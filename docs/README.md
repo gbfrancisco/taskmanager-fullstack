@@ -5,8 +5,8 @@ This cookbook demonstrates Spring Boot 3 features through a Task Manager applica
 ## Phase 1: Fundamentals (Getting Started)
 
 ### Core Concepts
-- [ ] **01-getting-started.md** - Spring Boot basics, auto-configuration, and project structure
-- [ ] **02-dependency-injection.md** - IoC container, beans, and dependency injection patterns
+- [x] **[01-getting-started.md](01-getting-started.md)** - Spring Boot basics, auto-configuration, and project structure
+- [x] **[02-dependency-injection.md](02-dependency-injection.md)** - IoC container, beans, and dependency injection patterns
 - [ ] **03-application-properties.md** - Configuration management and Spring profiles
 
 ### Web Layer
