@@ -7,7 +7,8 @@ import com.tutorial.taskmanager.model.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -32,183 +33,51 @@ import java.util.List;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-    // ==================== FIND BY RELATIONSHIP ====================
+    // ==================== FIND BY APP USER ====================
 
-    /**
-     * TODO: Add a method to find all tasks assigned to a specific user.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Method name pattern: findBy{RelationshipField}</li>
-     *   <li>The Task entity has a field: <code>@ManyToOne AppUser user</code></li>
-     *   <li>Return type: List&lt;Task&gt; (multiple tasks per user)</li>
-     *   <li>Parameter type: AppUser (pass the entire user object)</li>
-     * </ul>
-     *
-     * <p><b>Example:</b>
-     * <pre>
-     * List&lt;Task&gt; findByUser(AppUser user);
-     * </pre>
-     *
-     * <p><b>Generated SQL:</b>
-     * <pre>
-     * SELECT * FROM tasks WHERE user_id = ?
-     * </pre>
-     */
-    // TODO: Add findByUser method here
+    List<Task> findByAppUser(AppUser appUser);
 
-    /**
-     * TODO: Add a method to find all tasks belonging to a specific project.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Similar to findByUser</li>
-     *   <li>Task has field: <code>@ManyToOne Project project</code></li>
-     *   <li>Return type: List&lt;Task&gt;</li>
-     *   <li>Parameter type: Project</li>
-     * </ul>
-     */
-    // TODO: Add findByProject method here
+    List<Task> findByAppUserId(Long appUserId);
+
+    // ==================== FIND BY PROJECT ====================
+
+    List<Task> findByProject(Project project);
+
+    List<Task> findByProjectId(Long projectId);
 
     // ==================== FIND BY STATUS ====================
 
-    /**
-     * TODO: Add a method to find all tasks with a specific status.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Task has field: <code>TaskStatus status</code></li>
-     *   <li>Return type: List&lt;Task&gt;</li>
-     *   <li>Parameter type: TaskStatus (the enum)</li>
-     * </ul>
-     *
-     * <p><b>Use case:</b> Get all TODO tasks, or all COMPLETED tasks
-     *
-     * <p><b>Example:</b>
-     * <pre>
-     * List&lt;Task&gt; findByStatus(TaskStatus status);
-     * </pre>
-     */
-    // TODO: Add findByStatus method here
+    List<Task> findByStatus(TaskStatus status);
 
     // ==================== COMBINED FILTERS ====================
 
-    /**
-     * TODO: Add a method to find tasks by both user AND status.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Method name pattern: findBy{Field1}And{Field2}</li>
-     *   <li>Spring combines conditions with AND in SQL</li>
-     *   <li>Return type: List&lt;Task&gt;</li>
-     *   <li>Parameters: AppUser user, TaskStatus status (order matters!)</li>
-     * </ul>
-     *
-     * <p><b>Use case:</b> Get all TODO tasks for a specific user
-     *
-     * <p><b>Example:</b>
-     * <pre>
-     * List&lt;Task&gt; findByUserAndStatus(AppUser user, TaskStatus status);
-     * </pre>
-     *
-     * <p><b>Generated SQL:</b>
-     * <pre>
-     * SELECT * FROM tasks WHERE user_id = ? AND status = ?
-     * </pre>
-     */
-    // TODO: Add findByUserAndStatus method here
+    List<Task> findByAppUserAndStatus(AppUser appUser, TaskStatus status);
 
-    /**
-     * TODO: Add a method to find tasks by both project AND status.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Similar to findByUserAndStatus</li>
-     *   <li>Combine Project and TaskStatus filters</li>
-     * </ul>
-     *
-     * <p><b>Use case:</b> Get all IN_PROGRESS tasks for a specific project
-     */
-    // TODO: Add findByProjectAndStatus method here
+    List<Task> findByAppUserIdAndStatus(Long appUserId, TaskStatus status);
+
+    List<Task> findByProjectAndStatus(Project project, TaskStatus status);
+
+    List<Task> findByProjectIdAndStatus(Long projectId, TaskStatus status);
 
     // ==================== DATE-BASED QUERIES ====================
 
-    /**
-     * TODO: Add a method to find tasks due before a specific date.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Keyword: <code>Before</code> (e.g., findByDueDateBefore)</li>
-     *   <li>Task has field: <code>LocalDate dueDate</code></li>
-     *   <li>Return type: List&lt;Task&gt;</li>
-     *   <li>Parameter type: LocalDate</li>
-     * </ul>
-     *
-     * <p><b>Use case:</b> Find overdue tasks
-     *
-     * <p><b>Example:</b>
-     * <pre>
-     * List&lt;Task&gt; findByDueDateBefore(LocalDate date);
-     * </pre>
-     *
-     * <p><b>Generated SQL:</b>
-     * <pre>
-     * SELECT * FROM tasks WHERE due_date &lt; ?
-     * </pre>
-     */
-    // TODO: Add findByDueDateBefore method here
+    List<Task> findByDueDateBefore(LocalDateTime dateTimeToCompare);
 
-    /**
-     * TODO: Add a method to find tasks due between two dates.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Keyword: <code>Between</code> (e.g., findByDueDateBetween)</li>
-     *   <li>Parameters: LocalDate start, LocalDate end (inclusive range)</li>
-     *   <li>Return type: List&lt;Task&gt;</li>
-     * </ul>
-     *
-     * <p><b>Use case:</b> Find tasks due this week or this month
-     *
-     * <p><b>Example:</b>
-     * <pre>
-     * List&lt;Task&gt; findByDueDateBetween(LocalDate start, LocalDate end);
-     * </pre>
-     *
-     * <p><b>Generated SQL:</b>
-     * <pre>
-     * SELECT * FROM tasks WHERE due_date BETWEEN ? AND ?
-     * </pre>
-     */
-    // TODO: Add findByDueDateBetween method here
+    List<Task> findByDueDateBetween(LocalDateTime start, LocalDateTime end);
 
     // ==================== ADVANCED COMBINED QUERIES ====================
 
-    /**
-     * TODO (CHALLENGE): Add a method to find overdue tasks for a specific user
-     * that are not completed or cancelled.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Combine: findByUserAndDueDateBeforeAndStatusNot</li>
-     *   <li>Keywords: And, Before, Not</li>
-     *   <li>Parameters: AppUser user, LocalDate date, TaskStatus status</li>
-     *   <li>You'll call this with status = COMPLETED to exclude completed tasks</li>
-     * </ul>
-     *
-     * <p><b>Alternative approach:</b>
-     * You could also use <code>StatusNotIn</code> with a collection of statuses:
-     * <pre>
-     * findByUserAndDueDateBeforeAndStatusNotIn(
-     *     AppUser user,
-     *     LocalDate date,
-     *     Collection&lt;TaskStatus&gt; statuses
-     * )
-     * </pre>
-     *
-     * <p><b>Try implementing the simpler version first!</b>
-     */
-    // TODO: Add method to find overdue incomplete tasks here
+    List<Task> findByAppUserAndDueDateBeforeAndStatusNotIn(
+        AppUser appUser,
+        LocalDateTime dateTimeToCompare,
+        Collection<TaskStatus> excludedStatuses
+    );
+
+    List<Task> findByAppUserIdAndDueDateBeforeAndStatusNotIn(
+        Long appUserId,
+        LocalDateTime dateTimeToCompare,
+        Collection<TaskStatus> excludedStatuses
+    );
 
     // ==================== NOTES FOR LATER ====================
 

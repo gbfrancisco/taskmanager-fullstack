@@ -15,9 +15,9 @@ This cookbook demonstrates Spring Boot 3 features through a Task Manager applica
 - [ ] **06-request-response-handling.md** - DTOs, @RequestBody, @ResponseBody
 
 ### Data Layer
-- [ ] **07-spring-data-jpa.md** - JPA entities, relationships, and repositories
+- [x] **[07-spring-data-jpa.md](07-spring-data-jpa.md)** - JPA entities, relationships, and repositories
 - [ ] **08-database-configuration.md** - DataSource setup, H2 console
-- [ ] **09-query-methods.md** - Derived queries and custom JPQL
+- [x] **[09-query-methods.md](09-query-methods.md)** - Query method derivation and performance optimization
 
 ### Validation & Error Handling
 - [ ] **10-bean-validation.md** - Input validation with Jakarta Validation

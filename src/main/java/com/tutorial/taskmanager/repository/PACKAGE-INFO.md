@@ -19,7 +19,7 @@ Spring Data JPA is a framework that:
 com.tutorial.taskmanager.repository/
 ├── AppUserRepository.java      # User data access (authentication, user management)
 ├── TaskRepository.java         # Task data access (CRUD, filtering, date queries)
-├── ProjectRepository.java      # Project data access (owner queries, status filtering)
+├── ProjectRepository.java      # Project data access (appUser queries, status filtering)
 └── PACKAGE-INFO.md            # This file - package documentation
 ```
 
@@ -40,20 +40,20 @@ JpaRepository (Spring Data JPA interface)
         │    └── existsByEmail(String) : boolean
         │
         ├─── TaskRepository extends JpaRepository<Task, Long>
-        │    ├── findByUser(AppUser) : List<Task>
+        │    ├── findByAppUser(AppUser) : List<Task>
         │    ├── findByProject(Project) : List<Task>
         │    ├── findByStatus(TaskStatus) : List<Task>
-        │    ├── findByUserAndStatus(AppUser, TaskStatus) : List<Task>
-        │    ├── findByDueDateBefore(LocalDate) : List<Task>
-        │    └── findByDueDateBetween(LocalDate, LocalDate) : List<Task>
+        │    ├── findByAppUserAndStatus(AppUser, TaskStatus) : List<Task>
+        │    ├── findByDueDateBefore(LocalDateTime) : List<Task>
+        │    └── findByDueDateBetween(LocalDateTime, LocalDateTime) : List<Task>
         │
         └─── ProjectRepository extends JpaRepository<Project, Long>
-             ├── findByOwner(AppUser) : List<Project>
+             ├── findByAppUser(AppUser) : List<Project>
              ├── findByStatus(ProjectStatus) : List<Project>
-             ├── findByOwnerAndStatus(AppUser, ProjectStatus) : List<Project>
+             ├── findByAppUserAndStatus(AppUser, ProjectStatus) : List<Project>
              ├── findByName(String) : Optional<Project>
              ├── findByNameContainingIgnoreCase(String) : List<Project>
-             └── existsByOwnerAndName(AppUser, String) : boolean
+             └── existsByAppUserAndName(AppUser, String) : boolean
 ```
 
 ---
@@ -89,16 +89,16 @@ appUserRepository.save(newUser);  // Inherited from JpaRepository
 **Common Usage**:
 ```java
 // In a service class
-List<Task> userTasks = taskRepository.findByUser(currentUser);
+List<Task> userTasks = taskRepository.findByAppUser(currentUser);
 List<Task> todoTasks = taskRepository.findByStatus(TaskStatus.TODO);
-List<Task> overdueTasks = taskRepository.findByDueDateBefore(LocalDate.now());
+List<Task> overdueTasks = taskRepository.findByDueDateBefore(LocalDateTime.now());
 ```
 
 ### 3. ProjectRepository.java
 **Purpose**: Database operations for project management
 
 **Key Features**:
-- Find projects by owner (all projects owned by a user)
+- Find projects by appUser (all projects belonging to a user)
 - Find projects by status (ACTIVE, COMPLETED, etc.)
 - Search projects by name (exact or partial match)
 - Existence checks (prevent duplicate names per user)
@@ -106,9 +106,9 @@ List<Task> overdueTasks = taskRepository.findByDueDateBefore(LocalDate.now());
 **Common Usage**:
 ```java
 // In a service class
-List<Project> myProjects = projectRepository.findByOwner(currentUser);
+List<Project> myProjects = projectRepository.findByAppUser(currentUser);
 List<Project> results = projectRepository.findByNameContainingIgnoreCase("mobile");
-boolean exists = projectRepository.existsByOwnerAndName(user, "New Project");
+boolean exists = projectRepository.existsByAppUserAndName(user, "New Project");
 ```
 
 ---

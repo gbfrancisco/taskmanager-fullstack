@@ -42,71 +42,15 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
     // ==================== BASIC QUERY METHODS ====================
 
-    /**
-     * TODO: Add a method to find a user by username.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Method name pattern: findBy{FieldName}</li>
-     *   <li>Username is unique, so return Optional&lt;AppUser&gt;</li>
-     *   <li>Spring will generate: SELECT * FROM app_users WHERE username = ?</li>
-     * </ul>
-     *
-     * <p><b>Example:</b>
-     * <pre>
-     * Optional&lt;AppUser&gt; findByUsername(String username);
-     * </pre>
-     *
-     * <p><b>Why Optional?</b> The user might not exist, Optional handles null safely.
-     */
-    // TODO: Add findByUsername method here
+    Optional<AppUser> findByUsername(String username);
 
-    /**
-     * TODO: Add a method to find a user by email.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Similar to findByUsername</li>
-     *   <li>Email is also unique</li>
-     *   <li>Return type: Optional&lt;AppUser&gt;</li>
-     * </ul>
-     */
-    // TODO: Add findByEmail method here
+    Optional<AppUser> findByEmail(String email);
 
     // ==================== EXISTENCE CHECK METHODS ====================
 
-    /**
-     * TODO: Add a method to check if a username already exists.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Method name pattern: existsBy{FieldName}</li>
-     *   <li>Return type: boolean (true if exists, false otherwise)</li>
-     *   <li>More efficient than findByUsername().isPresent()</li>
-     *   <li>Spring generates: SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM...</li>
-     * </ul>
-     *
-     * <p><b>Use case:</b> Validate username uniqueness before registration
-     *
-     * <p><b>Example:</b>
-     * <pre>
-     * boolean existsByUsername(String username);
-     * </pre>
-     */
-    // TODO: Add existsByUsername method here
+    boolean existsByUsername(String username);
 
-    /**
-     * TODO: Add a method to check if an email already exists.
-     *
-     * <p><b>Hints:</b>
-     * <ul>
-     *   <li>Similar to existsByUsername</li>
-     *   <li>Return type: boolean</li>
-     * </ul>
-     *
-     * <p><b>Use case:</b> Validate email uniqueness before registration
-     */
-    // TODO: Add existsByEmail method here
+    boolean existsByEmail(String email);
 
     // ==================== NOTES FOR LATER ====================
 
