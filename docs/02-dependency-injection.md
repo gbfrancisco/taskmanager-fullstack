@@ -956,6 +956,92 @@ public class AppConfig {
 
 **Fix:** Add `@Configuration` so Spring discovers it.
 
+### 5. Assuming Stereotype Annotations Are Inherited
+
+**Common Misconception:** If a parent class has `@Component`, subclasses automatically become beans.
+
+**Reality:** Stereotype annotations are **NOT inherited** by subclasses.
+
+```java
+// Parent class - this IS a bean
+@Component
+public class BaseService {
+    public void doSomething() {
+        System.out.println("Base logic");
+    }
+}
+
+// Subclass - this is NOT a bean!
+public class ChildService extends BaseService {  // ❌ NOT a bean
+    @Override
+    public void doSomething() {
+        System.out.println("Child logic");
+    }
+}
+
+// Attempting to inject will fail
+@Service
+public class MyService {
+    // ❌ FAILS: ChildService is not a bean!
+    public MyService(ChildService childService) {
+        // NoSuchBeanDefinitionException
+    }
+}
+```
+
+**Why?** Spring's stereotype annotations (`@Component`, `@Service`, `@Repository`, etc.) are **not** marked with Java's `@Inherited` meta-annotation, so they don't propagate to subclasses.
+
+**Fix:** Explicitly annotate the subclass:
+
+```java
+@Component  // ✅ Now both parent and child are separate beans
+public class BaseService {
+    // ...
+}
+
+@Component  // ✅ Explicitly mark as bean
+public class ChildService extends BaseService {
+    // ...
+}
+```
+
+**When both are beans:** You'll have **two separate beans** in the Application Context:
+- One `BaseService` bean
+- One `ChildService` bean
+
+**Common Pattern:** Abstract base class without annotation (not a bean), concrete implementations with annotations (are beans):
+
+```java
+// Abstract base - NO annotation (can't be instantiated anyway)
+public abstract class BaseService {
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
+
+    public abstract void process();
+}
+
+// Concrete implementation - IS a bean
+@Service
+public class EmailService extends BaseService {
+    @Override
+    public void process() {
+        logger.info("Processing email");
+    }
+}
+
+// Another concrete implementation - IS a bean
+@Service
+public class SmsService extends BaseService {
+    @Override
+    public void process() {
+        logger.info("Processing SMS");
+    }
+}
+
+// Now you have two beans: EmailService and SmsService (but not BaseService)
+```
+
+**Key Takeaway:** Every class that needs to be a Spring bean must have its own stereotype annotation - inheritance doesn't apply.
+
 ---
 
 ## Summary
