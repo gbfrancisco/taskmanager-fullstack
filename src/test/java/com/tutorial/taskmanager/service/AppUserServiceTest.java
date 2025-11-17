@@ -57,18 +57,16 @@ class AppUserServiceTest {
     void setUp() {
         // Create a test user entity
         testUser = AppUser.builder()
-                .username("testuser")
-                .email("test@example.com")
-                .password("password123")
-                .build();
+            .username("testuser")
+            .email("test@example.com")
+            .password("password123")
+            .build();
         // Simulate that this user has been saved (has an ID)
         testUser.setId(1L);
 
         // Create DTOs for testing
         createDto = new AppUserCreateDto("newuser", "new@example.com", "password123");
-        updateDto = new AppUserUpdateDto();
-        updateDto.setEmail("updated@example.com");
-        updateDto.setPassword("newPassword123");
+        updateDto = new AppUserUpdateDto("updated@example.com", "newPassword123");
     }
 
     // ========================================
@@ -99,8 +97,8 @@ class AppUserServiceTest {
     void createAppUser_NullDto_ThrowsException() {
         // Act & Assert: Verify exception is thrown
         assertThatThrownBy(() -> appUserService.createAppUser(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("appUserCreateDto cannot be null");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("appUserCreateDto cannot be null");
 
         // Verify no repository interactions occurred
         verifyNoInteractions(appUserRepository);
@@ -114,8 +112,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.createAppUser(emptyUsernameDto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("username cannot be empty");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("username cannot be empty");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -128,8 +126,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.createAppUser(nullUsernameDto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("username cannot be empty");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("username cannot be empty");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -142,8 +140,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.createAppUser(emptyEmailDto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("email cannot be empty");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("email cannot be empty");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -156,8 +154,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.createAppUser(createDto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("username already exists");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("username already exists");
 
         // Verify that we checked username but never tried to save
         verify(appUserRepository).existsByUsername("newuser");
@@ -173,8 +171,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.createAppUser(createDto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("email already exists");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("email already exists");
 
         verify(appUserRepository).existsByUsername("newuser");
         verify(appUserRepository).existsByEmail("new@example.com");
@@ -220,8 +218,8 @@ class AppUserServiceTest {
     void findById_NullId_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.findById(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("id cannot be null");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("id cannot be null");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -254,8 +252,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.getById(999L))
-                .isInstanceOf(NoSuchElementException.class)
-                .hasMessage("appUser with id '999' not found");
+            .isInstanceOf(NoSuchElementException.class)
+            .hasMessage("appUser with id '999' not found");
 
         verify(appUserRepository).findById(999L);
     }
@@ -265,8 +263,8 @@ class AppUserServiceTest {
     void getById_NullId_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.getById(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("id cannot be null");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("id cannot be null");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -309,8 +307,8 @@ class AppUserServiceTest {
     void findByUsername_EmptyUsername_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.findByUsername(""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("username cannot be empty");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("username cannot be empty");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -342,8 +340,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.getByUsername("nonexistent"))
-                .isInstanceOf(NoSuchElementException.class)
-                .hasMessage("appUser with username 'nonexistent' not found");
+            .isInstanceOf(NoSuchElementException.class)
+            .hasMessage("appUser with username 'nonexistent' not found");
 
         verify(appUserRepository).findByUsername("nonexistent");
     }
@@ -353,8 +351,8 @@ class AppUserServiceTest {
     void getByUsername_EmptyUsername_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.getByUsername(""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("username cannot be empty");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("username cannot be empty");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -397,8 +395,8 @@ class AppUserServiceTest {
     void findByEmail_EmptyEmail_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.findByEmail(""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("email cannot be empty");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("email cannot be empty");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -412,10 +410,10 @@ class AppUserServiceTest {
     void findAll_ReturnsAllUsers() {
         // Arrange
         AppUser user2 = AppUser.builder()
-                .username("user2")
-                .email("user2@example.com")
-                .password("pass")
-                .build();
+            .username("user2")
+            .email("user2@example.com")
+            .password("pass")
+            .build();
         user2.setId(2L);
 
         when(appUserRepository.findAll()).thenReturn(List.of(testUser, user2));
@@ -426,7 +424,7 @@ class AppUserServiceTest {
         // Assert
         assertThat(result).hasSize(2);
         assertThat(result).extracting(AppUser::getUsername)
-                .containsExactly("testuser", "user2");
+            .containsExactly("testuser", "user2");
         verify(appUserRepository).findAll();
     }
 
@@ -493,8 +491,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.updateAppUser(1L, updateDto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("email already exists");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("email already exists");
 
         verify(appUserRepository).findById(1L);
         verify(appUserRepository).existsByEmail("updated@example.com");
@@ -541,8 +539,8 @@ class AppUserServiceTest {
     void updateAppUser_NullId_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.updateAppUser(null, updateDto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("id cannot be null");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("id cannot be null");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -552,8 +550,8 @@ class AppUserServiceTest {
     void updateAppUser_NullDto_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.updateAppUser(1L, null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("appUserUpdateDto cannot be null");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("appUserUpdateDto cannot be null");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -566,8 +564,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.updateAppUser(999L, updateDto))
-                .isInstanceOf(NoSuchElementException.class)
-                .hasMessage("appUser with id '999' not found");
+            .isInstanceOf(NoSuchElementException.class)
+            .hasMessage("appUser with id '999' not found");
 
         verify(appUserRepository).findById(999L);
         verify(appUserRepository, never()).save(any(AppUser.class));
@@ -597,8 +595,8 @@ class AppUserServiceTest {
     void deleteById_NullId_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.deleteById(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("id cannot be null");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("id cannot be null");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -611,8 +609,8 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.deleteById(999L))
-                .isInstanceOf(NoSuchElementException.class)
-                .hasMessage("appUser with id '999' not found");
+            .isInstanceOf(NoSuchElementException.class)
+            .hasMessage("appUser with id '999' not found");
 
         verify(appUserRepository).existsById(999L);
         verify(appUserRepository, never()).deleteById(anyLong());
@@ -655,8 +653,8 @@ class AppUserServiceTest {
     void existsByUsername_EmptyUsername_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.existsByUsername(""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("username cannot be empty");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("username cannot be empty");
 
         verifyNoInteractions(appUserRepository);
     }
@@ -698,8 +696,8 @@ class AppUserServiceTest {
     void existsByEmail_EmptyEmail_ThrowsException() {
         // Act & Assert
         assertThatThrownBy(() -> appUserService.existsByEmail(""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("email cannot be empty");
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("email cannot be empty");
 
         verifyNoInteractions(appUserRepository);
     }
