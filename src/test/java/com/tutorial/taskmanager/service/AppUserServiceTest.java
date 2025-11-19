@@ -2,6 +2,7 @@ package com.tutorial.taskmanager.service;
 
 import com.tutorial.taskmanager.dto.appuser.AppUserCreateDto;
 import com.tutorial.taskmanager.dto.appuser.AppUserUpdateDto;
+import com.tutorial.taskmanager.exception.ResourceNotFoundException;
 import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.repository.AppUserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -259,7 +259,7 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.getById(999L))
-            .isInstanceOf(NoSuchElementException.class)
+            .isInstanceOf(ResourceNotFoundException.class)
             .hasMessage("appUser with id '999' not found");
 
         verify(appUserRepository).findById(999L);
@@ -347,7 +347,7 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.getByUsername("nonexistent"))
-            .isInstanceOf(NoSuchElementException.class)
+            .isInstanceOf(ResourceNotFoundException.class)
             .hasMessage("appUser with username 'nonexistent' not found");
 
         verify(appUserRepository).findByUsername("nonexistent");
@@ -571,7 +571,7 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.updateAppUser(999L, updateDto))
-            .isInstanceOf(NoSuchElementException.class)
+            .isInstanceOf(ResourceNotFoundException.class)
             .hasMessage("appUser with id '999' not found");
 
         verify(appUserRepository).findById(999L);
@@ -616,7 +616,7 @@ class AppUserServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> appUserService.deleteById(999L))
-            .isInstanceOf(NoSuchElementException.class)
+            .isInstanceOf(ResourceNotFoundException.class)
             .hasMessage("appUser with id '999' not found");
 
         verify(appUserRepository).existsById(999L);

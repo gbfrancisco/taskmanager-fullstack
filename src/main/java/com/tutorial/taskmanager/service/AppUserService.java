@@ -2,6 +2,7 @@ package com.tutorial.taskmanager.service;
 
 import com.tutorial.taskmanager.dto.appuser.AppUserCreateDto;
 import com.tutorial.taskmanager.dto.appuser.AppUserUpdateDto;
+import com.tutorial.taskmanager.exception.ResourceNotFoundException;
 import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.repository.AppUserRepository;
 import org.apache.commons.lang3.StringUtils;
@@ -9,7 +10,6 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -73,7 +73,7 @@ public class AppUserService {
         }
 
         return appUserRepository.findById(id)
-            .orElseThrow(() -> new NoSuchElementException("appUser with id '" + id + "' not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("appUser", id));
     }
 
     // Find AppUser by username
@@ -97,7 +97,7 @@ public class AppUserService {
         }
 
         return appUserRepository.findByUsername(username)
-            .orElseThrow(() -> new NoSuchElementException("appUser with username '" + username + "' not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("appUser with username '" + username + "' not found"));
     }
 
     // Find AppUser by email
@@ -161,7 +161,7 @@ public class AppUserService {
         }
 
         if (!appUserRepository.existsById(id)) {
-            throw new NoSuchElementException("appUser with id '" + id + "' not found");
+            throw new ResourceNotFoundException("appUser", id);
         }
 
         appUserRepository.deleteById(id);
