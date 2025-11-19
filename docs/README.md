@@ -12,7 +12,7 @@ This cookbook demonstrates Spring Boot 3 features through a Task Manager applica
 ### Web Layer
 - [ ] **04-rest-controllers.md** - Building RESTful APIs with @RestController
 - [ ] **05-request-mapping.md** - HTTP methods, path variables, and request parameters
-- [ ] **06-request-response-handling.md** - DTOs, @RequestBody, @ResponseBody
+- [x] **[06-data-transfer-objects.md](06-data-transfer-objects.md)** - DTOs, separation of concerns, avoiding circular references
 
 ### Data Layer
 - [x] **[07-spring-data-jpa.md](07-spring-data-jpa.md)** - JPA entities, relationships, and repositories
@@ -30,7 +30,7 @@ This cookbook demonstrates Spring Boot 3 features through a Task Manager applica
 - [ ] **15-authorization.md** - Role-based access control and method security
 
 ### Testing
-- [ ] **16-unit-testing.md** - JUnit 5, Mockito, and testing services
+- [x] **[16-unit-testing.md](16-unit-testing.md)** - JUnit 5, Mockito, and testing services
 - [ ] **17-integration-testing.md** - @SpringBootTest and testing the full stack
 - [ ] **18-web-layer-testing.md** - @WebMvcTest and testing controllers
 - [ ] **19-data-layer-testing.md** - @DataJpaTest and repository testing
