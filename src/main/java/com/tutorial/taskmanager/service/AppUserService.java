@@ -20,7 +20,7 @@ public class AppUserService {
         this.appUserRepository = appUserRepository;
     }
 
-    // TODO: Create AppUser
+    // Create AppUser
     // - Method: createAppUser(AppUserCreateDto appUserCreateDto)
     // - Validate username and email are unique (throw exception if exists)
     // - Save and return the created user
@@ -51,7 +51,7 @@ public class AppUserService {
         return appUserRepository.save(appUserCreateDto.convert());
     }
 
-    // TODO: Find AppUser by ID
+    // Find AppUser by ID
     // - Method: findById(Long id)
     // - Return Optional<AppUser>
     // - Use repository.findById()
@@ -63,7 +63,7 @@ public class AppUserService {
         return appUserRepository.findById(id);
     }
 
-    // TODO: Find AppUser by ID (with exception if not found)
+    // Find AppUser by ID (with exception if not found)
     // - Method: getById(Long id)
     // - Throw custom exception if user not found
     // - This is useful for other services that need a user to exist
@@ -76,7 +76,7 @@ public class AppUserService {
             .orElseThrow(() -> new NoSuchElementException("appUser with id '" + id + "' not found"));
     }
 
-    // TODO: Find AppUser by username
+    // Find AppUser by username
     // - Method: findByUsername(String username)
     // - Return Optional<AppUser>
     // - Use repository.findByUsername()
@@ -88,7 +88,7 @@ public class AppUserService {
         return appUserRepository.findByUsername(username);
     }
 
-    // TODO: Get AppUser by username (with exception if not found)
+    // Get AppUser by username (with exception if not found)
     // - Method: getByUsername(String username)
     // - Throw custom exception if user not found
     public AppUser getByUsername(String username) {
@@ -100,7 +100,7 @@ public class AppUserService {
             .orElseThrow(() -> new NoSuchElementException("appUser with username '" + username + "' not found"));
     }
 
-    // TODO: Find AppUser by email
+    // Find AppUser by email
     // - Method: findByEmail(String email)
     // - Return Optional<AppUser>
     public Optional<AppUser> findByEmail(String email) {
@@ -111,14 +111,14 @@ public class AppUserService {
         return appUserRepository.findByEmail(email);
     }
 
-    // TODO: Get all AppUsers
+    // Get all AppUsers
     // - Method: findAll()
     // - Return List<AppUser>
     public List<AppUser> findAll() {
         return appUserRepository.findAll();
     }
 
-    // TODO: Update AppUser
+    // Update AppUser
     // - Method: updateAppUser(Long id, AppUser updatedUser)
     // - Find existing user by ID (throw exception if not found)
     // - Update only allowed fields (email, password - NOT username as it's immutable)
@@ -150,7 +150,7 @@ public class AppUserService {
         return appUserRepository.save(existingAppUser);
     }
 
-    // TODO: Delete AppUser by ID
+    // Delete AppUser by ID
     // - Method: deleteById(Long id)
     // - Check if user exists first (throw exception if not found)
     // - Consider cascade: deleting user will delete their tasks and projects (due to cascade)
@@ -167,7 +167,7 @@ public class AppUserService {
         appUserRepository.deleteById(id);
     }
 
-    // TODO: Check if username exists
+    // Check if username exists
     // - Method: existsByUsername(String username)
     // - Return boolean
     // - Useful for validation
@@ -179,7 +179,7 @@ public class AppUserService {
         return appUserRepository.existsByUsername(username);
     }
 
-    // TODO: Check if email exists
+    // Check if email exists
     // - Method: existsByEmail(String email)
     // - Return boolean
     // - Useful for validation
