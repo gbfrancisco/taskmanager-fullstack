@@ -65,8 +65,15 @@ class AppUserServiceTest {
         testUser.setId(1L);
 
         // Create DTOs for testing
-        createDto = new AppUserCreateDto("newuser", "new@example.com", "password123");
-        updateDto = new AppUserUpdateDto("updated@example.com", "newPassword123");
+        createDto = AppUserCreateDto.builder()
+            .username("newuser")
+            .email("new@example.com")
+            .password("password123")
+            .build();
+        updateDto = AppUserUpdateDto.builder()
+            .email("updated@example.com")
+            .password("newPassword123")
+            .build();
     }
 
     // ========================================
