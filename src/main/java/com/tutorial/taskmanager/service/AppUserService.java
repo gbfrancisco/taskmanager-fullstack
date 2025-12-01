@@ -16,10 +16,14 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class AppUserService {
     private final AppUserRepository appUserRepository;
     private final AppUserMapper appUserMapper;
+
+    public AppUserService(AppUserRepository appUserRepository, AppUserMapper appUserMapper) {
+        this.appUserRepository = appUserRepository;
+        this.appUserMapper = appUserMapper;
+    }
 
     // Create AppUser
     // - Method: createAppUser(AppUserCreateDto appUserCreateDto)
