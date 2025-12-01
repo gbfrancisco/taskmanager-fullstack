@@ -1,8 +1,10 @@
 package com.tutorial.taskmanager.service;
 
 import com.tutorial.taskmanager.dto.appuser.AppUserCreateDto;
+import com.tutorial.taskmanager.dto.appuser.AppUserResponseDto;
 import com.tutorial.taskmanager.dto.appuser.AppUserUpdateDto;
 import com.tutorial.taskmanager.exception.ResourceNotFoundException;
+import com.tutorial.taskmanager.mapper.AppUserMapper;
 import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.repository.AppUserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,12 +44,16 @@ class AppUserServiceTest {
     @Mock
     private AppUserRepository appUserRepository;
 
+    @Mock
+    private AppUserMapper appUserMapper;
+
     @InjectMocks
     private AppUserService appUserService;
 
     private AppUser testUser;
     private AppUserCreateDto createDto;
     private AppUserUpdateDto updateDto;
+    private AppUserResponseDto testUserResponseDto;
 
     /**
      * Setup method that runs before each test
@@ -63,6 +69,13 @@ class AppUserServiceTest {
             .build();
         // Simulate that this user has been saved (has an ID)
         testUser.setId(1L);
+
+        // Create response DTO for the test user
+        testUserResponseDto = AppUserResponseDto.builder()
+            .id(1L)
+            .username("testuser")
+            .email("test@example.com")
+            .build();
 
         // Create DTOs for testing
         createDto = AppUserCreateDto.builder()
@@ -86,17 +99,21 @@ class AppUserServiceTest {
         // Arrange: Setup mock behavior
         when(appUserRepository.existsByUsername(anyString())).thenReturn(false);
         when(appUserRepository.existsByEmail(anyString())).thenReturn(false);
+        when(appUserMapper.toEntity(createDto)).thenReturn(testUser);
         when(appUserRepository.save(any(AppUser.class))).thenReturn(testUser);
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);
 
         // Act: Call the method under test
-        AppUser result = appUserService.createAppUser(createDto);
+        AppUserResponseDto result = appUserService.createAppUser(createDto);
 
         // Assert: Verify the result and interactions
         assertThat(result).isNotNull();
         assertThat(result.getUsername()).isEqualTo(testUser.getUsername());
         verify(appUserRepository).existsByUsername("newuser");
         verify(appUserRepository).existsByEmail("new@example.com");
+        verify(appUserMapper).toEntity(createDto);
         verify(appUserRepository).save(any(AppUser.class));
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
@@ -195,15 +212,17 @@ class AppUserServiceTest {
     void findById_UserExists_ReturnsOptionalWithUser() {
         // Arrange
         when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);
 
         // Act
-        Optional<AppUser> result = appUserService.findById(1L);
+        Optional<AppUserResponseDto> result = appUserService.findById(1L);
 
         // Assert
         assertThat(result).isPresent();
         assertThat(result.get().getId()).isEqualTo(1L);
         assertThat(result.get().getUsername()).isEqualTo("testuser");
         verify(appUserRepository).findById(1L);
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
@@ -213,7 +232,7 @@ class AppUserServiceTest {
         when(appUserRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act
-        Optional<AppUser> result = appUserService.findById(999L);
+        Optional<AppUserResponseDto> result = appUserService.findById(999L);
 
         // Assert
         assertThat(result).isEmpty();
@@ -240,15 +259,17 @@ class AppUserServiceTest {
     void getById_UserExists_ReturnsUser() {
         // Arrange
         when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);
 
         // Act
-        AppUser result = appUserService.getById(1L);
+        AppUserResponseDto result = appUserService.getById(1L);
 
         // Assert
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getUsername()).isEqualTo("testuser");
         verify(appUserRepository).findById(1L);
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
@@ -285,14 +306,16 @@ class AppUserServiceTest {
     void findByUsername_UserExists_ReturnsOptionalWithUser() {
         // Arrange
         when(appUserRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);
 
         // Act
-        Optional<AppUser> result = appUserService.findByUsername("testuser");
+        Optional<AppUserResponseDto> result = appUserService.findByUsername("testuser");
 
         // Assert
         assertThat(result).isPresent();
         assertThat(result.get().getUsername()).isEqualTo("testuser");
         verify(appUserRepository).findByUsername("testuser");
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
@@ -302,7 +325,7 @@ class AppUserServiceTest {
         when(appUserRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
 
         // Act
-        Optional<AppUser> result = appUserService.findByUsername("nonexistent");
+        Optional<AppUserResponseDto> result = appUserService.findByUsername("nonexistent");
 
         // Assert
         assertThat(result).isEmpty();
@@ -329,14 +352,16 @@ class AppUserServiceTest {
     void getByUsername_UserExists_ReturnsUser() {
         // Arrange
         when(appUserRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);
 
         // Act
-        AppUser result = appUserService.getByUsername("testuser");
+        AppUserResponseDto result = appUserService.getByUsername("testuser");
 
         // Assert
         assertThat(result).isNotNull();
         assertThat(result.getUsername()).isEqualTo("testuser");
         verify(appUserRepository).findByUsername("testuser");
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
@@ -373,14 +398,16 @@ class AppUserServiceTest {
     void findByEmail_UserExists_ReturnsOptionalWithUser() {
         // Arrange
         when(appUserRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);
 
         // Act
-        Optional<AppUser> result = appUserService.findByEmail("test@example.com");
+        Optional<AppUserResponseDto> result = appUserService.findByEmail("test@example.com");
 
         // Assert
         assertThat(result).isPresent();
         assertThat(result.get().getEmail()).isEqualTo("test@example.com");
         verify(appUserRepository).findByEmail("test@example.com");
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
@@ -390,7 +417,7 @@ class AppUserServiceTest {
         when(appUserRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
         // Act
-        Optional<AppUser> result = appUserService.findByEmail("notfound@example.com");
+        Optional<AppUserResponseDto> result = appUserService.findByEmail("notfound@example.com");
 
         // Assert
         assertThat(result).isEmpty();
@@ -423,30 +450,44 @@ class AppUserServiceTest {
             .build();
         user2.setId(2L);
 
-        when(appUserRepository.findAll()).thenReturn(List.of(testUser, user2));
+        AppUserResponseDto user2ResponseDto = AppUserResponseDto.builder()
+            .id(2L)
+            .username("user2")
+            .email("user2@example.com")
+            .build();
+
+        List<AppUser> users = List.of(testUser, user2);
+        List<AppUserResponseDto> responseDtos = List.of(testUserResponseDto, user2ResponseDto);
+
+        when(appUserRepository.findAll()).thenReturn(users);
+        when(appUserMapper.toResponseDtoList(users)).thenReturn(responseDtos);
 
         // Act
-        List<AppUser> result = appUserService.findAll();
+        List<AppUserResponseDto> result = appUserService.findAll();
 
         // Assert
         assertThat(result).hasSize(2);
-        assertThat(result).extracting(AppUser::getUsername)
+        assertThat(result).extracting(AppUserResponseDto::getUsername)
             .containsExactly("testuser", "user2");
         verify(appUserRepository).findAll();
+        verify(appUserMapper).toResponseDtoList(users);
     }
 
     @Test
     @DisplayName("findAll - should return empty list when no users exist")
     void findAll_NoUsers_ReturnsEmptyList() {
         // Arrange
-        when(appUserRepository.findAll()).thenReturn(List.of());
+        List<AppUser> emptyList = List.of();
+        when(appUserRepository.findAll()).thenReturn(emptyList);
+        when(appUserMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
 
         // Act
-        List<AppUser> result = appUserService.findAll();
+        List<AppUserResponseDto> result = appUserService.findAll();
 
         // Assert
         assertThat(result).isEmpty();
         verify(appUserRepository).findAll();
+        verify(appUserMapper).toResponseDtoList(emptyList);
     }
 
     // ========================================
@@ -457,18 +498,27 @@ class AppUserServiceTest {
     @DisplayName("updateAppUser - should update email and password successfully")
     void updateAppUser_ValidUpdate_ReturnsUpdatedUser() {
         // Arrange
+        AppUserResponseDto updatedResponseDto = AppUserResponseDto.builder()
+            .id(1L)
+            .username("testuser")
+            .email("updated@example.com")
+            .build();
+
         when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(appUserRepository.existsByEmail("updated@example.com")).thenReturn(false);
         when(appUserRepository.save(any(AppUser.class))).thenReturn(testUser);
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(updatedResponseDto);
 
         // Act
-        AppUser result = appUserService.updateAppUser(1L, updateDto);
+        AppUserResponseDto result = appUserService.updateAppUser(1L, updateDto);
 
         // Assert
         assertThat(result).isNotNull();
         verify(appUserRepository).findById(1L);
         verify(appUserRepository).existsByEmail("updated@example.com");
+        verify(appUserMapper).updateEntityFromDto(updateDto, testUser);
         verify(appUserRepository).save(testUser);
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
@@ -478,15 +528,18 @@ class AppUserServiceTest {
         updateDto.setEmail("TEST@EXAMPLE.COM"); // Same email, different case
         when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(appUserRepository.save(any(AppUser.class))).thenReturn(testUser);
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);
 
         // Act
-        AppUser result = appUserService.updateAppUser(1L, updateDto);
+        AppUserResponseDto result = appUserService.updateAppUser(1L, updateDto);
 
         // Assert: Should not check existence (same email)
         assertThat(result).isNotNull();
         verify(appUserRepository).findById(1L);
         verify(appUserRepository, never()).existsByEmail(anyString());
+        verify(appUserMapper).updateEntityFromDto(updateDto, testUser);
         verify(appUserRepository).save(testUser);
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
@@ -514,13 +567,16 @@ class AppUserServiceTest {
         when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(appUserRepository.existsByEmail("updated@example.com")).thenReturn(false);
         when(appUserRepository.save(any(AppUser.class))).thenReturn(testUser);
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);
 
         // Act
-        AppUser result = appUserService.updateAppUser(1L, updateDto);
+        AppUserResponseDto result = appUserService.updateAppUser(1L, updateDto);
 
         // Assert
         assertThat(result).isNotNull();
+        verify(appUserMapper).updateEntityFromDto(updateDto, testUser);
         verify(appUserRepository).save(testUser);
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
@@ -530,15 +586,18 @@ class AppUserServiceTest {
         updateDto.setEmail(null);
         when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(appUserRepository.save(any(AppUser.class))).thenReturn(testUser);
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);
 
         // Act
-        AppUser result = appUserService.updateAppUser(1L, updateDto);
+        AppUserResponseDto result = appUserService.updateAppUser(1L, updateDto);
 
         // Assert
         assertThat(result).isNotNull();
         verify(appUserRepository).findById(1L);
         verify(appUserRepository, never()).existsByEmail(anyString());
+        verify(appUserMapper).updateEntityFromDto(updateDto, testUser);
         verify(appUserRepository).save(testUser);
+        verify(appUserMapper).toResponseDto(testUser);
     }
 
     @Test
