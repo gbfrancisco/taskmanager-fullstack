@@ -7,7 +7,6 @@ import com.tutorial.taskmanager.exception.ResourceNotFoundException;
 import com.tutorial.taskmanager.mapper.AppUserMapper;
 import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.repository.AppUserRepository;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
