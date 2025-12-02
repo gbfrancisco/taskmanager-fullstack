@@ -296,6 +296,63 @@ public interface AppUserMapper {
 }
 ```
 
+### Automatic List Mapping
+
+One of MapStruct's powerful features is **automatic list mapping**. When you define a method that maps a single object, MapStruct can automatically generate list versions:
+
+```java
+@Mapper(componentModel = "spring")
+public interface AppUserMapper {
+
+    // Define single object mapping
+    AppUserResponseDto toResponseDto(AppUser entity);
+
+    // MapStruct automatically implements this using toResponseDto() internally!
+    List<AppUserResponseDto> toResponseDtoList(List<AppUser> entities);
+}
+```
+
+**How it works**: MapStruct sees that:
+1. You have `toResponseDto(AppUser)` that returns `AppUserResponseDto`
+2. You want `toResponseDtoList(List<AppUser>)` returning `List<AppUserResponseDto>`
+3. It generates code that iterates and calls `toResponseDto()` for each item
+
+**Generated code looks like:**
+```java
+@Override
+public List<AppUserResponseDto> toResponseDtoList(List<AppUser> entities) {
+    if (entities == null) {
+        return null;
+    }
+
+    List<AppUserResponseDto> list = new ArrayList<>(entities.size());
+    for (AppUser appUser : entities) {
+        list.add(toResponseDto(appUser));  // Reuses single-object mapper!
+    }
+    return list;
+}
+```
+
+**Key points:**
+- You just declare the method signature - MapStruct implements it
+- Null input returns null (safe by default)
+- Uses `ArrayList` with pre-sized capacity for performance
+- Works with any collection type (`List`, `Set`, `Collection`)
+- The single-object mapper (`toResponseDto`) must exist
+
+**Usage in service layer:**
+```java
+public List<TaskResponseDto> findAll() {
+    List<Task> tasks = taskRepository.findAll();
+    return taskMapper.toResponseDtoList(tasks);  // One line!
+}
+
+public List<TaskResponseDto> findByStatus(TaskStatus status) {
+    List<Task> tasks = taskRepository.findByStatus(status);
+    return taskMapper.toResponseDtoList(tasks);  // Reuse everywhere
+}
+```
+
 ### Configuration Options
 
 | Option | Values | Purpose |
@@ -695,6 +752,86 @@ class AppUserMapperTest {
     }
 }
 ```
+
+### 8. Mocking Mappers in Service Tests
+
+When unit testing services that use mappers, **mock the mapper** just like you mock repositories:
+
+```java
+@ExtendWith(MockitoExtension.class)
+class AppUserServiceTest {
+
+    @Mock
+    private AppUserRepository appUserRepository;
+
+    @Mock
+    private AppUserMapper appUserMapper;  // Mock the mapper!
+
+    @InjectMocks
+    private AppUserService appUserService;
+
+    private AppUser testUser;
+    private AppUserResponseDto testUserResponseDto;
+
+    @BeforeEach
+    void setUp() {
+        testUser = AppUser.builder()
+            .username("testuser")
+            .email("test@example.com")
+            .build();
+        testUser.setId(1L);
+
+        // Create response DTO to return from mocked mapper
+        testUserResponseDto = AppUserResponseDto.builder()
+            .id(1L)
+            .username("testuser")
+            .email("test@example.com")
+            .build();
+    }
+
+    @Test
+    void shouldCreateUserSuccessfully() {
+        // Arrange
+        AppUserCreateDto createDto = AppUserCreateDto.builder()
+            .username("newuser")
+            .email("new@example.com")
+            .password("password")
+            .build();
+
+        when(appUserRepository.existsByUsername(anyString())).thenReturn(false);
+        when(appUserRepository.existsByEmail(anyString())).thenReturn(false);
+        when(appUserMapper.toEntity(createDto)).thenReturn(testUser);  // Stub mapper
+        when(appUserRepository.save(any())).thenReturn(testUser);
+        when(appUserMapper.toResponseDto(testUser)).thenReturn(testUserResponseDto);  // Stub mapper
+
+        // Act
+        AppUserResponseDto result = appUserService.createAppUser(createDto);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getUsername()).isEqualTo("testuser");
+
+        // Verify mapper was called
+        verify(appUserMapper).toEntity(createDto);
+        verify(appUserMapper).toResponseDto(testUser);
+    }
+}
+```
+
+**Key points for mocking mappers:**
+
+| Method | How to Stub | How to Verify |
+|--------|-------------|---------------|
+| `toEntity(dto)` | `when(mapper.toEntity(dto)).thenReturn(entity)` | `verify(mapper).toEntity(dto)` |
+| `toResponseDto(entity)` | `when(mapper.toResponseDto(entity)).thenReturn(dto)` | `verify(mapper).toResponseDto(entity)` |
+| `toResponseDtoList(list)` | `when(mapper.toResponseDtoList(list)).thenReturn(dtoList)` | `verify(mapper).toResponseDtoList(list)` |
+| `updateEntityFromDto(dto, entity)` | Void method - just verify | `verify(mapper).updateEntityFromDto(dto, entity)` |
+
+**Why mock the mapper?**
+- Unit tests should test ONE class in isolation
+- Mocking the mapper lets you control exactly what it returns
+- You're testing service LOGIC, not mapper logic
+- Faster tests (no annotation processor needed)
 
 ---
 

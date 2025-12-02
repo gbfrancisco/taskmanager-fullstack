@@ -79,6 +79,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         Collection<TaskStatus> excludedStatuses
     );
 
+    List<Task> findByDueDateBeforeAndStatusNotIn(
+        LocalDateTime dateTimeToCompare,
+        Collection<TaskStatus> excludedStatuses
+    );
+
     // ==================== NOTES FOR LATER ====================
 
     /*

@@ -11,6 +11,7 @@ This guide covers JPA (Java Persistence API) entities, relationships, and the fo
 4. [Entity Relationships](#entity-relationships)
 5. [JPA Annotations Reference](#jpa-annotations-reference)
 6. [Common Patterns](#common-patterns)
+   - [Hibernate 6 Proxy Behavior and ID Access](#5-hibernate-6-proxy-behavior-and-id-access)
 7. [Best Practices](#best-practices)
 8. [Common Pitfalls](#common-pitfalls)
 
@@ -494,6 +495,148 @@ AppUser user = new AppUser();
 user.getTasks().add(task); // NullPointerException without initialization!
 ```
 
+### 5. Hibernate 6 Proxy Behavior and ID Access
+
+When working with lazy relationships, you often need to compare entities by their owner (e.g., "does this task belong to the same user as this project?"). Understanding Hibernate's proxy behavior is crucial for performance.
+
+#### The Problem
+
+```java
+// In TaskService.assignToProject()
+if (!Objects.equals(task.getAppUser(), project.getAppUser())) {
+    throw new ValidationException("Project does not belong to the same user");
+}
+```
+
+This code compares two `AppUser` entities. But both are **lazy proxies** - does this trigger database queries?
+
+#### Hibernate Behavior (5.2.12+ and 6.x)
+
+**Good news:** Since Hibernate 5.2.12 (and all of Hibernate 6.x), calling `getId()` on a proxy does **NOT** trigger initialization by default - even when using field access.
+
+```java
+// These do NOT trigger SQL queries (Hibernate 5.2.12+):
+Long userId1 = task.getAppUser().getId();      // No SQL
+Long userId2 = project.getAppUser().getId();   // No SQL
+
+// This DOES trigger SQL (accessing non-ID property):
+String username = task.getAppUser().getUsername();  // SELECT * FROM app_user...
+```
+
+**Why?** The proxy already holds the ID value (from the foreign key column). Modern Hibernate is smart enough to return it without loading the full entity.
+
+**Historical note:** Before Hibernate 5.2.12, with field access (annotations on fields like `@Id private Long id`), calling `getId()` **would** trigger initialization. This was fixed in [HHH-3718](https://hibernate.atlassian.net/browse/HHH-3718).
+
+#### The Catch: `equals()` Still Triggers Loading
+
+Even though `getId()` is safe, comparing entities with `equals()` or `Objects.equals()` triggers initialization:
+
+```java
+// This TRIGGERS lazy loading (calls proxy's equals method):
+Objects.equals(task.getAppUser(), project.getAppUser())  // 2 SQL queries!
+
+// This does NOT trigger loading (compares IDs only):
+Objects.equals(task.getAppUser().getId(), project.getAppUser().getId())  // No SQL!
+```
+
+#### Best Practice: Compare IDs, Not Entities
+
+```java
+// ❌ AVOID - triggers lazy loading
+if (!Objects.equals(task.getAppUser(), project.getAppUser())) {
+    throw new ValidationException("...");
+}
+
+// ✅ PREFERRED - no lazy loading
+if (!Objects.equals(task.getAppUser().getId(), project.getAppUser().getId())) {
+    throw new ValidationException("...");
+}
+```
+
+#### Alternative: Read-Only ID Field
+
+Some codebases add a separate read-only ID field for the foreign key:
+
+```java
+@Entity
+public class Task extends BaseEntity {
+
+    // Read-only FK column (same column, mapped twice)
+    @Column(name = "APP_USER_ID", insertable = false, updatable = false)
+    private Long appUserId;
+
+    // The actual relationship
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "APP_USER_ID")
+    private AppUser appUser;
+
+    // Getter for direct ID access
+    public Long getAppUserId() {
+        return appUserId;
+    }
+}
+```
+
+**Usage:**
+```java
+// Direct ID access - guaranteed no proxy interaction
+if (!Objects.equals(task.getAppUserId(), project.getAppUserId())) {
+    throw new ValidationException("...");
+}
+```
+
+**Pros:**
+- Explicit and clear intent
+- Works regardless of Hibernate version
+- No proxy interaction at all
+
+**Cons:**
+- Duplication (two fields for same data)
+- MapStruct may need `@Mapping(target = "appUserId", ignore = true)` to avoid conflicts
+- More fields to maintain
+
+**Recommendation:** In Hibernate 5.2.12+ or Hibernate 6 (Spring Boot 2.1+ or 3.x), prefer the simpler approach of calling `proxy.getId()`. Only use the read-only ID field pattern if you need backwards compatibility with very old Hibernate versions (pre-5.2.12) or want to be extra explicit.
+
+#### Verifying Proxy Behavior
+
+You can test this behavior in your project:
+
+```java
+@DataJpaTest
+class HibernateProxyBehaviorTest {
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Test
+    void getIdOnProxyShouldNotTriggerInitialization() {
+        // Create test data...
+        entityManager.flush();
+        entityManager.clear();
+
+        // Get a proxy
+        AppUser proxy = entityManager.getReference(AppUser.class, userId);
+        assertThat(Hibernate.isInitialized(proxy)).isFalse();
+
+        // Access ID
+        Long id = proxy.getId();
+
+        // Proxy should STILL be uninitialized
+        assertThat(Hibernate.isInitialized(proxy)).isFalse();  // Passes in Hibernate 5.2.12+!
+    }
+}
+```
+
+See `src/test/java/com/tutorial/taskmanager/proxy/HibernateProxyBehaviorTest.java` for complete test examples.
+
+#### Configuration Note
+
+This behavior is controlled by `hibernate.jpa.proxy.compliance`:
+- `false` (default): `getId()` does NOT initialize proxy (Hibernate's traditional behavior)
+- `true`: `getId()` DOES initialize proxy (strict JPA compliance, not recommended)
+
+Spring Boot 3 with Hibernate 6 uses the default (`false`), so you get the optimized behavior out of the box.
+
 ---
 
 ## Best Practices
@@ -534,7 +677,29 @@ private AppUser appUser;
 private AppUser appUser;
 ```
 
-### 3. Use Validation Constraints
+### 3. Compare Proxy IDs, Not Entities
+
+When comparing lazy relationships, compare IDs to avoid unnecessary database queries:
+
+**✅ CORRECT:**
+```java
+// No lazy loading - getId() is safe in Hibernate 6
+if (!Objects.equals(task.getAppUser().getId(), project.getAppUser().getId())) {
+    throw new ValidationException("...");
+}
+```
+
+**❌ AVOID:**
+```java
+// Triggers lazy loading via equals()
+if (!Objects.equals(task.getAppUser(), project.getAppUser())) {
+    throw new ValidationException("...");
+}
+```
+
+See [Hibernate 6 Proxy Behavior and ID Access](#5-hibernate-6-proxy-behavior-and-id-access) for details.
+
+### 4. Use Validation Constraints
 
 ```java
 @Column(nullable = false, unique = true, length = 50)
@@ -544,7 +709,7 @@ private String username;
 private String description;
 ```
 
-### 4. Timestamp Management
+### 5. Timestamp Management
 
 **Use lifecycle callbacks:**
 ```java
@@ -558,14 +723,14 @@ public void prePersist() {
 
 **Why?** Ensures consistency and removes manual timestamp management.
 
-### 5. Avoid Bidirectional Relationships Unless Needed
+### 6. Avoid Bidirectional Relationships Unless Needed
 
 **Only add the reverse side if you actually need it:**
 ```java
 // If you only navigate Task → User, don't add User → tasks
 ```
 
-### 6. Be Careful with Cascade
+### 7. Be Careful with Cascade
 
 **Think about the business logic:**
 - Should deleting a user delete all their tasks?
@@ -773,5 +938,5 @@ See:
 
 ---
 
-**Last Updated:** 2025-11-15
+**Last Updated:** 2025-12-01
 **Status:** ✅ Implemented
