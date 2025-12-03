@@ -58,7 +58,7 @@ public class TaskService {
             project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("project", projectId));
 
-            if (!Objects.equals(appUser, project.getAppUser())) {
+            if (!Objects.equals(appUser.getId(), project.getAppUser().getId())) {
                 throw new ValidationException("Project does not belong to user");
             }
         }
