@@ -9,6 +9,7 @@
 - [Creating Mappers](#creating-mappers)
 - [Using Mappers in Services](#using-mappers-in-services)
 - [Advanced Mapping Scenarios](#advanced-mapping-scenarios)
+- [Partial Updates and Null Handling Strategy](#partial-updates-and-null-handling-strategy)
 - [Best Practices](#best-practices)
 - [Common Pitfalls](#common-pitfalls)
 - [Troubleshooting](#troubleshooting)
@@ -622,6 +623,159 @@ public interface TaskMapper {
     TaskStatusDto mapStatus(TaskStatus status);
 }
 ```
+
+### Partial Updates and Null Handling Strategy
+
+When implementing update operations, you need to handle **partial updates** where only some fields are sent. By default, MapStruct copies ALL values including nulls, which can accidentally overwrite existing data.
+
+#### The Problem
+
+```java
+// Default behavior - nulls OVERWRITE existing values!
+@Mapping(target = "appUser", ignore = true)
+void updateEntityFromDto(TaskUpdateDto dto, @MappingTarget Task entity);
+```
+
+```java
+// Client sends only title, other fields are null in DTO
+TaskUpdateDto dto = new TaskUpdateDto();
+dto.setTitle("New Title");
+// dto.status = null, dto.description = null, dto.dueDate = null
+
+taskMapper.updateEntityFromDto(dto, task);
+// Result: title="New Title", status=NULL!, description=NULL!, dueDate=NULL!
+// Existing values were OVERWRITTEN with nulls!
+```
+
+#### The Solution: `@BeanMapping` with IGNORE Strategy
+
+Use `@BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)` on update methods:
+
+```java
+@Mapper(componentModel = "spring")
+public interface TaskMapper {
+
+    // Create: nulls are fine (new object)
+    Task toEntity(TaskCreateDto dto);
+
+    // Update: IGNORE nulls to preserve existing values
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "appUser", ignore = true)
+    @Mapping(target = "project", ignore = true)
+    void patchEntityFromDto(TaskUpdateDto dto, @MappingTarget Task entity);
+}
+```
+
+Now partial updates work correctly:
+
+```java
+TaskUpdateDto dto = new TaskUpdateDto();
+dto.setTitle("New Title");  // Only this field sent
+
+taskMapper.patchEntityFromDto(dto, task);
+// Result: title="New Title", status=PRESERVED, description=PRESERVED, dueDate=PRESERVED
+```
+
+#### NullValuePropertyMappingStrategy Options
+
+MapStruct provides different strategies for handling null values:
+
+| Strategy | Behavior | Use Case |
+|----------|----------|----------|
+| `SET_TO_NULL` (default) | Null values overwrite target fields with null | PUT (full replacement) |
+| `IGNORE` | Null values are skipped, target unchanged | PATCH (partial update) |
+| `SET_TO_DEFAULT` | Null values set target to default (0, false, empty collection) | Special cases |
+
+#### Supporting Both PUT and PATCH
+
+If your API needs both full replacement (PUT) and partial updates (PATCH), create separate methods:
+
+```java
+@Mapper(componentModel = "spring")
+public interface TaskMapper {
+
+    // For PATCH - partial updates, nulls ignored
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "appUser", ignore = true)
+    @Mapping(target = "project", ignore = true)
+    void patchEntityFromDto(TaskUpdateDto dto, @MappingTarget Task entity);
+
+    // For PUT - full replacement, nulls overwrite existing values
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
+    @Mapping(target = "appUser", ignore = true)
+    @Mapping(target = "project", ignore = true)
+    void updateEntityFromDto(TaskUpdateDto dto, @MappingTarget Task entity);
+}
+```
+
+Then in service:
+
+```java
+// PATCH /tasks/{id} - partial update
+public TaskResponseDto patchTask(Long id, TaskUpdateDto dto) {
+    Task task = taskRepository.findById(id).orElseThrow();
+    taskMapper.patchEntityFromDto(dto, task);  // Nulls ignored
+    return taskMapper.toResponseDto(taskRepository.save(task));
+}
+
+// PUT /tasks/{id} - full replacement
+public TaskResponseDto updateTask(Long id, TaskUpdateDto dto) {
+    Task task = taskRepository.findById(id).orElseThrow();
+    taskMapper.updateEntityFromDto(dto, task);  // Nulls overwrite
+    return taskMapper.toResponseDto(taskRepository.save(task));
+}
+```
+
+#### Method-Level vs Mapper-Level Configuration
+
+You can set the null handling strategy at different levels:
+
+**Method-level (recommended):**
+```java
+@BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+void patchEntityFromDto(TaskUpdateDto dto, @MappingTarget Task entity);
+```
+
+**Mapper-level (affects ALL methods):**
+```java
+@Mapper(
+    componentModel = "spring",
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE  // All methods!
+)
+public interface TaskMapper { ... }
+```
+
+**Best practice:** Use method-level `@BeanMapping` to have fine-grained control. This allows different strategies for different methods (PATCH vs PUT).
+
+#### Trade-off: Cannot Set Fields to Null
+
+With `IGNORE` strategy, you **cannot** intentionally clear a field to null via the same endpoint:
+
+```json
+{"title": "New"}                      // title updated, others preserved ✅
+{"title": "New", "description": null} // description NOT cleared ❌ (null ignored)
+```
+
+**Common solutions in enterprise applications:**
+
+1. **Use PUT for full replacement, PATCH for partial updates:**
+   - `PUT /tasks/{id}` → Send ALL fields, nulls clear values
+   - `PATCH /tasks/{id}` → Send only changed fields, nulls ignored
+
+2. **Separate "clear" endpoints:**
+   - `DELETE /tasks/{id}/due-date` → Clear the due date
+
+3. **Empty string convention (for Strings):**
+   ```java
+   // In service, after mapper:
+   if ("".equals(dto.getDescription())) {
+       task.setDescription(null);
+   }
+   ```
+
+4. **Accept the limitation:** Most fields shouldn't be nullable anyway. For the few that can be cleared, handle it manually or use a separate endpoint.
+
+**Industry standard:** Most Spring Boot applications use `IGNORE` on update methods and accept the trade-off. If clearing fields is needed, it's handled separately.
 
 ---
 
