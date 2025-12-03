@@ -833,7 +833,72 @@ Task managed = entityManager.merge(detached);
 managed.setStatus(TaskStatus.DONE);  // managed is tracked
 ```
 
-### 3. LazyInitializationException from Detached Entities
+### 3. Merge Overwrites ALL Fields (Including Nulls!)
+
+This is a **critical difference** between updating managed vs detached entities:
+
+```java
+// MANAGED UPDATE - Only specified fields change
+@Transactional
+public void updateTitle(Long id, String newTitle) {
+    Task task = taskRepository.findById(id).orElseThrow();
+    // task has: title="Old", status=IN_PROGRESS, dueDate=2024-01-15
+
+    task.setTitle(newTitle);  // Only title changes
+
+    // Result: title="New Title", status=IN_PROGRESS, dueDate=2024-01-15
+    // Other fields PRESERVED
+}
+
+// MERGE (DETACHED) - ALL fields are copied, including nulls!
+@Transactional
+public void updateFromDetached(Task detached) {
+    // detached has: id=1, title="New Title", status=null, dueDate=null
+    // (maybe only title was set, rest are null)
+
+    Task merged = entityManager.merge(detached);
+
+    // Result: title="New Title", status=NULL, dueDate=NULL
+    // Existing data OVERWRITTEN with nulls!
+}
+```
+
+**Why this happens:** `merge()` copies ALL field values from the detached entity to the managed entity. It doesn't know which fields you "intended" to update vs which are just null because they weren't set.
+
+**The safe pattern - fetch then update:**
+
+```java
+@Transactional
+public TaskResponseDto updateTask(Long id, TaskUpdateDto dto) {
+    // 1. Fetch the managed entity (has all current values)
+    Task task = taskRepository.findById(id).orElseThrow();
+
+    // 2. Update ONLY the fields that should change
+    if (dto.getTitle() != null) {
+        task.setTitle(dto.getTitle());
+    }
+    if (dto.getStatus() != null) {
+        task.setStatus(dto.getStatus());
+    }
+    // Fields not in DTO remain unchanged
+
+    // 3. Dirty checking handles the rest
+    return taskMapper.toResponseDto(task);
+}
+```
+
+**Or use MapStruct with null-handling:**
+
+```java
+@Mapper(componentModel = "spring",
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+public interface TaskMapper {
+    // With IGNORE strategy, null values in DTO won't overwrite entity fields
+    void updateEntityFromDto(TaskUpdateDto dto, @MappingTarget Task entity);
+}
+```
+
+### 4. LazyInitializationException from Detached Entities
 
 ```java
 // WRONG
@@ -855,7 +920,7 @@ public TaskWithProjectDto getTaskWithProject(Long taskId) {
 }
 ```
 
-### 4. N+1 Queries from Lazy Loading
+### 5. N+1 Queries from Lazy Loading
 
 ```java
 // BAD - N+1 queries
@@ -872,7 +937,7 @@ public List<String> getAllProjectNames() {
 List<Task> findAllWithProjects();  // 1 query with JOIN
 ```
 
-### 5. Cascade Operations in Unexpected States
+### 6. Cascade Operations in Unexpected States
 
 ```java
 // Entity with CascadeType.ALL
@@ -889,7 +954,7 @@ public void addTaskToUser(Long userId, Task newTask) {
 }
 ```
 
-### 6. Assuming Entity Stays Managed Across Web Request
+### 7. Assuming Entity Stays Managed Across Web Request
 
 ```java
 // Controller
