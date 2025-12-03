@@ -429,7 +429,7 @@ class ProjectServiceTest {
             assertThat(result.getStatus()).isEqualTo(updateDto.getStatus());
 
             verify(projectRepository).findById(1L);
-            verify(projectMapper).updateEntityFromDto(updateDto, testProject);
+            verify(projectMapper).patchEntityFromDto(updateDto, testProject);
             verify(projectRepository).save(testProject);
             verify(projectMapper).toResponseDto(testProject);
         }
@@ -461,7 +461,7 @@ class ProjectServiceTest {
             assertThat(result.getName()).isEqualTo(testProject.getName());  // Unchanged
             assertThat(result.getStatus()).isEqualTo(updateDto.getStatus());  // Changed
 
-            verify(projectMapper).updateEntityFromDto(updateDto, testProject);
+            verify(projectMapper).patchEntityFromDto(updateDto, testProject);
             verify(projectRepository).save(testProject);
             // Should NOT check uniqueness when name is null (not being updated)
             verify(projectRepository, never()).existsByAppUserIdAndName(anyLong(), anyString());

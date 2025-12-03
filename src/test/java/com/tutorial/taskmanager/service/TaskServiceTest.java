@@ -474,7 +474,7 @@ class TaskServiceTest {
             assertThat(result.getDueDate()).isEqualTo(updateDto.getDueDate());
 
             verify(taskRepository).findById(1L);
-            verify(taskMapper).updateEntityFromDto(updateDto, testTask);
+            verify(taskMapper).patchEntityFromDto(updateDto, testTask);
             verify(taskRepository).save(testTask);
             verify(taskMapper).toResponseDto(testTask);
         }
@@ -506,7 +506,7 @@ class TaskServiceTest {
             assertThat(result.getTitle()).isEqualTo(testTask.getTitle());  // Unchanged
             assertThat(result.getStatus()).isEqualTo(updateDto.getStatus());  // Changed
 
-            verify(taskMapper).updateEntityFromDto(updateDto, testTask);
+            verify(taskMapper).patchEntityFromDto(updateDto, testTask);
             verify(taskRepository).save(testTask);
         }
 

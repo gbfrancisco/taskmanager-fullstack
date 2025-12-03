@@ -513,7 +513,7 @@ class AppUserServiceTest {
             assertThat(result).isNotNull();
             verify(appUserRepository).findById(1L);
             verify(appUserRepository).existsByEmail("updated@example.com");
-            verify(appUserMapper).updateEntityFromDto(updateDto, testUser);
+            verify(appUserMapper).patchEntityFromDto(updateDto, testUser);
             verify(appUserRepository).save(testUser);
             verify(appUserMapper).toResponseDto(testUser);
         }
@@ -534,7 +534,7 @@ class AppUserServiceTest {
             assertThat(result).isNotNull();
             verify(appUserRepository).findById(1L);
             verify(appUserRepository, never()).existsByEmail(anyString());
-            verify(appUserMapper).updateEntityFromDto(updateDto, testUser);
+            verify(appUserMapper).patchEntityFromDto(updateDto, testUser);
             verify(appUserRepository).save(testUser);
             verify(appUserMapper).toResponseDto(testUser);
         }
@@ -571,7 +571,7 @@ class AppUserServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            verify(appUserMapper).updateEntityFromDto(updateDto, testUser);
+            verify(appUserMapper).patchEntityFromDto(updateDto, testUser);
             verify(appUserRepository).save(testUser);
             verify(appUserMapper).toResponseDto(testUser);
         }
@@ -592,7 +592,7 @@ class AppUserServiceTest {
             assertThat(result).isNotNull();
             verify(appUserRepository).findById(1L);
             verify(appUserRepository, never()).existsByEmail(anyString());
-            verify(appUserMapper).updateEntityFromDto(updateDto, testUser);
+            verify(appUserMapper).patchEntityFromDto(updateDto, testUser);
             verify(appUserRepository).save(testUser);
             verify(appUserMapper).toResponseDto(testUser);
         }

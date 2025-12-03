@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * DTO for updating an existing Task.
  *
  * <p>Used as input to the service layer. Conversion to entity is handled
- * by {@link com.tutorial.taskmanager.mapper.TaskMapper#updateEntityFromDto}.
+ * by {@link com.tutorial.taskmanager.mapper.TaskMapper#patchEntityFromDto}.
  *
  * <p><strong>All fields are optional.</strong> Only provided fields will be updated.
  *

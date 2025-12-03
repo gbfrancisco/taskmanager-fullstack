@@ -168,7 +168,7 @@ public class ProjectService {
             throw new ValidationException("name already exists");
         }
 
-        projectMapper.updateEntityFromDto(projectUpdateDto, projectToUpdate);
+        projectMapper.patchEntityFromDto(projectUpdateDto, projectToUpdate);
         return projectMapper.toResponseDto(projectRepository.save(projectToUpdate));
     }
 

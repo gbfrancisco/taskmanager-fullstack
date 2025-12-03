@@ -204,7 +204,7 @@ public class TaskService {
         Task taskToUpdate = taskRepository.findById(taskId)
             .orElseThrow(() -> new ResourceNotFoundException("task", taskId));
 
-        taskMapper.updateEntityFromDto(taskUpdateDto, taskToUpdate);
+        taskMapper.patchEntityFromDto(taskUpdateDto, taskToUpdate);
         taskToUpdate = taskRepository.save(taskToUpdate);
         return taskMapper.toResponseDto(taskToUpdate);
     }

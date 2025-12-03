@@ -141,7 +141,7 @@ public class AppUserService {
             }
         }
 
-        appUserMapper.updateEntityFromDto(appUserUpdateDto, existingAppUser);
+        appUserMapper.patchEntityFromDto(appUserUpdateDto, existingAppUser);
 
         AppUser savedAppUser = appUserRepository.save(existingAppUser);
         return appUserMapper.toResponseDto(savedAppUser);

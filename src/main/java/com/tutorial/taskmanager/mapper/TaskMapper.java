@@ -127,5 +127,5 @@ public interface TaskMapper {
     @Mapping(target = "appUser", ignore = true)
     @Mapping(target = "project", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateEntityFromDto(TaskUpdateDto dto, @MappingTarget Task entity);
+    void patchEntityFromDto(TaskUpdateDto dto, @MappingTarget Task entity);
 }
