@@ -644,7 +644,7 @@ Need to query data?
   - `Project.java`
 
 - Previous docs:
-  - [07-spring-data-jpa.md](07-spring-data-jpa.md) - JPA entities and relationships
+  - [07-jpa-entities.md](07-jpa-entities.md) - JPA entities and relationships
   - [02-dependency-injection.md](02-dependency-injection.md) - Dependency injection patterns
 
 ---

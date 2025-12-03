@@ -910,8 +910,8 @@ Now that you understand JPA entities and relationships:
 4. **Create service layer** - Business logic using repositories
 
 See:
-- [08-database-configuration.md](08-database-configuration.md) - Database setup
-- [09-query-methods.md](09-query-methods.md) - Repository queries
+- [08-jpa-entity-lifecycle.md](08-jpa-entity-lifecycle.md) - Entity states and persistence context
+- [09-jpa-query-methods.md](09-jpa-query-methods.md) - Repository queries
 - [19-data-layer-testing.md](19-data-layer-testing.md) - Testing repositories
 
 ---

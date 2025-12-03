@@ -1055,6 +1055,6 @@ MapStruct can slow down compilation for large projects:
 ---
 
 **Next Steps**:
-- Explore [Spring Data JPA](07-spring-data-jpa.md) for database operations
+- Explore [JPA Entities](07-jpa-entities.md) for database operations
 - Learn about [DTOs](06-data-transfer-objects.md) for API design
 - Read about [Unit Testing](16-unit-testing.md) for testing mappers

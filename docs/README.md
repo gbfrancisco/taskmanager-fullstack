@@ -15,9 +15,10 @@ This cookbook demonstrates Spring Boot 3 features through a Task Manager applica
 - [x] **[06-data-transfer-objects.md](06-data-transfer-objects.md)** - DTOs, separation of concerns, avoiding circular references
 
 ### Data Layer
-- [x] **[07-spring-data-jpa.md](07-spring-data-jpa.md)** - JPA entities, relationships, and repositories
-- [ ] **08-database-configuration.md** - DataSource setup, H2 console
-- [x] **[09-query-methods.md](09-query-methods.md)** - Query method derivation and performance optimization
+- [x] **[07-jpa-entities.md](07-jpa-entities.md)** - JPA entities, relationships, and repositories
+- [x] **[08-jpa-entity-lifecycle.md](08-jpa-entity-lifecycle.md)** - Entity states, persistence context, and state transitions
+- [x] **[09-jpa-query-methods.md](09-jpa-query-methods.md)** - Query method derivation and performance optimization
+- [ ] **database-configuration.md** - DataSource setup, connection pools, H2 console (future)
 
 ### Validation & Error Handling
 - [ ] **10-bean-validation.md** - Input validation with Jakarta Validation
