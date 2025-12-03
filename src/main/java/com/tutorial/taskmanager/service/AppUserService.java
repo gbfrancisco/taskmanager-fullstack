@@ -10,11 +10,13 @@ import com.tutorial.taskmanager.repository.AppUserRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class AppUserService {
     private final AppUserRepository appUserRepository;
     private final AppUserMapper appUserMapper;
@@ -53,6 +55,7 @@ public class AppUserService {
         return appUserMapper.toResponseDto(appUser);
     }
 
+    @Transactional(readOnly = true)
     public Optional<AppUserResponseDto> findById(Long id) {
         if (id == null) {
             throw new IllegalArgumentException("id cannot be null");
@@ -62,6 +65,7 @@ public class AppUserService {
             .map(appUserMapper::toResponseDto);
     }
 
+    @Transactional(readOnly = true)
     public AppUserResponseDto getById(Long id) {
         if (id == null) {
             throw new IllegalArgumentException("id cannot be null");
@@ -72,6 +76,7 @@ public class AppUserService {
         return appUserMapper.toResponseDto(appUser);
     }
 
+    @Transactional(readOnly = true)
     AppUser getEntityById(Long id) {
         if (id == null) {
             throw new IllegalArgumentException("id cannot be null");
@@ -81,6 +86,7 @@ public class AppUserService {
             .orElseThrow(() -> new ResourceNotFoundException("appUser", id));
     }
 
+    @Transactional(readOnly = true)
     public Optional<AppUserResponseDto> findByUsername(String username) {
         if (StringUtils.isEmpty(username)) {
             throw new IllegalArgumentException("username cannot be empty");
@@ -90,6 +96,7 @@ public class AppUserService {
             .map(appUserMapper::toResponseDto);
     }
 
+    @Transactional(readOnly = true)
     public AppUserResponseDto getByUsername(String username) {
         if (StringUtils.isEmpty(username)) {
             throw new IllegalArgumentException("username cannot be empty");
@@ -100,6 +107,7 @@ public class AppUserService {
         return appUserMapper.toResponseDto(appUser);
     }
 
+    @Transactional(readOnly = true)
     public Optional<AppUserResponseDto> findByEmail(String email) {
         if (StringUtils.isEmpty(email)) {
             throw new IllegalArgumentException("email cannot be empty");
@@ -109,6 +117,7 @@ public class AppUserService {
             .map(appUserMapper::toResponseDto);
     }
 
+    @Transactional(readOnly = true)
     public List<AppUserResponseDto> findAll() {
         List<AppUser> appUsers = appUserRepository.findAll();
         return appUserMapper.toResponseDtoList(appUsers);
@@ -150,6 +159,7 @@ public class AppUserService {
         appUserRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
     public boolean existsByUsername(String username) {
         if (StringUtils.isEmpty(username)) {
             throw new IllegalArgumentException("username cannot be empty");
@@ -158,6 +168,7 @@ public class AppUserService {
         return appUserRepository.existsByUsername(username);
     }
 
+    @Transactional(readOnly = true)
     public boolean existsByEmail(String email) {
         if (StringUtils.isEmpty(email)) {
             throw new IllegalArgumentException("email cannot be empty");

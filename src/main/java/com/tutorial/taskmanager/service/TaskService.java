@@ -14,6 +14,7 @@ import com.tutorial.taskmanager.repository.AppUserRepository;
 import com.tutorial.taskmanager.repository.ProjectRepository;
 import com.tutorial.taskmanager.repository.TaskRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class TaskService {
     private final TaskRepository taskRepository;
     private final AppUserRepository appUserRepository;
@@ -70,6 +72,7 @@ public class TaskService {
         return taskMapper.toResponseDto(taskToSave);
     }
 
+    @Transactional(readOnly = true)
     public Optional<TaskResponseDto> findById(Long taskId) {
         if (taskId == null) {
             throw new IllegalArgumentException("id is null");
@@ -78,6 +81,7 @@ public class TaskService {
         return taskRepository.findById(taskId).map(taskMapper::toResponseDto);
     }
 
+    @Transactional(readOnly = true)
     public TaskResponseDto getById(Long taskId) {
         if (taskId == null) {
             throw new IllegalArgumentException("id is null");
@@ -88,10 +92,12 @@ public class TaskService {
             .orElseThrow(() -> new ResourceNotFoundException("task", taskId));
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponseDto> findAll() {
         return taskMapper.toResponseDtoList(taskRepository.findAll());
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponseDto> findByAppUserId(Long appUserId) {
         if (appUserId == null) {
             throw new IllegalArgumentException("appUserId is null");
@@ -101,6 +107,7 @@ public class TaskService {
         return taskMapper.toResponseDtoList(tasks);
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponseDto> findByProjectId(Long projectId) {
         if (projectId == null) {
             throw new IllegalArgumentException("projectId is null");
@@ -110,6 +117,7 @@ public class TaskService {
         return taskMapper.toResponseDtoList(tasks);
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponseDto> findByStatus(TaskStatus status) {
         if (status == null) {
             throw new IllegalArgumentException("status is null");
@@ -119,6 +127,7 @@ public class TaskService {
         return taskMapper.toResponseDtoList(tasks);
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponseDto> findByAppUserIdAndStatus(Long appUserId, TaskStatus status) {
         if (appUserId == null) {
             throw new IllegalArgumentException("appUserId is null");
@@ -132,6 +141,7 @@ public class TaskService {
         return taskMapper.toResponseDtoList(tasks);
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponseDto> findByProjectIdAndStatus(Long projectId, TaskStatus status) {
         if (projectId == null) {
             throw new IllegalArgumentException("projectId is null");
@@ -145,6 +155,7 @@ public class TaskService {
         return taskMapper.toResponseDtoList(tasks);
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponseDto> findOverdueTasks() {
         List<Task> overdueTasks = taskRepository.findByDueDateBeforeAndStatusNotIn(
             LocalDateTime.now(),
@@ -153,6 +164,7 @@ public class TaskService {
         return taskMapper.toResponseDtoList(overdueTasks);
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponseDto> findOverdueTasksByAppUserId(Long appUserId) {
         if (appUserId == null) {
             throw new IllegalArgumentException("appUserId is null");
@@ -166,6 +178,7 @@ public class TaskService {
         return taskMapper.toResponseDtoList(overdueTasks);
     }
 
+    @Transactional(readOnly = true)
     public List<TaskResponseDto> findByDueDateBetween(LocalDateTime start, LocalDateTime end) {
         if (start == null) {
             throw new IllegalArgumentException("start is null");
