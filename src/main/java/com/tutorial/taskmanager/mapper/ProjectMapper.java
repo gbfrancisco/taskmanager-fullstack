@@ -4,9 +4,11 @@ import com.tutorial.taskmanager.dto.project.ProjectCreateDto;
 import com.tutorial.taskmanager.dto.project.ProjectResponseDto;
 import com.tutorial.taskmanager.dto.project.ProjectUpdateDto;
 import com.tutorial.taskmanager.model.Project;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
@@ -113,5 +115,6 @@ public interface ProjectMapper {
      */
     @Mapping(target = "appUser", ignore = true)
     @Mapping(target = "tasks", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(ProjectUpdateDto dto, @MappingTarget Project entity);
 }
