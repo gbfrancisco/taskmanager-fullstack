@@ -10,7 +10,7 @@ This cookbook demonstrates Spring Boot 3 features through a Task Manager applica
 - [ ] **03-application-properties.md** - Configuration management and Spring profiles
 
 ### Web Layer
-- [ ] **04-rest-controllers.md** - Building RESTful APIs with @RestController
+- [x] **[04-rest-controllers.md](04-rest-controllers.md)** - Building RESTful APIs, exception handling, and controller testing
 - [ ] **05-request-mapping.md** - HTTP methods, path variables, and request parameters
 - [x] **[06-data-transfer-objects.md](06-data-transfer-objects.md)** - DTOs, separation of concerns, avoiding circular references
 
