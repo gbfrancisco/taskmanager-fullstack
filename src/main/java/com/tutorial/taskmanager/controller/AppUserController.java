@@ -84,11 +84,8 @@ public class AppUserController {
      */
     @PostMapping
     public ResponseEntity<AppUserResponseDto> createUser(@RequestBody AppUserCreateDto createDto) {
-        // TODO: Implement this method
-        // 1. Call appUserService.createAppUser(createDto)
-        // 2. Return ResponseEntity with status 201 (HttpStatus.CREATED) and the created user
-        // Hint: return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
-        return null;
+        AppUserResponseDto createdUser = appUserService.createAppUser(createDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
     // ========================================================================
@@ -115,10 +112,8 @@ public class AppUserController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<AppUserResponseDto> getUserById(@PathVariable Long id) {
-        // TODO: Implement this method
-        // 1. Call appUserService.getById(id) - this throws ResourceNotFoundException if not found
-        // 2. Return ResponseEntity.ok(user)
-        return null;
+        AppUserResponseDto user = appUserService.getById(id);
+        return ResponseEntity.ok(user);
     }
 
     /**
@@ -138,10 +133,8 @@ public class AppUserController {
      */
     @GetMapping
     public ResponseEntity<List<AppUserResponseDto>> getAllUsers() {
-        // TODO: Implement this method
-        // 1. Call appUserService.findAll()
-        // 2. Return ResponseEntity.ok(users)
-        return null;
+        List<AppUserResponseDto> users = appUserService.findAll();
+        return ResponseEntity.ok(users);
     }
 
     /**
@@ -164,10 +157,8 @@ public class AppUserController {
      */
     @GetMapping("/username/{username}")
     public ResponseEntity<AppUserResponseDto> getUserByUsername(@PathVariable String username) {
-        // TODO: Implement this method
-        // 1. Call appUserService.getByUsername(username) - throws ResourceNotFoundException if not found
-        // 2. Return ResponseEntity.ok(user)
-        return null;
+        AppUserResponseDto user = appUserService.getByUsername(username);
+        return ResponseEntity.ok(user);
     }
 
     // ========================================================================
@@ -206,12 +197,11 @@ public class AppUserController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<AppUserResponseDto> updateUser(
-            @PathVariable Long id,
-            @RequestBody AppUserUpdateDto updateDto) {
-        // TODO: Implement this method
-        // 1. Call appUserService.updateAppUser(id, updateDto)
-        // 2. Return ResponseEntity.ok(updatedUser)
-        return null;
+        @PathVariable Long id,
+        @RequestBody AppUserUpdateDto updateDto
+    ) {
+        AppUserResponseDto updatedUser = appUserService.updateAppUser(id, updateDto);
+        return ResponseEntity.ok(updatedUser);
     }
 
     // ========================================================================
@@ -238,9 +228,7 @@ public class AppUserController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        // TODO: Implement this method
-        // 1. Call appUserService.deleteById(id) - throws ResourceNotFoundException if not found
-        // 2. Return ResponseEntity.noContent().build()
-        return null;
+        appUserService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
