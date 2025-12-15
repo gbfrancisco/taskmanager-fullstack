@@ -688,6 +688,97 @@ public void updateTask(Long id, String title) {
 }
 ```
 
+### @Transactional(readOnly = true) for Read Operations
+
+For methods that only read data, use `readOnly = true` as an optimization hint:
+
+```java
+@Service
+@Transactional  // Default for all methods - read-write
+public class TaskService {
+
+    @Transactional(readOnly = true)  // Override for read-only methods
+    public Optional<TaskResponseDto> findById(Long id) {
+        return taskRepository.findById(id)
+            .map(taskMapper::toResponseDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskResponseDto> findAll() {
+        return taskMapper.toResponseDtoList(taskRepository.findAll());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskResponseDto> findByStatus(TaskStatus status) {
+        return taskMapper.toResponseDtoList(taskRepository.findByStatus(status));
+    }
+
+    // Write methods inherit class-level @Transactional (read-write)
+    public TaskResponseDto createTask(TaskCreateDto dto) { ... }
+    public TaskResponseDto updateTask(Long id, TaskUpdateDto dto) { ... }
+    public void deleteTask(Long id) { ... }
+}
+```
+
+#### Benefits of readOnly = true
+
+| Benefit | Explanation |
+|---------|-------------|
+| **Performance** | Hibernate skips dirty checking (no snapshot comparison at flush) |
+| **Consistency** | Multiple reads share the same persistence context - consistent view of data |
+| **Safety** | Accidental entity modifications won't be persisted |
+| **DB Optimization** | Some databases/connection pools can route to read replicas |
+
+#### When to Use readOnly = true
+
+- **Use it for:** Any method that only reads data, even with multiple repository calls
+- **Don't use it for:** Methods that create, update, or delete entities
+
+```java
+// Multiple reads - still use readOnly = true
+@Transactional(readOnly = true)
+public DashboardDto getDashboard(Long userId) {
+    AppUser user = userRepository.findById(userId).orElseThrow();
+    List<Task> tasks = taskRepository.findByAppUserId(userId);
+    List<Project> projects = projectRepository.findByAppUserId(userId);
+    return buildDashboardDto(user, tasks, projects);
+}
+```
+
+#### Class-Level vs Method-Level
+
+**Recommended pattern:** Class-level `@Transactional` + method-level `readOnly = true` for reads:
+
+```java
+@Service
+@Transactional  // All methods are transactional by default
+public class TaskService {
+
+    @Transactional(readOnly = true)  // Override for reads
+    public TaskResponseDto getById(Long id) { ... }
+
+    // Inherits class-level @Transactional (read-write)
+    public TaskResponseDto createTask(TaskCreateDto dto) { ... }
+}
+```
+
+**Alternative:** Class-level `readOnly = true` + method-level override for writes:
+
+```java
+@Service
+@Transactional(readOnly = true)  // Default to read-only
+public class TaskService {
+
+    // Inherits class-level readOnly = true
+    public TaskResponseDto getById(Long id) { ... }
+
+    @Transactional  // Override for writes (removes readOnly)
+    public TaskResponseDto createTask(TaskCreateDto dto) { ... }
+}
+```
+
+Both patterns are valid. Choose based on whether your service has more reads or writes.
+
 ### How DTOs Help
 
 DTOs are plain objects - they don't have JPA state:
