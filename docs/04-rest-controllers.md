@@ -573,9 +573,13 @@ Use `@RestControllerAdvice` instead of try-catch in every controller.
 
 | File | Description |
 |------|-------------|
-| `controller/AppUserController.java` | Example REST controller |
+| `controller/AppUserController.java` | User REST endpoints (CRUD) |
+| `controller/TaskController.java` | Task REST endpoints with query param filtering |
+| `controller/ProjectController.java` | Project REST endpoints with query param filtering |
 | `exception/GlobalExceptionHandler.java` | Centralized exception handling |
 | `exception/ResourceNotFoundException.java` | Custom 404 exception |
 | `exception/ValidationException.java` | Custom validation exception |
-| `test/controller/AppUserControllerTest.java` | Controller slice tests |
+| `test/controller/AppUserControllerTest.java` | User controller slice tests |
+| `test/controller/TaskControllerTest.java` | Task controller slice tests |
+| `test/controller/ProjectControllerTest.java` | Project controller slice tests |
 | `test/exception/GlobalExceptionHandlerTest.java` | Exception handler tests |
