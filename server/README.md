@@ -1,10 +1,12 @@
-# Spring Boot 3 Cookbook
+# Task Manager Server (Spring Boot)
 
-A comprehensive, hands-on cookbook for learning Spring Boot 3 from fundamentals to enterprise-level features. This project demonstrates best practices through a fully functional Task Manager application.
+The backend server for the Task Manager fullstack tutorial. A comprehensive, hands-on resource for learning Spring Boot 3 from fundamentals to enterprise-level features.
 
 ## What is This?
 
-This repository serves as both a learning resource and a reference implementation for Spring Boot 3. Each feature is:
+This is the **server** component of the `taskmanager-fullstack` monorepo. It demonstrates Spring Boot best practices through a fully functional Task Manager REST API.
+
+Each feature is:
 - Implemented in working code following industry standards
 - Documented with explanations in the `docs/` folder
 - Organized in a clean, maintainable structure
@@ -12,7 +14,7 @@ This repository serves as both a learning resource and a reference implementatio
 ## Project Structure
 
 ```
-spring-boot-3-tutorial/
+server/
 ├── docs/                          # Feature documentation and guides
 ├── src/
 │   ├── main/
@@ -54,9 +56,8 @@ spring-boot-3-tutorial/
 ### Running the Application
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd spring-boot-3-tutorial
+# From the monorepo root
+cd server
 
 # Run with Maven
 ./mvnw spring-boot:run
@@ -80,7 +81,7 @@ Once running, you can access:
 
 This cookbook is organized into phases. Start with Phase 1 and progress sequentially:
 
-### Phase 1: Fundamentals ✅
+### Phase 1: Fundamentals
 Core Spring Boot concepts needed for any application:
 - Getting Started & Project Structure
 - Dependency Injection & IoC
@@ -110,30 +111,22 @@ Production-ready, scalable patterns:
 - Custom Spring Boot Starters
 - Reactive Programming
 
-## Contributing to Your Learning
-
-This is a hands-on cookbook - **you write the code**!
-
-For each topic:
-1. Read the documentation in `docs/`
-2. Implement the feature yourself
-3. Refer to best practices and patterns
-4. Run tests to validate your implementation
-
 ## Code Standards
 
 This project follows industry-standard practices:
 - Clean code principles
 - SOLID design patterns
-- Comprehensive testing (unit, integration, e2e)
+- Comprehensive testing (unit, integration, slice)
 - Proper exception handling
 - API versioning and documentation
 - Security best practices
 
-## Next Steps
+## API Endpoints
 
-1. Create your main application class: `TaskManagerApplication.java`
-2. Start with the domain model (entities)
-3. Follow along with the documentation in `docs/`
+| Resource | Endpoints |
+|----------|-----------|
+| Users | `GET/POST/PUT/DELETE /api/users` |
+| Tasks | `GET/POST/PUT/DELETE /api/tasks` |
+| Projects | `GET/POST/PUT/DELETE /api/projects` |
 
-Happy coding! 🚀
+See the Swagger UI for full API documentation.
