@@ -13,10 +13,10 @@
     </parent>
 
     <groupId>com.tutorial</groupId>
-    <artifactId>spring-boot-3-cookbook</artifactId>
+    <artifactId>spring-boot-3-tutorial</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Spring Boot 3 Cookbook</name>
-    <description>A comprehensive cookbook for Spring Boot 3 fundamentals and advanced features</description>
+    <name>Spring Boot 3 Tutorial</name>
+    <description>A comprehensive tutorial for Spring Boot 3 fundamentals and advanced features</description>
 
     <properties>
         <java.version>21</java.version>
