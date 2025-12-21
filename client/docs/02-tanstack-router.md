@@ -9,7 +9,7 @@ This document covers TanStack Router fundamentals: file-based routing, navigatio
 - [Navigation](#navigation)
 - [Route Parameters](#route-parameters)
 - [Nested Routes and Layouts](#nested-routes-and-layouts)
-- [Hands-On: Build Task Manager Routes](#hands-on-build-task-manager-routes)
+- [Implementation Reference](#implementation-reference)
 
 ---
 
@@ -19,7 +19,52 @@ Before creating new routes, let's understand what was scaffolded.
 
 ### `main.tsx` - Application Entry Point
 
-<!-- TODO: Code walkthrough -->
+```tsx
+import { StrictMode } from 'react'
+import ReactDOM from 'react-dom/client'
+import { RouterProvider, createRouter } from '@tanstack/react-router'
+
+import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider.tsx'
+import { routeTree } from './routeTree.gen'  // Auto-generated!
+
+import './styles.css'
+
+// 1. Get the QueryClient context to share with routes
+const TanStackQueryProviderContext = TanStackQueryProvider.getContext()
+
+// 2. Create the router instance
+const router = createRouter({
+  routeTree,                              // The auto-generated route tree
+  context: {
+    ...TanStackQueryProviderContext,      // Share QueryClient with all routes
+  },
+  defaultPreload: 'intent',               // Prefetch on hover (snappy navigation!)
+  scrollRestoration: true,                // Remember scroll position
+  defaultStructuralSharing: true,         // Optimize re-renders
+  defaultPreloadStaleTime: 0,             // Always prefetch fresh data
+})
+
+// 3. Register router for TypeScript (enables type-safe navigation)
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
+
+// 4. Render the app
+const rootElement = document.getElementById('app')
+if (rootElement && !rootElement.innerHTML) {
+  const root = ReactDOM.createRoot(rootElement)
+  root.render(
+    <StrictMode>
+      {/* QueryProvider wraps RouterProvider - order matters! */}
+      <TanStackQueryProvider.Provider {...TanStackQueryProviderContext}>
+        <RouterProvider router={router} />
+      </TanStackQueryProvider.Provider>
+    </StrictMode>,
+  )
+}
+```
 
 Key concepts:
 - `createRouter()` - Creates the router instance with configuration
@@ -30,7 +75,42 @@ Key concepts:
 
 ### `routes/__root.tsx` - Root Layout
 
-<!-- TODO: Code walkthrough -->
+```tsx
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
+import type { QueryClient } from '@tanstack/react-query'
+
+// Define what context is available to ALL routes
+interface MyRouterContext {
+  queryClient: QueryClient
+}
+
+// Create the root route with typed context
+export const Route = createRootRouteWithContext<MyRouterContext>()({
+  component: RootLayout,
+})
+
+function RootLayout() {
+  return (
+    <div>
+      {/* Persistent UI goes here (header, sidebar, etc.) */}
+      <header>My App</header>
+
+      <main>
+        {/*
+         * <Outlet /> - Where child routes render
+         *
+         * Navigate to "/" → HomePage renders here
+         * Navigate to "/posts" → PostsPage renders here
+         * Navigate to "/posts/123" → PostDetailPage renders here
+         *
+         * Everything outside <Outlet /> stays in place.
+         */}
+        <Outlet />
+      </main>
+    </div>
+  )
+}
+```
 
 Key concepts:
 - `createRootRouteWithContext<T>()` - Root route with typed context
@@ -52,15 +132,71 @@ The TanStack Router Vite plugin watches `src/routes/` and regenerates this file 
 
 TanStack Router uses file naming conventions to define routes.
 
+### How It Works (The "Magic" Explained)
+
+File-based routing isn't actually magic - it's powered by a **Vite plugin** that watches your files and generates code.
+
+Here's what happens:
+
+1. **You create a file** in `src/routes/` (e.g., `about.tsx`)
+2. **The Vite plugin detects it** and reads the file
+3. **It generates `routeTree.gen.ts`** with all your routes wired up
+4. **The router uses this generated file** to know what routes exist
+
+This is configured in `vite.config.ts`:
+
+```ts
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
+
+export default defineConfig({
+  plugins: [
+    tanstackRouter({
+      target: 'react',
+      autoCodeSplitting: true,
+      // These are the defaults - you can customize:
+      // routesDirectory: './src/routes',
+      // generatedRouteTree: './src/routeTree.gen.ts',
+    }),
+    // ... other plugins
+  ],
+})
+```
+
+**Key configuration options:**
+
+| Option | Default | Purpose |
+|--------|---------|---------|
+| `routesDirectory` | `./src/routes` | Where your route files live |
+| `generatedRouteTree` | `./src/routeTree.gen.ts` | Where the auto-generated file goes |
+| `autoCodeSplitting` | `false` | Lazy-load routes for better performance |
+
+So `src/routes` isn't a magic folder name - it's just the default. You could change it to `src/pages` or `src/views` if you prefer.
+
+### When Does Generation Happen?
+
+The route tree is generated when:
+
+| Scenario | What Happens |
+|----------|--------------|
+| `npm run dev` starts | Plugin scans routes, generates `routeTree.gen.ts` |
+| File added/changed/deleted (dev server running) | Plugin regenerates, HMR updates browser |
+| `npm run build` | Plugin generates before building |
+| Dev server NOT running | Nothing - changes won't be picked up until next start |
+
+**Manual generation** (useful if things get out of sync):
+```bash
+npx tsr generate
+```
+
 ### Basic Conventions
 
 | File | Route Path |
 |------|------------|
 | `routes/index.tsx` | `/` |
 | `routes/about.tsx` | `/about` |
-| `routes/tasks.tsx` | `/tasks` |
-| `routes/tasks/index.tsx` | `/tasks` (same as above) |
-| `routes/tasks/$taskId.tsx` | `/tasks/:taskId` |
+| `routes/posts.tsx` | `/posts` |
+| `routes/posts/index.tsx` | `/posts` (same as above) |
+| `routes/posts/$postId.tsx` | `/posts/:postId` |
 
 ### Special Files
 
@@ -77,12 +213,12 @@ Every route file exports a `Route` constant:
 ```tsx
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/tasks')({
-  component: TasksPage,
+export const Route = createFileRoute('/posts')({
+  component: PostsPage,
 })
 
-function TasksPage() {
-  return <div>Tasks</div>
+function PostsPage() {
+  return <div>All Posts</div>
 }
 ```
 
@@ -128,8 +264,8 @@ function Navigation() {
   return (
     <nav>
       <Link to="/">Home</Link>
-      <Link to="/tasks">Tasks</Link>
-      <Link to="/projects">Projects</Link>
+      <Link to="/posts">Posts</Link>
+      <Link to="/about">About</Link>
     </nav>
   )
 }
@@ -139,13 +275,27 @@ function Navigation() {
 
 ```tsx
 <Link
-  to="/tasks"
+  to="/posts"
   activeProps={{ className: 'font-bold text-blue-600' }}
   inactiveProps={{ className: 'text-gray-600' }}
 >
-  Tasks
+  Posts
 </Link>
 ```
+
+The `activeOptions` prop controls what counts as "active":
+
+```tsx
+<Link
+  to="/"
+  activeOptions={{ exact: true }}  // Only active on exact "/" match
+  activeProps={{ className: 'active' }}
+>
+  Home
+</Link>
+```
+
+Without `exact: true`, the "/" link would be active on every page since all paths start with "/".
 
 ### Programmatic Navigation
 
@@ -156,10 +306,10 @@ function SomeComponent() {
   const navigate = useNavigate()
 
   const handleClick = () => {
-    navigate({ to: '/tasks' })
+    navigate({ to: '/posts' })
   }
 
-  return <button onClick={handleClick}>Go to Tasks</button>
+  return <button onClick={handleClick}>Go to Posts</button>
 }
 ```
 
@@ -172,7 +322,7 @@ function SomeComponent() {
 Use `$paramName` in the file name:
 
 ```
-routes/tasks/$taskId.tsx  →  /tasks/:taskId
+routes/users/$userId.tsx  →  /users/:userId
 ```
 
 ### Accessing Parameters
@@ -180,28 +330,70 @@ routes/tasks/$taskId.tsx  →  /tasks/:taskId
 ```tsx
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/tasks/$taskId')({
-  component: TaskDetailPage,
+export const Route = createFileRoute('/users/$userId')({
+  component: UserProfilePage,
 })
 
-function TaskDetailPage() {
-  const { taskId } = Route.useParams()
+function UserProfilePage() {
+  const { userId } = Route.useParams()
 
-  return <div>Task ID: {taskId}</div>
+  return <div>User ID: {userId}</div>
 }
 ```
 
 ### Type Safety
 
-Parameters are fully typed! TypeScript knows `taskId` is a string.
+Parameters are fully typed! TypeScript knows `userId` is a string.
+
+**Important:** Parameters are always strings, even if they look like numbers in the URL. If you need a number, parse it:
+
+```tsx
+const { userId } = Route.useParams()
+const userIdNum = parseInt(userId, 10)
+```
 
 ### Linking with Parameters
 
 ```tsx
-<Link to="/tasks/$taskId" params={{ taskId: '123' }}>
-  View Task
+<Link to="/users/$userId" params={{ userId: '123' }}>
+  View Profile
 </Link>
 ```
+
+### Multiple Parameters
+
+For routes with multiple dynamic segments, stack `$param` folders:
+
+```
+routes/orgs/$orgId/members/$memberId.tsx
+→ /orgs/:orgId/members/:memberId
+```
+
+```tsx
+export const Route = createFileRoute('/orgs/$orgId/members/$memberId')({
+  component: MemberDetailPage,
+})
+
+function MemberDetailPage() {
+  // All params available and typed
+  const { orgId, memberId } = Route.useParams()
+
+  return <div>Org {orgId}, Member {memberId}</div>
+}
+```
+
+Linking requires all params:
+
+```tsx
+<Link
+  to="/orgs/$orgId/members/$memberId"
+  params={{ orgId: '1', memberId: '42' }}
+>
+  View Member
+</Link>
+```
+
+TypeScript enforces you provide **all** required params - forget one and you get a compile error.
 
 ---
 
@@ -211,53 +403,56 @@ Parameters are fully typed! TypeScript knows `taskId` is a string.
 
 ```
 routes/
-├── tasks.tsx           # /tasks (or layout for /tasks/*)
-├── tasks/
-│   ├── index.tsx       # /tasks (if tasks.tsx is layout)
-│   └── $taskId.tsx     # /tasks/:taskId
+├── dashboard.tsx           # /dashboard (or layout for /dashboard/*)
+├── dashboard/
+│   ├── index.tsx           # /dashboard (if dashboard.tsx is layout)
+│   ├── settings.tsx        # /dashboard/settings
+│   └── $widgetId.tsx       # /dashboard/:widgetId
 ```
 
 ### Layout Routes
 
-If `tasks.tsx` contains an `<Outlet />`, it becomes a layout:
+If a route file contains an `<Outlet />`, it becomes a layout for its child routes:
 
 ```tsx
-// routes/tasks.tsx - Layout
-export const Route = createFileRoute('/tasks')({
-  component: TasksLayout,
+// routes/dashboard.tsx - Layout
+import { createFileRoute, Outlet } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/dashboard')({
+  component: DashboardLayout,
 })
 
-function TasksLayout() {
+function DashboardLayout() {
   return (
     <div>
-      <h1>Tasks</h1>
+      <h1>Dashboard</h1>
+      <nav>
+        <Link to="/dashboard">Overview</Link>
+        <Link to="/dashboard/settings">Settings</Link>
+      </nav>
       <Outlet /> {/* Child routes render here */}
     </div>
   )
 }
 ```
 
+When you navigate to `/dashboard/settings`, the `DashboardLayout` stays in place and `<Outlet />` renders the settings page.
+
 ---
 
-## Hands-On: Build Task Manager Routes
+## Implementation Reference
 
-### Goal
+This section lists the actual files in our Task Manager app. Refer to the source files for complete implementations.
 
-Create this route structure:
-- `/` - Home page (done)
-- `/tasks` - Task list
-- `/tasks/$taskId` - Task detail
-- `/projects` - Project list
-- `/projects/$projectId` - Project detail
-
-### Tasks
-
-1. Create `routes/tasks.tsx` (or `routes/tasks/index.tsx`)
-2. Create `routes/tasks/$taskId.tsx`
-3. Create `routes/projects.tsx` (or `routes/projects/index.tsx`)
-4. Create `routes/projects/$projectId.tsx`
-5. Build a navigation header component
-6. Add `<Link>` components to navigate between routes
+| File | URL | Description |
+|------|-----|-------------|
+| `src/routes/__root.tsx` | (all) | Root layout with Header and `<Outlet />` |
+| `src/routes/index.tsx` | `/` | Home page |
+| `src/routes/tasks.tsx` | `/tasks` | Task list with links to details |
+| `src/routes/tasks/$taskId.tsx` | `/tasks/:taskId` | Task detail using `Route.useParams()` |
+| `src/routes/projects.tsx` | `/projects` | Project list with links to details |
+| `src/routes/projects/$projectId.tsx` | `/projects/:projectId` | Project detail using `Route.useParams()` |
+| `src/components/Header.tsx` | — | Navigation with `<Link>` and `activeProps` |
 
 ---
 

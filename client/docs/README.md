@@ -7,8 +7,8 @@ This folder contains learning documentation for the React frontend, organized by
 ### Phase 1: Foundation
 | # | Topic | Status | Description |
 |---|-------|--------|-------------|
-| 01 | [Getting Started](./01-getting-started.md) | Pending | Project structure, Vite, React 19 basics |
-| 02 | [TanStack Router](./02-tanstack-router.md) | Pending | File-based routing, navigation, params |
+| 01 | [Getting Started](./01-getting-started.md) | Complete | Project structure, Vite, React 19 basics |
+| 02 | [TanStack Router](./02-tanstack-router.md) | Complete | File-based routing, navigation, params |
 | 03 | [TanStack Query](./03-tanstack-query.md) | Pending | Data fetching, caching, loaders |
 | 04 | [TypeScript with React](./04-typescript-react.md) | Pending | Props typing, generics, type inference |
 
@@ -49,5 +49,6 @@ This folder contains learning documentation for the React frontend, organized by
 | Session | Focus | Status |
 |---------|-------|--------|
 | 01 | Project Setup & Scaffolding | Complete |
-| 02 | TanStack Router Basics | Next |
-| 03+ | TBD | Pending |
+| 02 | TanStack Router Basics | Complete |
+| 03 | TanStack Query + API Client | Next |
+| 04+ | TBD | Pending |
