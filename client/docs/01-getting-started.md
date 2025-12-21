@@ -42,16 +42,21 @@ This is a modern React application built with:
 ```
 client/
 ├── src/
-│   ├── routes/                    # File-based routes
-│   │   ├── __root.tsx             # Root layout
-│   │   ├── index.tsx              # Home page (/)
-│   │   └── demo/
-│   │       └── tanstack-query.tsx # Demo route
-│   ├── components/                # Reusable components
+│   ├── routes/                    # File-based routes (TanStack Router)
+│   │   ├── __root.tsx             # Root layout (Outlet + Devtools)
+│   │   └── index.tsx              # Home page (/)
+│   ├── components/                # Reusable UI components
+│   ├── api/                       # API client functions
+│   ├── types/                     # TypeScript type definitions
+│   ├── hooks/                     # Custom React hooks
+│   ├── utils/                     # Utility functions
 │   ├── integrations/              # Third-party integrations
-│   ├── main.tsx                   # Application entry
+│   │   └── tanstack-query/        # TanStack Query setup
+│   ├── main.tsx                   # Application entry point
 │   ├── routeTree.gen.ts           # Auto-generated (don't edit!)
-│   └── styles.css                 # Global styles
+│   └── styles.css                 # Global styles (Tailwind)
+├── docs/                          # Learning documentation
+├── public/                        # Static assets
 ├── vite.config.ts                 # Vite configuration
 ├── tsconfig.json                  # TypeScript configuration
 └── package.json                   # Dependencies
