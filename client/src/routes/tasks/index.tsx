@@ -15,16 +15,16 @@
  * - Cache invalidation after mutations
  */
 
-import { useState } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { fetchTasks, taskKeys } from '../../api/tasks'
-import { TaskForm } from '../../components/TaskForm'
-import type { Task, TaskStatus } from '../../types/api'
+import { useState } from 'react';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTasks, taskKeys } from '../../api/tasks';
+import { TaskForm } from '../../components/TaskForm';
+import type { Task, TaskStatus } from '../../types/api';
 
 export const Route = createFileRoute('/tasks/')({
-  component: TasksPage,
-})
+  component: TasksPage
+});
 
 /**
  * TasksPage Component
@@ -39,7 +39,7 @@ function TasksPage() {
    * When showCreateForm is true, we display the TaskForm component.
    * After successful creation, we hide the form.
    */
-  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   /**
    * useQuery - The core hook for fetching data
@@ -62,11 +62,11 @@ function TasksPage() {
     data: tasks,
     isPending,
     isError,
-    error,
+    error
   } = useQuery({
     queryKey: taskKeys.list(),
-    queryFn: fetchTasks,
-  })
+    queryFn: fetchTasks
+  });
 
   // Loading state - show skeleton or spinner
   if (isPending) {
@@ -86,7 +86,7 @@ function TasksPage() {
           ))}
         </div>
       </div>
-    )
+    );
   }
 
   // Error state - show error message
@@ -101,7 +101,7 @@ function TasksPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Success state - render the task list
@@ -120,7 +120,9 @@ function TasksPage() {
       {/* Create Task Form - shown when showCreateForm is true */}
       {showCreateForm && (
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Create New Task</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">
+            Create New Task
+          </h2>
           <TaskForm
             onSuccess={() => setShowCreateForm(false)}
             onCancel={() => setShowCreateForm(false)}
@@ -129,19 +131,19 @@ function TasksPage() {
       )}
       {tasks.length === 0 ? (
         // Empty state
-        (<div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
           <p className="text-gray-600">No tasks yet. Create your first task!</p>
-        </div>)
+        </div>
       ) : (
         // Task list
-        (<div className="space-y-3">
+        <div className="space-y-3">
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}
-        </div>)
+        </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -180,7 +182,7 @@ function TaskCard({ task }: { task: Task }) {
         </p>
       )}
     </Link>
-  )
+  );
 }
 
 // =============================================================================
@@ -197,21 +199,21 @@ function StatusBadge({ status }: { status: TaskStatus }) {
     TODO: 'bg-gray-100 text-gray-800',
     IN_PROGRESS: 'bg-blue-100 text-blue-800',
     COMPLETED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-red-100 text-red-800',
-  }
+    CANCELLED: 'bg-red-100 text-red-800'
+  };
 
   const labels: Record<TaskStatus, string> = {
     TODO: 'To Do',
     IN_PROGRESS: 'In Progress',
     COMPLETED: 'Completed',
-    CANCELLED: 'Cancelled',
-  }
+    CANCELLED: 'Cancelled'
+  };
 
   return (
     <span className={`px-2 py-1 text-xs rounded ${styles[status]}`}>
       {labels[status]}
     </span>
-  )
+  );
 }
 
 // =============================================================================
@@ -224,26 +226,26 @@ function StatusBadge({ status }: { status: TaskStatus }) {
  * Shows time only if it's not midnight (00:00).
  */
 function formatDate(isoString: string): string {
-  const date = new Date(isoString)
+  const date = new Date(isoString);
 
   const dateStr = date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
-  })
+    year: 'numeric'
+  });
 
   // Check if time is midnight (meaning no specific time was set)
-  const hours = date.getHours()
-  const minutes = date.getMinutes()
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
   if (hours === 0 && minutes === 0) {
-    return dateStr
+    return dateStr;
   }
 
   // Include time if it was explicitly set
   const timeStr = date.toLocaleTimeString('en-US', {
     hour: 'numeric',
-    minute: '2-digit',
-  })
+    minute: '2-digit'
+  });
 
-  return `${dateStr}, ${timeStr}`
+  return `${dateStr}, ${timeStr}`;
 }

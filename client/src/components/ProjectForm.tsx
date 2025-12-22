@@ -17,12 +17,12 @@
  * - Red border styling on invalid fields
  */
 
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createProject, updateProject, projectKeys } from '../api/projects'
-import { projectSchema, type ProjectFormData } from '../schemas/project'
-import type { Project, ProjectCreateInput } from '../types/api'
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createProject, updateProject, projectKeys } from '../api/projects';
+import { projectSchema, type ProjectFormData } from '../schemas/project';
+import type { Project, ProjectCreateInput } from '../types/api';
 
 // =============================================================================
 // COMPONENT PROPS
@@ -33,17 +33,17 @@ interface ProjectFormProps {
    * Existing project data for edit mode.
    * If undefined, the form is in "create" mode.
    */
-  project?: Project
+  project?: Project;
 
   /**
    * Callback when form is successfully submitted.
    */
-  onSuccess?: () => void
+  onSuccess?: () => void;
 
   /**
    * Callback when user cancels the form.
    */
-  onCancel?: () => void
+  onCancel?: () => void;
 }
 
 // =============================================================================
@@ -58,21 +58,25 @@ const PROJECT_STATUSES = [
   { value: 'ACTIVE', label: 'Active' },
   { value: 'ON_HOLD', label: 'On Hold' },
   { value: 'COMPLETED', label: 'Completed' },
-  { value: 'CANCELLED', label: 'Cancelled' },
-] as const
+  { value: 'CANCELLED', label: 'Cancelled' }
+] as const;
 
 /**
  * Temporary hardcoded user ID.
  * TODO: Replace with actual authenticated user when auth is implemented.
  */
-const TEMP_USER_ID = 1
+const TEMP_USER_ID = 1;
 
 // =============================================================================
 // COMPONENT
 // =============================================================================
 
-export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) {
-  const isEditing = !!project
+export function ProjectForm({
+  project,
+  onSuccess,
+  onCancel
+}: ProjectFormProps) {
+  const isEditing = !!project;
 
   // ---------------------------------------------------------------------------
   // REACT HOOK FORM SETUP
@@ -87,45 +91,49 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting }
   } = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     mode: 'onBlur',
     defaultValues: {
       name: project?.name ?? '',
       description: project?.description ?? '',
-      status: project?.status ?? 'PLANNING',
-    },
-  })
+      status: project?.status ?? 'PLANNING'
+    }
+  });
 
   // ---------------------------------------------------------------------------
   // QUERY CLIENT & MUTATIONS
   // ---------------------------------------------------------------------------
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const createMutation = useMutation({
     mutationFn: createProject,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-      onSuccess?.()
-    },
-  })
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      onSuccess?.();
+    }
+  });
 
   const updateMutation = useMutation({
-    mutationFn: (input: { id: number; data: Parameters<typeof updateProject>[1] }) =>
-      updateProject(input.id, input.data),
+    mutationFn: (input: {
+      id: number;
+      data: Parameters<typeof updateProject>[1];
+    }) => updateProject(input.id, input.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
       if (project) {
-        queryClient.invalidateQueries({ queryKey: projectKeys.detail(project.id) })
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.detail(project.id)
+        });
       }
-      onSuccess?.()
-    },
-  })
+      onSuccess?.();
+    }
+  });
 
-  const mutation = isEditing ? updateMutation : createMutation
-  const isPending = isSubmitting || mutation.isPending
+  const mutation = isEditing ? updateMutation : createMutation;
+  const isPending = isSubmitting || mutation.isPending;
 
   // ---------------------------------------------------------------------------
   // FORM SUBMISSION
@@ -144,17 +152,17 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
         data: {
           name: data.name,
           description: data.description,
-          status: data.status,
-        },
-      })
+          status: data.status
+        }
+      });
     } else {
       const input: ProjectCreateInput = {
         name: data.name,
         description: data.description,
         status: data.status,
-        appUserId: TEMP_USER_ID,
-      }
-      createMutation.mutate(input)
+        appUserId: TEMP_USER_ID
+      };
+      createMutation.mutate(input);
     }
   }
 
@@ -166,7 +174,10 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* Name Field - Required */}
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="name"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Project Name <span className="text-red-500">*</span>
         </label>
         <input
@@ -185,7 +196,10 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
 
       {/* Description Field - Optional */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="description"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Description
         </label>
         <textarea
@@ -198,13 +212,18 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
           placeholder="Enter project description (optional)"
         />
         {errors.description && (
-          <p className="text-red-600 text-sm mt-1">{errors.description.message}</p>
+          <p className="text-red-600 text-sm mt-1">
+            {errors.description.message}
+          </p>
         )}
       </div>
 
       {/* Status Dropdown */}
       <div>
-        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="status"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Status
         </label>
         <select
@@ -238,7 +257,11 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
           disabled={isPending}
           className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isPending ? 'Saving...' : isEditing ? 'Update Project' : 'Create Project'}
+          {isPending
+            ? 'Saving...'
+            : isEditing
+              ? 'Update Project'
+              : 'Create Project'}
         </button>
 
         {onCancel && (
@@ -253,5 +276,5 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
         )}
       </div>
     </form>
-  )
+  );
 }

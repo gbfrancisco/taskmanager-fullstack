@@ -7,13 +7,13 @@
  * @see server/src/main/java/com/tutorial/taskmanager/controller/ProjectController.java
  */
 
-import { get, post, put, del } from './client'
+import { get, post, put, del } from './client';
 import type {
   Project,
   ProjectCreateInput,
   ProjectUpdateInput,
-  ProjectStatus,
-} from '../types/api'
+  ProjectStatus
+} from '../types/api';
 
 // =============================================================================
 // QUERY FUNCTIONS (GET requests - used with useQuery)
@@ -27,7 +27,7 @@ import type {
  * @returns Array of all projects
  */
 export function fetchProjects(): Promise<Project[]> {
-  return get<Project[]>('/api/projects')
+  return get<Project[]>('/api/projects');
 }
 
 /**
@@ -40,7 +40,7 @@ export function fetchProjects(): Promise<Project[]> {
  * @throws ApiClientError with status 404 if project not found
  */
 export function fetchProjectById(id: number): Promise<Project> {
-  return get<Project>(`/api/projects/${id}`)
+  return get<Project>(`/api/projects/${id}`);
 }
 
 /**
@@ -52,7 +52,7 @@ export function fetchProjectById(id: number): Promise<Project> {
  * @returns Array of projects owned by the user
  */
 export function fetchProjectsByUserId(userId: number): Promise<Project[]> {
-  return get<Project[]>(`/api/projects?userId=${userId}`)
+  return get<Project[]>(`/api/projects?userId=${userId}`);
 }
 
 /**
@@ -63,8 +63,10 @@ export function fetchProjectsByUserId(userId: number): Promise<Project[]> {
  * @param status - The status to filter by
  * @returns Array of projects with the given status
  */
-export function fetchProjectsByStatus(status: ProjectStatus): Promise<Project[]> {
-  return get<Project[]>(`/api/projects?status=${status}`)
+export function fetchProjectsByStatus(
+  status: ProjectStatus
+): Promise<Project[]> {
+  return get<Project[]>(`/api/projects?status=${status}`);
 }
 
 /**
@@ -78,7 +80,7 @@ export function fetchProjectsByStatus(status: ProjectStatus): Promise<Project[]>
  * @returns Array of projects matching the name
  */
 export function searchProjectsByName(name: string): Promise<Project[]> {
-  return get<Project[]>(`/api/projects?name=${encodeURIComponent(name)}`)
+  return get<Project[]>(`/api/projects?name=${encodeURIComponent(name)}`);
 }
 
 // =============================================================================
@@ -94,7 +96,7 @@ export function searchProjectsByName(name: string): Promise<Project[]> {
  * @returns The created project with its new ID
  */
 export function createProject(input: ProjectCreateInput): Promise<Project> {
-  return post<Project>('/api/projects', input)
+  return post<Project>('/api/projects', input);
 }
 
 /**
@@ -108,9 +110,9 @@ export function createProject(input: ProjectCreateInput): Promise<Project> {
  */
 export function updateProject(
   id: number,
-  input: ProjectUpdateInput,
+  input: ProjectUpdateInput
 ): Promise<Project> {
-  return put<Project>(`/api/projects/${id}`, input)
+  return put<Project>(`/api/projects/${id}`, input);
 }
 
 /**
@@ -121,7 +123,7 @@ export function updateProject(
  * @param id - The project ID to delete
  */
 export function deleteProject(id: number): Promise<void> {
-  return del(`/api/projects/${id}`)
+  return del(`/api/projects/${id}`);
 }
 
 // =============================================================================
@@ -150,5 +152,5 @@ export const projectKeys = {
 
   // Keys for detail queries
   details: () => [...projectKeys.all, 'detail'] as const,
-  detail: (id: number) => [...projectKeys.details(), id] as const,
-}
+  detail: (id: number) => [...projectKeys.details(), id] as const
+};

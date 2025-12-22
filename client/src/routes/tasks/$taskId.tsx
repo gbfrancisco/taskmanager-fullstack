@@ -12,26 +12,26 @@
  * We need to parse them to numbers for API calls.
  */
 
-import { useState } from 'react'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchTaskById, deleteTask, taskKeys } from '../../api/tasks'
-import { TaskForm } from '../../components/TaskForm'
-import type { TaskStatus } from '../../types/api'
+import { useState } from 'react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchTaskById, deleteTask, taskKeys } from '../../api/tasks';
+import { TaskForm } from '../../components/TaskForm';
+import type { TaskStatus } from '../../types/api';
 
 export const Route = createFileRoute('/tasks/$taskId')({
-  component: TaskDetailPage,
-})
+  component: TaskDetailPage
+});
 
 function TaskDetailPage() {
   // Get the taskId from the URL
-  const { taskId } = Route.useParams()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const { taskId } = Route.useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // State for edit mode and delete confirmation
-  const [isEditing, setIsEditing] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   /**
    * Parse the taskId to a number
@@ -42,7 +42,7 @@ function TaskDetailPage() {
    * NOTE: We could add validation here to handle invalid IDs,
    * but for now we'll let the API return a 404.
    */
-  const id = parseInt(taskId, 10)
+  const id = parseInt(taskId, 10);
 
   /**
    * Fetch the task data
@@ -51,12 +51,17 @@ function TaskDetailPage() {
    * cached entry. If you navigate away and back, the cached data
    * is shown immediately while a background refetch happens.
    */
-  const { data: task, isPending, isError, error } = useQuery({
+  const {
+    data: task,
+    isPending,
+    isError,
+    error
+  } = useQuery({
     queryKey: taskKeys.detail(id),
     queryFn: () => fetchTaskById(id),
     // Only run the query if we have a valid ID
-    enabled: !isNaN(id),
-  })
+    enabled: !isNaN(id)
+  });
 
   /**
    * Delete mutation
@@ -69,17 +74,17 @@ function TaskDetailPage() {
     mutationFn: deleteTask,
     onSuccess: () => {
       // Invalidate the tasks list
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       // Navigate back to the list
-      navigate({ to: '/tasks' })
-    },
-  })
+      navigate({ to: '/tasks' });
+    }
+  });
 
   /**
    * Handle delete with confirmation
    */
   function handleDelete() {
-    deleteMutation.mutate(id)
+    deleteMutation.mutate(id);
   }
 
   // Invalid ID handling
@@ -94,7 +99,7 @@ function TaskDetailPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Loading state
@@ -108,7 +113,7 @@ function TaskDetailPage() {
           <div className="h-4 bg-gray-100 rounded w-1/2"></div>
         </div>
       </div>
-    )
+    );
   }
 
   // Error state
@@ -123,7 +128,7 @@ function TaskDetailPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Success state - render task details or edit form
@@ -135,7 +140,9 @@ function TaskDetailPage() {
         {isEditing ? (
           // Edit mode - show the form
           <>
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Edit Task</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Edit Task
+            </h2>
             <TaskForm
               task={task}
               onSuccess={() => setIsEditing(false)}
@@ -163,10 +170,16 @@ function TaskDetailPage() {
               <MetadataRow label="Task ID" value={String(task.id)} />
               <MetadataRow label="User ID" value={String(task.appUserId)} />
               {task.projectId && (
-                <MetadataRow label="Project ID" value={String(task.projectId)} />
+                <MetadataRow
+                  label="Project ID"
+                  value={String(task.projectId)}
+                />
               )}
               {task.dueDate && (
-                <MetadataRow label="Due Date" value={formatDate(task.dueDate)} />
+                <MetadataRow
+                  label="Due Date"
+                  value={formatDate(task.dueDate)}
+                />
               )}
             </div>
 
@@ -224,7 +237,7 @@ function TaskDetailPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -243,7 +256,7 @@ function BackLink() {
       <span>←</span>
       <span>Back to tasks</span>
     </Link>
-  )
+  );
 }
 
 /**
@@ -257,21 +270,21 @@ function StatusBadge({ status }: { status: TaskStatus }) {
     TODO: 'bg-gray-100 text-gray-800',
     IN_PROGRESS: 'bg-blue-100 text-blue-800',
     COMPLETED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-red-100 text-red-800',
-  }
+    CANCELLED: 'bg-red-100 text-red-800'
+  };
 
   const labels: Record<TaskStatus, string> = {
     TODO: 'To Do',
     IN_PROGRESS: 'In Progress',
     COMPLETED: 'Completed',
-    CANCELLED: 'Cancelled',
-  }
+    CANCELLED: 'Cancelled'
+  };
 
   return (
     <span className={`px-2 py-1 text-xs rounded ${styles[status]}`}>
       {labels[status]}
     </span>
-  )
+  );
 }
 
 /**
@@ -283,7 +296,7 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
       <span className="text-gray-500 w-24">{label}:</span>
       <span className="text-gray-800 font-mono">{value}</span>
     </div>
-  )
+  );
 }
 
 /**
@@ -293,27 +306,27 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
  * This matches our form behavior where users can optionally include time.
  */
 function formatDate(isoString: string): string {
-  const date = new Date(isoString)
+  const date = new Date(isoString);
 
   const dateStr = date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
-  })
+    year: 'numeric'
+  });
 
   // Check if time is midnight (meaning no specific time was set)
-  const hours = date.getHours()
-  const minutes = date.getMinutes()
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
   if (hours === 0 && minutes === 0) {
-    return dateStr
+    return dateStr;
   }
 
   // Include time if it was explicitly set
   const timeStr = date.toLocaleTimeString('en-US', {
     hour: 'numeric',
-    minute: '2-digit',
-  })
+    minute: '2-digit'
+  });
 
-  return `${dateStr} at ${timeStr}`
+  return `${dateStr} at ${timeStr}`;
 }

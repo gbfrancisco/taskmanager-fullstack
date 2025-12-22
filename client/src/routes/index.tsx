@@ -9,11 +9,11 @@
  * In this case, it's directly in routes/, so it maps to "/"
  */
 
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/')({
-  component: HomePage,
-})
+  component: HomePage
+});
 
 function HomePage() {
   return (
@@ -69,5 +69,5 @@ function HomePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

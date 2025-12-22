@@ -16,7 +16,7 @@
  * 4. Add common headers (and later, auth tokens)
  */
 
-import type { ApiError } from '../types/api'
+import type { ApiError } from '../types/api';
 
 // =============================================================================
 // CONFIGURATION
@@ -31,7 +31,7 @@ import type { ApiError } from '../types/api'
  * TIP: Vite uses import.meta.env for environment variables:
  *   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
  */
-const API_BASE_URL = 'http://localhost:8080'
+const API_BASE_URL = 'http://localhost:8080';
 
 // =============================================================================
 // CUSTOM ERROR CLASS
@@ -53,10 +53,10 @@ export class ApiClientError extends Error {
   constructor(
     message: string,
     public status: number,
-    public body?: ApiError,
+    public body?: ApiError
   ) {
-    super(message)
-    this.name = 'ApiClientError'
+    super(message);
+    this.name = 'ApiClientError';
   }
 }
 
@@ -79,11 +79,11 @@ export async function get<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'GET',
     headers: {
-      Accept: 'application/json',
-    },
-  })
+      Accept: 'application/json'
+    }
+  });
 
-  return handleResponse<T>(response)
+  return handleResponse<T>(response);
 }
 
 /**
@@ -102,12 +102,12 @@ export async function post<T>(endpoint: string, data: unknown): Promise<T> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Accept: 'application/json',
+      Accept: 'application/json'
     },
-    body: JSON.stringify(data),
-  })
+    body: JSON.stringify(data)
+  });
 
-  return handleResponse<T>(response)
+  return handleResponse<T>(response);
 }
 
 /**
@@ -126,12 +126,12 @@ export async function put<T>(endpoint: string, data: unknown): Promise<T> {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      Accept: 'application/json',
+      Accept: 'application/json'
     },
-    body: JSON.stringify(data),
-  })
+    body: JSON.stringify(data)
+  });
 
-  return handleResponse<T>(response)
+  return handleResponse<T>(response);
 }
 
 /**
@@ -149,18 +149,18 @@ export async function del(endpoint: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'DELETE',
     headers: {
-      Accept: 'application/json',
-    },
-  })
+      Accept: 'application/json'
+    }
+  });
 
   // 204 No Content is success for DELETE
   if (response.status === 204) {
-    return
+    return;
   }
 
   // For other responses, use standard handling
   if (!response.ok) {
-    await handleErrorResponse(response)
+    await handleErrorResponse(response);
   }
 }
 
@@ -180,16 +180,16 @@ export async function del(endpoint: string): Promise<void> {
  */
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    await handleErrorResponse(response)
+    await handleErrorResponse(response);
   }
 
   // Handle empty responses (e.g., 204 No Content)
-  const text = await response.text()
+  const text = await response.text();
   if (!text) {
-    return undefined as T
+    return undefined as T;
   }
 
-  return JSON.parse(text) as T
+  return JSON.parse(text) as T;
 }
 
 /**
@@ -199,18 +199,18 @@ async function handleResponse<T>(response: Response): Promise<T> {
  * Falls back to a generic error message if parsing fails.
  */
 async function handleErrorResponse(response: Response): Promise<never> {
-  let errorBody: ApiError | undefined
+  let errorBody: ApiError | undefined;
 
   try {
-    const text = await response.text()
+    const text = await response.text();
     if (text) {
-      errorBody = JSON.parse(text) as ApiError
+      errorBody = JSON.parse(text) as ApiError;
     }
   } catch {
     // Parsing failed, errorBody remains undefined
   }
 
-  const message = errorBody?.message || `HTTP Error ${response.status}`
+  const message = errorBody?.message || `HTTP Error ${response.status}`;
 
-  throw new ApiClientError(message, response.status, errorBody)
+  throw new ApiClientError(message, response.status, errorBody);
 }

@@ -21,14 +21,14 @@
  *    - This enables data fetching in route loaders (Session 03)
  */
 
-import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
+import { TanStackDevtools } from '@tanstack/react-devtools';
 
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
-import { Header } from '../components/Header'
+import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
+import { Header } from '../components/Header';
 
-import type { QueryClient } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query';
 
 /**
  * Router Context Type
@@ -40,7 +40,7 @@ import type { QueryClient } from '@tanstack/react-query'
  * - Feature flags
  */
 interface MyRouterContext {
-  queryClient: QueryClient
+  queryClient: QueryClient;
 }
 
 /**
@@ -52,8 +52,8 @@ interface MyRouterContext {
  * 3. Renders the root layout component
  */
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  component: RootLayout,
-})
+  component: RootLayout
+});
 
 /**
  * RootLayout Component
@@ -85,16 +85,16 @@ function RootLayout() {
       {/* Development tools - only visible in dev mode */}
       <TanStackDevtools
         config={{
-          position: 'bottom-right',
+          position: 'bottom-right'
         }}
         plugins={[
           {
             name: 'Tanstack Router',
-            render: <TanStackRouterDevtoolsPanel />,
+            render: <TanStackRouterDevtoolsPanel />
           },
-          TanStackQueryDevtools,
+          TanStackQueryDevtools
         ]}
       />
     </div>
-  )
+  );
 }

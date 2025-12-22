@@ -13,7 +13,7 @@
  * - status: Required (always has a default from the dropdown)
  */
 
-import { z } from 'zod'
+import { z } from 'zod';
 
 // =============================================================================
 // PROJECT STATUS VALUES
@@ -29,8 +29,8 @@ const projectStatusValues = [
   'ACTIVE',
   'ON_HOLD',
   'COMPLETED',
-  'CANCELLED',
-] as const
+  'CANCELLED'
+] as const;
 
 // =============================================================================
 // PROJECT SCHEMA
@@ -72,8 +72,8 @@ export const projectSchema = z.object({
    * The form always provides a default value, so this will always be valid.
    * We include it in the schema for type safety.
    */
-  status: z.enum(projectStatusValues),
-})
+  status: z.enum(projectStatusValues)
+});
 
 // =============================================================================
 // TYPE INFERENCE
@@ -89,4 +89,4 @@ export const projectSchema = z.object({
  *   status: 'PLANNING' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED'
  * }
  */
-export type ProjectFormData = z.infer<typeof projectSchema>
+export type ProjectFormData = z.infer<typeof projectSchema>;

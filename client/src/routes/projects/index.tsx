@@ -8,29 +8,29 @@
  * - Query key factory for consistent caching
  */
 
-import { useState } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { fetchProjects, projectKeys } from '../../api/projects'
-import { ProjectForm } from '../../components/ProjectForm'
-import type { Project, ProjectStatus } from '../../types/api'
+import { useState } from 'react';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { fetchProjects, projectKeys } from '../../api/projects';
+import { ProjectForm } from '../../components/ProjectForm';
+import type { Project, ProjectStatus } from '../../types/api';
 
 export const Route = createFileRoute('/projects/')({
-  component: ProjectsPage,
-})
+  component: ProjectsPage
+});
 
 function ProjectsPage() {
-  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const {
     data: projects,
     isPending,
     isError,
-    error,
+    error
   } = useQuery({
     queryKey: projectKeys.list(),
-    queryFn: fetchProjects,
-  })
+    queryFn: fetchProjects
+  });
 
   // Loading state
   if (isPending) {
@@ -50,7 +50,7 @@ function ProjectsPage() {
           ))}
         </div>
       </div>
-    )
+    );
   }
 
   // Error state
@@ -65,7 +65,7 @@ function ProjectsPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Success state
@@ -109,7 +109,7 @@ function ProjectsPage() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -138,7 +138,7 @@ function ProjectCard({ project }: { project: Project }) {
         <StatusBadge status={project.status} />
       </div>
     </Link>
-  )
+  );
 }
 
 // =============================================================================
@@ -151,20 +151,20 @@ function StatusBadge({ status }: { status: ProjectStatus }) {
     ACTIVE: 'bg-green-100 text-green-800',
     ON_HOLD: 'bg-orange-100 text-orange-800',
     COMPLETED: 'bg-blue-100 text-blue-800',
-    CANCELLED: 'bg-red-100 text-red-800',
-  }
+    CANCELLED: 'bg-red-100 text-red-800'
+  };
 
   const labels: Record<ProjectStatus, string> = {
     PLANNING: 'Planning',
     ACTIVE: 'Active',
     ON_HOLD: 'On Hold',
     COMPLETED: 'Completed',
-    CANCELLED: 'Cancelled',
-  }
+    CANCELLED: 'Cancelled'
+  };
 
   return (
     <span className={`px-2 py-1 text-xs rounded ${styles[status]}`}>
       {labels[status]}
     </span>
-  )
+  );
 }

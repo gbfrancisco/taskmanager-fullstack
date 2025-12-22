@@ -21,7 +21,7 @@
  * The backend stores these as strings (EnumType.STRING), so we use
  * string literal union types to match.
  */
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
 /**
  * ProjectStatus - Matches backend ProjectStatus enum
@@ -33,7 +33,7 @@ export type ProjectStatus =
   | 'ACTIVE'
   | 'ON_HOLD'
   | 'COMPLETED'
-  | 'CANCELLED'
+  | 'CANCELLED';
 
 // =============================================================================
 // USER TYPES
@@ -46,9 +46,9 @@ export type ProjectStatus =
  * The backend calls this "AppUser" to avoid SQL reserved word "User".
  */
 export interface User {
-  id: number
-  username: string
-  email: string
+  id: number;
+  username: string;
+  email: string;
 }
 
 /**
@@ -57,9 +57,9 @@ export interface User {
  * Used when creating a new user.
  */
 export interface UserCreateInput {
-  username: string
-  email: string
-  password: string
+  username: string;
+  email: string;
+  password: string;
 }
 
 /**
@@ -69,8 +69,8 @@ export interface UserCreateInput {
  * Note: Username cannot be updated (enforced by backend).
  */
 export interface UserUpdateInput {
-  email?: string
-  password?: string
+  email?: string;
+  password?: string;
 }
 
 // =============================================================================
@@ -87,13 +87,13 @@ export interface UserUpdateInput {
  * The dueDate comes from the backend as an ISO string (LocalDateTime).
  */
 export interface Task {
-  id: number
-  title: string
-  description: string | null
-  status: TaskStatus
-  dueDate: string | null // ISO date string (e.g., "2024-12-31T23:59:59")
-  appUserId: number
-  projectId: number | null // null if not assigned to a project
+  id: number;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  dueDate: string | null; // ISO date string (e.g., "2024-12-31T23:59:59")
+  appUserId: number;
+  projectId: number | null; // null if not assigned to a project
 }
 
 /**
@@ -102,12 +102,12 @@ export interface Task {
  * Used when creating a new task.
  */
 export interface TaskCreateInput {
-  title: string
-  description?: string
-  status?: TaskStatus
-  dueDate?: string
-  appUserId: number
-  projectId?: number
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  dueDate?: string;
+  appUserId: number;
+  projectId?: number;
 }
 
 /**
@@ -117,10 +117,10 @@ export interface TaskCreateInput {
  * All fields are optional - only provided fields are updated.
  */
 export interface TaskUpdateInput {
-  title?: string
-  description?: string
-  status?: TaskStatus
-  dueDate?: string
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  dueDate?: string;
 }
 
 // =============================================================================
@@ -134,11 +134,11 @@ export interface TaskUpdateInput {
  * a nested User object.
  */
 export interface Project {
-  id: number
-  name: string
-  description: string | null
-  status: ProjectStatus
-  appUserId: number
+  id: number;
+  name: string;
+  description: string | null;
+  status: ProjectStatus;
+  appUserId: number;
 }
 
 /**
@@ -147,10 +147,10 @@ export interface Project {
  * Used when creating a new project.
  */
 export interface ProjectCreateInput {
-  name: string
-  description?: string
-  status?: ProjectStatus
-  appUserId: number
+  name: string;
+  description?: string;
+  status?: ProjectStatus;
+  appUserId: number;
 }
 
 /**
@@ -160,9 +160,9 @@ export interface ProjectCreateInput {
  * All fields are optional - only provided fields are updated.
  */
 export interface ProjectUpdateInput {
-  name?: string
-  description?: string
-  status?: ProjectStatus
+  name?: string;
+  description?: string;
+  status?: ProjectStatus;
 }
 
 // =============================================================================
@@ -175,8 +175,8 @@ export interface ProjectUpdateInput {
  * The backend returns this structure for all errors.
  */
 export interface ApiError {
-  timestamp: string
-  status: number
-  error: string
-  message: string
+  timestamp: string;
+  status: number;
+  error: string;
+  message: string;
 }

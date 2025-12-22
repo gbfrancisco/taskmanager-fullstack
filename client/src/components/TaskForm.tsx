@@ -33,20 +33,24 @@
  * 6. On next blur or submit, error clears
  */
 
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createTask,
   updateTask,
   assignTaskToProject,
   removeTaskFromProject,
-  taskKeys,
-} from '../api/tasks'
-import { fetchProjectsByUserId, projectKeys } from '../api/projects'
-import { taskCreateSchema, taskEditSchema, type TaskFormData } from '../schemas/task'
-import type { Task, TaskCreateInput } from '../types/api'
+  taskKeys
+} from '../api/tasks';
+import { fetchProjectsByUserId, projectKeys } from '../api/projects';
+import {
+  taskCreateSchema,
+  taskEditSchema,
+  type TaskFormData
+} from '../schemas/task';
+import type { Task, TaskCreateInput } from '../types/api';
 
 // =============================================================================
 // COMPONENT PROPS
@@ -57,18 +61,18 @@ interface TaskFormProps {
    * Existing task data for edit mode.
    * If undefined, the form is in "create" mode.
    */
-  task?: Task
+  task?: Task;
 
   /**
    * Callback when form is successfully submitted.
    * Use this to close modals, navigate away, etc.
    */
-  onSuccess?: () => void
+  onSuccess?: () => void;
 
   /**
    * Callback when user cancels the form.
    */
-  onCancel?: () => void
+  onCancel?: () => void;
 }
 
 // =============================================================================
@@ -83,15 +87,15 @@ const TASK_STATUSES = [
   { value: 'TODO', label: 'To Do' },
   { value: 'IN_PROGRESS', label: 'In Progress' },
   { value: 'COMPLETED', label: 'Completed' },
-  { value: 'CANCELLED', label: 'Cancelled' },
-] as const
+  { value: 'CANCELLED', label: 'Cancelled' }
+] as const;
 
 /**
  * Temporary hardcoded user ID.
  * In a real app, this would come from authentication context.
  * TODO: Replace with actual authenticated user when auth is implemented.
  */
-const TEMP_USER_ID = 1
+const TEMP_USER_ID = 1;
 
 // =============================================================================
 // COMPONENT
@@ -99,10 +103,10 @@ const TEMP_USER_ID = 1
 
 export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
   // Determine if we're creating or editing
-  const isEditing = !!task
+  const isEditing = !!task;
 
   // Track original projectId to detect changes in edit mode
-  const originalProjectId = task?.projectId ?? null
+  const originalProjectId = task?.projectId ?? null;
 
   // ---------------------------------------------------------------------------
   // REACT HOOK FORM SETUP
@@ -128,7 +132,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting }
   } = useForm<TaskFormData>({
     // Use different schema for create vs edit (future date validation differs)
     resolver: zodResolver(isEditing ? taskEditSchema : taskCreateSchema),
@@ -142,13 +146,13 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       projectId: task?.projectId ?? null,
       dueDate: task?.dueDate ? task.dueDate.split('T')[0] : '',
       dueTime: task?.dueDate
-        ? task.dueDate.split('T')[1]?.slice(0, 5) ?? ''
+        ? (task.dueDate.split('T')[1]?.slice(0, 5) ?? '')
         : '',
       includeTime: task?.dueDate
         ? task.dueDate.split('T')[1] !== '00:00:00'
-        : false,
-    },
-  })
+        : false
+    }
+  });
 
   /**
    * watch() - Subscribe to field value changes
@@ -156,8 +160,8 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
    * We watch dueDate and includeTime to conditionally show/hide the time input.
    * Unlike useState, this doesn't cause re-renders on every keystroke.
    */
-  const watchDueDate = watch('dueDate')
-  const watchIncludeTime = watch('includeTime')
+  const watchDueDate = watch('dueDate');
+  const watchIncludeTime = watch('includeTime');
 
   // ---------------------------------------------------------------------------
   // FETCH PROJECTS FOR DROPDOWN
@@ -171,8 +175,8 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
    */
   const { data: projects } = useQuery({
     queryKey: projectKeys.listByUser(TEMP_USER_ID),
-    queryFn: () => fetchProjectsByUserId(TEMP_USER_ID),
-  })
+    queryFn: () => fetchProjectsByUserId(TEMP_USER_ID)
+  });
 
   // ---------------------------------------------------------------------------
   // QUERY CLIENT
@@ -184,7 +188,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
    * We need this to invalidate queries after a mutation succeeds.
    * Invalidation marks cached data as stale and triggers a refetch.
    */
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   // ---------------------------------------------------------------------------
   // CREATE MUTATION
@@ -200,10 +204,10 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
     mutationFn: createTask,
     onSuccess: () => {
       // Invalidate the tasks list so it refetches with the new task
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
-      onSuccess?.()
-    },
-  })
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      onSuccess?.();
+    }
+  });
 
   // ---------------------------------------------------------------------------
   // UPDATE MUTATION
@@ -216,9 +220,11 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
    * both the update and project assignment before calling onSuccess.
    */
   const updateMutation = useMutation({
-    mutationFn: (input: { id: number; data: Parameters<typeof updateTask>[1] }) =>
-      updateTask(input.id, input.data),
-  })
+    mutationFn: (input: {
+      id: number;
+      data: Parameters<typeof updateTask>[1];
+    }) => updateTask(input.id, input.data)
+  });
 
   // ---------------------------------------------------------------------------
   // PROJECT ASSIGNMENT MUTATION
@@ -236,23 +242,23 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
   const projectAssignmentMutation = useMutation({
     mutationFn: async ({
       taskId,
-      newProjectId,
+      newProjectId
     }: {
-      taskId: number
-      newProjectId: number | null
+      taskId: number;
+      newProjectId: number | null;
     }) => {
       if (newProjectId === null) {
-        return removeTaskFromProject(taskId)
+        return removeTaskFromProject(taskId);
       } else {
-        return assignTaskToProject(taskId, newProjectId)
+        return assignTaskToProject(taskId, newProjectId);
       }
-    },
-  })
+    }
+  });
 
   // Combine for easier access in the UI
-  const mutation = isEditing ? updateMutation : createMutation
+  const mutation = isEditing ? updateMutation : createMutation;
   const isPending =
-    isSubmitting || mutation.isPending || projectAssignmentMutation.isPending
+    isSubmitting || mutation.isPending || projectAssignmentMutation.isPending;
 
   // ---------------------------------------------------------------------------
   // FORM SUBMISSION
@@ -276,10 +282,11 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
      * - If date is set but no time toggle, default to 00:00:00
      * - If date and time are both set, use the specified time
      */
-    let formattedDueDate: string | undefined
+    let formattedDueDate: string | undefined;
     if (data.dueDate) {
-      const timeValue = data.includeTime && data.dueTime ? data.dueTime : '00:00'
-      formattedDueDate = `${data.dueDate}T${timeValue}:00`
+      const timeValue =
+        data.includeTime && data.dueTime ? data.dueTime : '00:00';
+      formattedDueDate = `${data.dueDate}T${timeValue}:00`;
     }
 
     if (isEditing && task) {
@@ -291,24 +298,24 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
             title: data.title,
             description: data.description,
             status: data.status,
-            dueDate: formattedDueDate,
-          },
-        })
+            dueDate: formattedDueDate
+          }
+        });
 
         // If project changed, call the separate project assignment endpoint
-        const projectChanged = data.projectId !== originalProjectId
+        const projectChanged = data.projectId !== originalProjectId;
         if (projectChanged) {
           await projectAssignmentMutation.mutateAsync({
             taskId: task.id,
-            newProjectId: data.projectId ?? null,
-          })
+            newProjectId: data.projectId ?? null
+          });
         }
 
         // Invalidate queries after all mutations succeed
-        queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
-        queryClient.invalidateQueries({ queryKey: taskKeys.detail(task.id) })
+        queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: taskKeys.detail(task.id) });
 
-        onSuccess?.()
+        onSuccess?.();
       } catch {
         // Errors are handled by mutation.isError - no need to do anything here
       }
@@ -320,9 +327,9 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
         status: data.status,
         dueDate: formattedDueDate,
         appUserId: TEMP_USER_ID,
-        projectId: data.projectId ?? undefined,
-      }
-      createMutation.mutate(input)
+        projectId: data.projectId ?? undefined
+      };
+      createMutation.mutate(input);
     }
   }
 
@@ -337,9 +344,9 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
    */
   useEffect(() => {
     if (!watchIncludeTime) {
-      setValue('dueTime', '')
+      setValue('dueTime', '');
     }
-  }, [watchIncludeTime, setValue])
+  }, [watchIncludeTime, setValue]);
 
   // ---------------------------------------------------------------------------
   // RENDER
@@ -349,7 +356,10 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* Title Field - Required */}
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="title"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Title <span className="text-red-500">*</span>
         </label>
         {/*
@@ -376,7 +386,10 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
 
       {/* Description Field - Optional */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="description"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Description
         </label>
         <textarea
@@ -389,13 +402,18 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
           placeholder="Enter task description (optional)"
         />
         {errors.description && (
-          <p className="text-red-600 text-sm mt-1">{errors.description.message}</p>
+          <p className="text-red-600 text-sm mt-1">
+            {errors.description.message}
+          </p>
         )}
       </div>
 
       {/* Status Dropdown */}
       <div>
-        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="status"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Status
         </label>
         <select
@@ -413,7 +431,10 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
 
       {/* Project Dropdown - Optional */}
       <div>
-        <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="projectId"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Project
         </label>
         {/*
@@ -425,7 +446,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
         <select
           id="projectId"
           {...register('projectId', {
-            setValueAs: (v) => (v === '' ? null : parseInt(v, 10)),
+            setValueAs: (v) => (v === '' ? null : parseInt(v, 10))
           })}
           defaultValue={task?.projectId ?? ''}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -438,13 +459,18 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
           ))}
         </select>
         <p className="text-xs text-gray-500 mt-1">
-          {isEditing ? 'Move task to a different project' : 'Assign this task to a project (optional)'}
+          {isEditing
+            ? 'Move task to a different project'
+            : 'Assign this task to a project (optional)'}
         </p>
       </div>
 
       {/* Due Date & Time - Optional */}
       <div>
-        <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="dueDate"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Due Date
         </label>
         <div className="flex gap-2">
@@ -477,7 +503,9 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             Include specific time
-            {!watchIncludeTime && <span className="text-gray-400">(defaults to 00:00)</span>}
+            {!watchIncludeTime && (
+              <span className="text-gray-400">(defaults to 00:00)</span>
+            )}
           </label>
         )}
       </div>
@@ -517,5 +545,5 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
         )}
       </div>
     </form>
-  )
+  );
 }

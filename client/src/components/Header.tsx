@@ -7,7 +7,7 @@
  * - Type-safe navigation (try changing 'to' to an invalid path!)
  */
 
-import { Link } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router';
 
 /**
  * Navigation links configuration
@@ -20,8 +20,8 @@ import { Link } from '@tanstack/react-router'
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/tasks', label: 'Tasks' },
-  { to: '/projects', label: 'Projects' },
-] as const
+  { to: '/projects', label: 'Projects' }
+] as const;
 
 export function Header() {
   return (
@@ -44,7 +44,7 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
 
 /**
@@ -84,7 +84,7 @@ function NavLink({ to, label }: { to: string; label: string }) {
        */
       activeProps={{
         className:
-          'px-3 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-900',
+          'px-3 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-900'
       }}
       /**
        * inactiveProps - Applied when NOT active
@@ -94,10 +94,10 @@ function NavLink({ to, label }: { to: string; label: string }) {
        */
       inactiveProps={{
         className:
-          'px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50',
+          'px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50'
       }}
     >
       {label}
     </Link>
-  )
+  );
 }

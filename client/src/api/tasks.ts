@@ -12,8 +12,13 @@
  * @see server/src/main/java/com/tutorial/taskmanager/controller/TaskController.java
  */
 
-import { get, post, put, del } from './client'
-import type { Task, TaskCreateInput, TaskUpdateInput, TaskStatus } from '../types/api'
+import { get, post, put, del } from './client';
+import type {
+  Task,
+  TaskCreateInput,
+  TaskUpdateInput,
+  TaskStatus
+} from '../types/api';
 
 // =============================================================================
 // QUERY FUNCTIONS (GET requests - used with useQuery)
@@ -34,7 +39,7 @@ import type { Task, TaskCreateInput, TaskUpdateInput, TaskStatus } from '../type
  * })
  */
 export function fetchTasks(): Promise<Task[]> {
-  return get<Task[]>('/api/tasks')
+  return get<Task[]>('/api/tasks');
 }
 
 /**
@@ -53,7 +58,7 @@ export function fetchTasks(): Promise<Task[]> {
  * })
  */
 export function fetchTaskById(id: number): Promise<Task> {
-  return get<Task>(`/api/tasks/${id}`)
+  return get<Task>(`/api/tasks/${id}`);
 }
 
 /**
@@ -65,7 +70,7 @@ export function fetchTaskById(id: number): Promise<Task> {
  * @returns Array of tasks belonging to the user
  */
 export function fetchTasksByUserId(userId: number): Promise<Task[]> {
-  return get<Task[]>(`/api/tasks?userId=${userId}`)
+  return get<Task[]>(`/api/tasks?userId=${userId}`);
 }
 
 /**
@@ -77,7 +82,7 @@ export function fetchTasksByUserId(userId: number): Promise<Task[]> {
  * @returns Array of tasks in the project
  */
 export function fetchTasksByProjectId(projectId: number): Promise<Task[]> {
-  return get<Task[]>(`/api/tasks?projectId=${projectId}`)
+  return get<Task[]>(`/api/tasks?projectId=${projectId}`);
 }
 
 /**
@@ -89,7 +94,7 @@ export function fetchTasksByProjectId(projectId: number): Promise<Task[]> {
  * @returns Array of tasks with the given status
  */
 export function fetchTasksByStatus(status: TaskStatus): Promise<Task[]> {
-  return get<Task[]>(`/api/tasks?status=${status}`)
+  return get<Task[]>(`/api/tasks?status=${status}`);
 }
 
 /**
@@ -101,7 +106,7 @@ export function fetchTasksByStatus(status: TaskStatus): Promise<Task[]> {
  * @returns Array of overdue tasks
  */
 export function fetchOverdueTasks(userId: number): Promise<Task[]> {
-  return get<Task[]>(`/api/tasks?userId=${userId}&overdue=true`)
+  return get<Task[]>(`/api/tasks?userId=${userId}&overdue=true`);
 }
 
 // =============================================================================
@@ -123,7 +128,7 @@ export function fetchOverdueTasks(userId: number): Promise<Task[]> {
  * })
  */
 export function createTask(input: TaskCreateInput): Promise<Task> {
-  return post<Task>('/api/tasks', input)
+  return post<Task>('/api/tasks', input);
 }
 
 /**
@@ -136,7 +141,7 @@ export function createTask(input: TaskCreateInput): Promise<Task> {
  * @returns The updated task
  */
 export function updateTask(id: number, input: TaskUpdateInput): Promise<Task> {
-  return put<Task>(`/api/tasks/${id}`, input)
+  return put<Task>(`/api/tasks/${id}`, input);
 }
 
 /**
@@ -147,7 +152,7 @@ export function updateTask(id: number, input: TaskUpdateInput): Promise<Task> {
  * @param id - The task ID to delete
  */
 export function deleteTask(id: number): Promise<void> {
-  return del(`/api/tasks/${id}`)
+  return del(`/api/tasks/${id}`);
 }
 
 /**
@@ -161,9 +166,9 @@ export function deleteTask(id: number): Promise<void> {
  */
 export function assignTaskToProject(
   taskId: number,
-  projectId: number,
+  projectId: number
 ): Promise<Task> {
-  return put<Task>(`/api/tasks/${taskId}/project/${projectId}`, {})
+  return put<Task>(`/api/tasks/${taskId}/project/${projectId}`, {});
 }
 
 /**
@@ -175,7 +180,7 @@ export function assignTaskToProject(
  * @returns The updated task (with projectId: null)
  */
 export function removeTaskFromProject(taskId: number): Promise<Task> {
-  return del(`/api/tasks/${taskId}/project`) as unknown as Promise<Task>
+  return del(`/api/tasks/${taskId}/project`) as unknown as Promise<Task>;
 }
 
 // =============================================================================
@@ -224,5 +229,5 @@ export const taskKeys = {
 
   // Keys for detail queries (single task)
   details: () => [...taskKeys.all, 'detail'] as const,
-  detail: (id: number) => [...taskKeys.details(), id] as const,
-}
+  detail: (id: number) => [...taskKeys.details(), id] as const
+};

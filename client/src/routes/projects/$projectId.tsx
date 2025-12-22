@@ -13,39 +13,43 @@
  * TanStack Query makes this easy - just call useQuery twice!
  */
 
-import { useState } from 'react'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchProjectById, deleteProject, projectKeys } from '../../api/projects'
-import { fetchTasksByProjectId, taskKeys } from '../../api/tasks'
-import { ProjectForm } from '../../components/ProjectForm'
-import type { ProjectStatus, Task, TaskStatus } from '../../types/api'
+import { useState } from 'react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  fetchProjectById,
+  deleteProject,
+  projectKeys
+} from '../../api/projects';
+import { fetchTasksByProjectId, taskKeys } from '../../api/tasks';
+import { ProjectForm } from '../../components/ProjectForm';
+import type { ProjectStatus, Task, TaskStatus } from '../../types/api';
 
 export const Route = createFileRoute('/projects/$projectId')({
-  component: ProjectDetailPage,
-})
+  component: ProjectDetailPage
+});
 
 function ProjectDetailPage() {
-  const { projectId } = Route.useParams()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const id = parseInt(projectId, 10)
+  const { projectId } = Route.useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const id = parseInt(projectId, 10);
 
   // State for edit mode and delete confirmation
-  const [isEditing, setIsEditing] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch project details
   const {
     data: project,
     isPending: isProjectPending,
     isError: isProjectError,
-    error: projectError,
+    error: projectError
   } = useQuery({
     queryKey: projectKeys.detail(id),
     queryFn: () => fetchProjectById(id),
-    enabled: !isNaN(id),
-  })
+    enabled: !isNaN(id)
+  });
 
   /**
    * Fetch tasks for this project
@@ -59,12 +63,12 @@ function ProjectDetailPage() {
   const {
     data: tasks,
     isPending: isTasksPending,
-    isError: isTasksError,
+    isError: isTasksError
   } = useQuery({
     queryKey: taskKeys.listByProject(id),
     queryFn: () => fetchTasksByProjectId(id),
-    enabled: !isNaN(id),
-  })
+    enabled: !isNaN(id)
+  });
 
   /**
    * Delete mutation
@@ -72,13 +76,13 @@ function ProjectDetailPage() {
   const deleteMutation = useMutation({
     mutationFn: deleteProject,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-      navigate({ to: '/projects' })
-    },
-  })
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      navigate({ to: '/projects' });
+    }
+  });
 
   function handleDelete() {
-    deleteMutation.mutate(id)
+    deleteMutation.mutate(id);
   }
 
   // Invalid ID
@@ -93,7 +97,7 @@ function ProjectDetailPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Loading state
@@ -107,7 +111,7 @@ function ProjectDetailPage() {
           <div className="h-4 bg-gray-100 rounded w-1/2"></div>
         </div>
       </div>
-    )
+    );
   }
 
   // Error state
@@ -124,7 +128,7 @@ function ProjectDetailPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Success state
@@ -137,7 +141,9 @@ function ProjectDetailPage() {
         {isEditing ? (
           // Edit mode
           <>
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Edit Project</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Edit Project
+            </h2>
             <ProjectForm
               project={project}
               onSuccess={() => setIsEditing(false)}
@@ -148,7 +154,9 @@ function ProjectDetailPage() {
           // View mode
           <>
             <div className="flex items-start justify-between mb-4">
-              <h1 className="text-2xl font-bold text-gray-800">{project.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-800">
+                {project.name}
+              </h1>
               <ProjectStatusBadge status={project.status} />
             </div>
 
@@ -253,7 +261,7 @@ function ProjectDetailPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -269,7 +277,7 @@ function BackLink() {
       <span>←</span>
       <span>Back to projects</span>
     </Link>
-  )
+  );
 }
 
 function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
@@ -278,22 +286,22 @@ function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
     ACTIVE: 'bg-green-100 text-green-800',
     ON_HOLD: 'bg-orange-100 text-orange-800',
     COMPLETED: 'bg-blue-100 text-blue-800',
-    CANCELLED: 'bg-red-100 text-red-800',
-  }
+    CANCELLED: 'bg-red-100 text-red-800'
+  };
 
   const labels: Record<ProjectStatus, string> = {
     PLANNING: 'Planning',
     ACTIVE: 'Active',
     ON_HOLD: 'On Hold',
     COMPLETED: 'Completed',
-    CANCELLED: 'Cancelled',
-  }
+    CANCELLED: 'Cancelled'
+  };
 
   return (
     <span className={`px-2 py-1 text-xs rounded ${styles[status]}`}>
       {labels[status]}
     </span>
-  )
+  );
 }
 
 function TaskStatusBadge({ status }: { status: TaskStatus }) {
@@ -301,14 +309,14 @@ function TaskStatusBadge({ status }: { status: TaskStatus }) {
     TODO: 'bg-gray-100 text-gray-800',
     IN_PROGRESS: 'bg-blue-100 text-blue-800',
     COMPLETED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-red-100 text-red-800',
-  }
+    CANCELLED: 'bg-red-100 text-red-800'
+  };
 
   return (
     <span className={`px-2 py-0.5 text-xs rounded ${styles[status]}`}>
       {status.replace('_', ' ')}
     </span>
-  )
+  );
 }
 
 function TaskRow({ task }: { task: Task }) {
@@ -323,7 +331,7 @@ function TaskRow({ task }: { task: Task }) {
         <TaskStatusBadge status={task.status} />
       </div>
     </Link>
-  )
+  );
 }
 
 function MetadataRow({ label, value }: { label: string; value: string }) {
@@ -332,5 +340,5 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
       <span className="text-gray-500 w-24">{label}:</span>
       <span className="text-gray-800 font-mono">{value}</span>
     </div>
-  )
+  );
 }

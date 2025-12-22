@@ -25,7 +25,7 @@
  * - Edit: Any date allowed (user might be editing an existing overdue task)
  */
 
-import { z } from 'zod'
+import { z } from 'zod';
 
 // =============================================================================
 // TASK STATUS VALUES
@@ -41,8 +41,8 @@ const taskStatusValues = [
   'TODO',
   'IN_PROGRESS',
   'COMPLETED',
-  'CANCELLED',
-] as const
+  'CANCELLED'
+] as const;
 
 // =============================================================================
 // BASE SCHEMA (SHARED FIELDS)
@@ -117,8 +117,8 @@ const taskBaseSchema = {
    * Used in the refine() validation to determine how to construct
    * the full datetime for validation.
    */
-  includeTime: z.boolean().optional(),
-}
+  includeTime: z.boolean().optional()
+};
 
 // =============================================================================
 // CREATE SCHEMA (WITH FUTURE DATE VALIDATION)
@@ -139,28 +139,28 @@ export const taskCreateSchema = z.object(taskBaseSchema).refine(
   (data) => {
     // If no due date is set, validation passes
     if (!data.dueDate) {
-      return true
+      return true;
     }
 
     // Construct the full datetime string
     // If includeTime is true and time is provided, use it
     // Otherwise default to midnight (00:00)
-    const timeValue = data.includeTime && data.dueTime ? data.dueTime : '00:00'
-    const dateTimeString = `${data.dueDate}T${timeValue}:00`
+    const timeValue = data.includeTime && data.dueTime ? data.dueTime : '00:00';
+    const dateTimeString = `${data.dueDate}T${timeValue}:00`;
 
     // Parse and compare to current time
-    const dueDateTime = new Date(dateTimeString)
-    const now = new Date()
+    const dueDateTime = new Date(dateTimeString);
+    const now = new Date();
 
-    return dueDateTime > now
+    return dueDateTime > now;
   },
   {
     // Error message shown when validation fails
     message: 'Due date must be in the future',
     // Which field to attach the error to (for display purposes)
-    path: ['dueDate'],
-  },
-)
+    path: ['dueDate']
+  }
+);
 
 // =============================================================================
 // EDIT SCHEMA (NO FUTURE DATE REQUIREMENT)
@@ -174,7 +174,7 @@ export const taskCreateSchema = z.object(taskBaseSchema).refine(
  *
  * NOTE: We don't use .refine() here, so all validation is field-level only.
  */
-export const taskEditSchema = z.object(taskBaseSchema)
+export const taskEditSchema = z.object(taskBaseSchema);
 
 // =============================================================================
 // TYPE INFERENCE
@@ -198,4 +198,4 @@ export const taskEditSchema = z.object(taskBaseSchema)
  *   includeTime?: boolean | undefined
  * }
  */
-export type TaskFormData = z.infer<typeof taskCreateSchema>
+export type TaskFormData = z.infer<typeof taskCreateSchema>;
