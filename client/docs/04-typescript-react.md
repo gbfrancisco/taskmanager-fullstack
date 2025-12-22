@@ -9,7 +9,7 @@ Props typing, generics, and type inference in React components.
 - [Typing Events](#typing-events)
 - [Generics in Components](#generics-in-components)
 - [Type Inference](#type-inference)
-- [Common Patterns](#common-patterns)
+- [Common Patterns](#common-patterns) (includes `unknown` vs `any`)
 - [Utility Types](#utility-types)
 - [Implementation Reference](#implementation-reference)
 
@@ -408,6 +408,91 @@ if (isError) {
 // data is defined here - TypeScript knows isPending and isError are false
 return <TaskList tasks={data} />
 ```
+
+### unknown vs any
+
+Both represent "any value", but with different safety guarantees:
+
+```tsx
+// ❌ any - disables type checking entirely
+function processAny(data: any) {
+  console.log(data.foo.bar.baz)  // No error - crashes at runtime if wrong
+  data.someMethod()               // No error - might not exist
+}
+
+// ✅ unknown - must narrow before using
+function processUnknown(data: unknown) {
+  console.log(data.foo)  // ❌ Error: 'data' is of type 'unknown'
+
+  // Must check the type first
+  if (typeof data === 'object' && data !== null) {
+    console.log(data)  // ✅ Now TypeScript knows it's an object
+  }
+}
+```
+
+**When to use each:**
+
+| Type | Use Case | Safety |
+|------|----------|--------|
+| `any` | Migrating JS code, temporary escape hatch | ❌ None |
+| `unknown` | Accepting external/untrusted data | ✅ Must validate |
+
+**Real example from our API client:**
+
+```tsx
+// src/api/client.ts
+export async function post<T>(endpoint: string, data: unknown): Promise<T> {
+  // We accept any data shape - we just serialize it
+  // We don't access data's properties, so unknown is perfect
+  body: JSON.stringify(data)  // JSON.stringify accepts unknown
+}
+
+// Usage - any object works
+await post<Task>('/api/tasks', { title: 'New task', status: 'TODO' })
+await post<User>('/api/users', { username: 'john', email: 'john@example.com' })
+```
+
+**Why `unknown` over `any` here:**
+- We don't need to access the data's properties (just serialize)
+- If we accidentally tried to access `data.title`, TypeScript would error
+- Prevents bugs where we might misuse the parameter
+
+**Type narrowing with unknown:**
+
+```tsx
+function handleApiResponse(response: unknown) {
+  // Check if it's an object with expected shape
+  if (
+    typeof response === 'object' &&
+    response !== null &&
+    'data' in response
+  ) {
+    // TypeScript now knows response has a 'data' property
+    console.log(response.data)
+  }
+}
+
+// Or use a type guard
+function isTask(value: unknown): value is Task {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'title' in value &&
+    'status' in value
+  )
+}
+
+function processTask(input: unknown) {
+  if (isTask(input)) {
+    // TypeScript knows input is Task here
+    console.log(input.title)
+  }
+}
+```
+
+**Rule of thumb:** Use `unknown` instead of `any` when you're accepting data from external sources (API responses, user input, JSON parsing) and need to validate it before use.
 
 ### Exhaustive Checks
 
