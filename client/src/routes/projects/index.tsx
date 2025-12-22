@@ -85,7 +85,9 @@ function ProjectsPage() {
       {/* Create Project Form */}
       {showCreateForm && (
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Create New Project</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">
+            Create New Project
+          </h2>
           <ProjectForm
             onSuccess={() => setShowCreateForm(false)}
             onCancel={() => setShowCreateForm(false)}

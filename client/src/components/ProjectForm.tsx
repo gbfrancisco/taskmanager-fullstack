@@ -1,19 +1,28 @@
 /**
- * ProjectForm Component - Create and edit projects
+ * ProjectForm Component - Create and edit projects with validation
  *
- * Similar pattern to TaskForm - demonstrates useMutation for projects.
+ * This component demonstrates the same React Hook Form + Zod pattern as TaskForm,
+ * but with a simpler schema (no conditional validation like future date).
  *
- * KEY CONCEPTS:
- * - useMutation for create/update operations
- * - Cache invalidation after successful mutations
- * - Controlled form inputs
- * - Reusable form component for both create and edit modes
+ * KEY DIFFERENCES FROM TASKFORM:
+ * - Single schema for both create and edit (no conditional rules)
+ * - Fewer fields (name, description, status)
+ * - No complex state dependencies (like dueDate/dueTime)
+ *
+ * SAME PATTERNS:
+ * - useForm with zodResolver
+ * - mode: 'onBlur' for validation timing
+ * - register() for connecting inputs
+ * - errors.fieldName?.message for error display
+ * - Red border styling on invalid fields
  */
 
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createProject, updateProject, projectKeys } from '../api/projects'
-import type { Project, ProjectCreateInput, ProjectStatus } from '../types/api'
+import { projectSchema, type ProjectFormData } from '../schemas/project'
+import type { Project, ProjectCreateInput } from '../types/api'
 
 // =============================================================================
 // COMPONENT PROPS
@@ -44,13 +53,13 @@ interface ProjectFormProps {
 /**
  * Available project statuses for the dropdown.
  */
-const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
+const PROJECT_STATUSES = [
   { value: 'PLANNING', label: 'Planning' },
   { value: 'ACTIVE', label: 'Active' },
   { value: 'ON_HOLD', label: 'On Hold' },
   { value: 'COMPLETED', label: 'Completed' },
   { value: 'CANCELLED', label: 'Cancelled' },
-]
+] as const
 
 /**
  * Temporary hardcoded user ID.
@@ -66,12 +75,28 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
   const isEditing = !!project
 
   // ---------------------------------------------------------------------------
-  // FORM STATE
+  // REACT HOOK FORM SETUP
   // ---------------------------------------------------------------------------
 
-  const [name, setName] = useState(project?.name ?? '')
-  const [description, setDescription] = useState(project?.description ?? '')
-  const [status, setStatus] = useState<ProjectStatus>(project?.status ?? 'PLANNING')
+  /**
+   * useForm configuration for project form.
+   *
+   * Unlike TaskForm, we use a single schema (projectSchema) for both
+   * create and edit because there are no conditional validation rules.
+   */
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ProjectFormData>({
+    resolver: zodResolver(projectSchema),
+    mode: 'onBlur',
+    defaultValues: {
+      name: project?.name ?? '',
+      description: project?.description ?? '',
+      status: project?.status ?? 'PLANNING',
+    },
+  })
 
   // ---------------------------------------------------------------------------
   // QUERY CLIENT & MUTATIONS
@@ -100,29 +125,33 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
   })
 
   const mutation = isEditing ? updateMutation : createMutation
-  const isPending = mutation.isPending
+  const isPending = isSubmitting || mutation.isPending
 
   // ---------------------------------------------------------------------------
   // FORM SUBMISSION
   // ---------------------------------------------------------------------------
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
+  /**
+   * Handle form submission.
+   *
+   * Called by React Hook Form's handleSubmit() after validation passes.
+   * The 'data' parameter is the validated form data typed by our Zod schema.
+   */
+  function onSubmit(data: ProjectFormData) {
     if (isEditing && project) {
       updateMutation.mutate({
         id: project.id,
         data: {
-          name,
-          description: description || undefined,
-          status,
+          name: data.name,
+          description: data.description,
+          status: data.status,
         },
       })
     } else {
       const input: ProjectCreateInput = {
-        name,
-        description: description || undefined,
-        status,
+        name: data.name,
+        description: data.description,
+        status: data.status,
         appUserId: TEMP_USER_ID,
       }
       createMutation.mutate(input)
@@ -134,7 +163,7 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
   // ---------------------------------------------------------------------------
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* Name Field - Required */}
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -143,12 +172,15 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
         <input
           type="text"
           id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          {...register('name')}
+          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            errors.name ? 'border-red-500' : 'border-gray-300'
+          }`}
           placeholder="Enter project name"
         />
+        {errors.name && (
+          <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>
+        )}
       </div>
 
       {/* Description Field - Optional */}
@@ -158,12 +190,16 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
         </label>
         <textarea
           id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          {...register('description')}
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            errors.description ? 'border-red-500' : 'border-gray-300'
+          }`}
           placeholder="Enter project description (optional)"
         />
+        {errors.description && (
+          <p className="text-red-600 text-sm mt-1">{errors.description.message}</p>
+        )}
       </div>
 
       {/* Status Dropdown */}
@@ -173,8 +209,7 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
         </label>
         <select
           id="status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as ProjectStatus)}
+          {...register('status')}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           {PROJECT_STATUSES.map((s) => (
@@ -185,7 +220,7 @@ export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) 
         </select>
       </div>
 
-      {/* Error Message */}
+      {/* Server Error Message - show errors from mutations */}
       {mutation.isError && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3">
           <p className="text-red-800 text-sm">
