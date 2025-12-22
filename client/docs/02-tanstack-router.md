@@ -222,6 +222,42 @@ function PostsPage() {
 }
 ```
 
+### Route Configuration Options
+
+The `createFileRoute()` function accepts a configuration object with several options:
+
+```tsx
+export const Route = createFileRoute('/posts')({
+  // Required
+  component: PostsPage,           // The React component to render
+
+  // Optional - Data Loading
+  loader: async () => {           // Fetch data before rendering
+    const posts = await fetchPosts()
+    return { posts }
+  },
+
+  // Optional - Loading & Error States
+  pendingComponent: Loading,      // Shown while loader is running
+  errorComponent: ErrorDisplay,   // Shown if loader throws an error
+
+  // Optional - Other
+  beforeLoad: async () => {},     // Runs before loader (auth checks, redirects)
+  validateSearch: (search) => {}, // Validate/parse URL search params
+})
+```
+
+| Option | Purpose |
+|--------|---------|
+| `component` | The React component to render for this route |
+| `loader` | Async function to fetch data before rendering (data available via `Route.useLoaderData()`) |
+| `pendingComponent` | Component shown while `loader` is running |
+| `errorComponent` | Component shown if `loader` throws an error |
+| `beforeLoad` | Runs before `loader` - useful for auth checks or redirects |
+| `validateSearch` | Parse and validate URL search parameters |
+
+**Note:** While TanStack Router has built-in `loader` support, this project uses TanStack Query's `useQuery` for data fetching instead. This gives us more control over caching, background refetching, and mutation handling. See `docs/03-tanstack-query.md` for details.
+
 ---
 
 ## Creating Routes

@@ -1,64 +1,245 @@
 /**
  * Project Detail Route - /projects/:projectId
  *
- * Same pattern as tasks/$taskId.tsx:
- * - File: $projectId.tsx → Parameter: projectId
- * - URL: /projects/123 → params.projectId = "123"
+ * This file demonstrates:
+ * - Fetching a single project by ID
+ * - Fetching related data (tasks in this project)
+ * - Multiple useQuery calls in one component
+ *
+ * PARALLEL QUERIES:
+ * We fetch the project and its tasks simultaneously.
+ * TanStack Query makes this easy - just call useQuery twice!
  */
 
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { fetchProjectById, projectKeys } from '../../api/projects'
+import { fetchTasksByProjectId, taskKeys } from '../../api/tasks'
+import type { ProjectStatus, Task, TaskStatus } from '../../types/api'
 
 export const Route = createFileRoute('/projects/$projectId')({
   component: ProjectDetailPage,
 })
 
 function ProjectDetailPage() {
-  // Extract the projectId parameter from the URL
   const { projectId } = Route.useParams()
+  const id = parseInt(projectId, 10)
 
+  // Fetch project details
+  const {
+    data: project,
+    isPending: isProjectPending,
+    isError: isProjectError,
+    error: projectError,
+  } = useQuery({
+    queryKey: projectKeys.detail(id),
+    queryFn: () => fetchProjectById(id),
+    enabled: !isNaN(id),
+  })
+
+  /**
+   * Fetch tasks for this project
+   *
+   * This query runs in parallel with the project query.
+   * Each has its own loading/error state.
+   *
+   * NOTE: We use a separate query key that includes projectId,
+   * so tasks are cached per-project.
+   */
+  const {
+    data: tasks,
+    isPending: isTasksPending,
+    isError: isTasksError,
+  } = useQuery({
+    queryKey: taskKeys.listByProject(id),
+    queryFn: () => fetchTasksByProjectId(id),
+    enabled: !isNaN(id),
+  })
+
+  // Invalid ID
+  if (isNaN(id)) {
+    return (
+      <div className="p-6">
+        <BackLink />
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+          <p className="text-red-800 font-medium">Invalid project ID</p>
+          <p className="text-red-600 text-sm mt-1">
+            "{projectId}" is not a valid project ID
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Loading state
+  if (isProjectPending) {
+    return (
+      <div className="p-6">
+        <BackLink />
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-4 animate-pulse">
+          <div className="h-7 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (isProjectError) {
+    return (
+      <div className="p-6">
+        <BackLink />
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+          <p className="text-red-800 font-medium">Failed to load project</p>
+          <p className="text-red-600 text-sm mt-1">
+            {projectError instanceof Error
+              ? projectError.message
+              : 'Unknown error occurred'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Success state
   return (
     <div className="p-6">
-      <div className="mb-4">
-        <span className="text-sm text-gray-500">Project ID:</span>
-        <span className="ml-2 font-mono bg-gray-100 px-2 py-1 rounded">
-          {projectId}
-        </span>
-      </div>
+      <BackLink />
 
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">Project Details</h1>
+      {/* Project details card */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-4 mb-6">
+        <div className="flex items-start justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-800">{project.name}</h1>
+          <ProjectStatusBadge status={project.status} />
+        </div>
 
-      <p className="text-gray-600 mb-6">
-        This page will display details for project #{projectId}. In Session 03,
-        we'll fetch this project and its tasks from the backend API.
-      </p>
+        {project.description ? (
+          <p className="text-gray-600 mb-6">{project.description}</p>
+        ) : (
+          <p className="text-gray-400 italic mb-6">No description</p>
+        )}
 
-      {/* Placeholder content */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <h2 className="font-semibold text-lg text-gray-800 mb-2">
-          Sample Project
-        </h2>
-        <p className="text-gray-600 mb-4">
-          Project description will go here. This is placeholder content.
-        </p>
-        <div className="flex gap-2 mb-4">
-          <span className="px-2 py-1 bg-green-100 text-green-800 text-sm rounded">
-            Active
-          </span>
+        <div className="border-t border-gray-100 pt-4 space-y-2">
+          <MetadataRow label="Project ID" value={String(project.id)} />
+          <MetadataRow label="Owner ID" value={String(project.appUserId)} />
         </div>
       </div>
 
-      {/* Placeholder task list for this project */}
+      {/* Project tasks section */}
       <div>
-        <h3 className="font-semibold text-gray-800 mb-3">Project Tasks</h3>
-        <div className="space-y-2">
-          <div className="bg-gray-50 p-3 rounded border border-gray-200">
-            <p className="text-sm text-gray-700">Task 1 for this project</p>
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">
+          Project Tasks
+        </h2>
+
+        {isTasksPending ? (
+          <div className="space-y-2">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="bg-gray-50 p-3 rounded border border-gray-200 animate-pulse"
+              >
+                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+              </div>
+            ))}
           </div>
-          <div className="bg-gray-50 p-3 rounded border border-gray-200">
-            <p className="text-sm text-gray-700">Task 2 for this project</p>
+        ) : isTasksError ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-red-600 text-sm">Failed to load tasks</p>
           </div>
-        </div>
+        ) : tasks && tasks.length > 0 ? (
+          <div className="space-y-2">
+            {tasks.map((task) => (
+              <TaskRow key={task.id} task={task} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+            <p className="text-gray-500 text-sm">
+              No tasks in this project yet
+            </p>
+          </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+// =============================================================================
+// HELPER COMPONENTS
+// =============================================================================
+
+function BackLink() {
+  return (
+    <Link
+      to="/projects"
+      className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+    >
+      <span>←</span>
+      <span>Back to projects</span>
+    </Link>
+  )
+}
+
+function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
+  const styles: Record<ProjectStatus, string> = {
+    PLANNING: 'bg-yellow-100 text-yellow-800',
+    ACTIVE: 'bg-green-100 text-green-800',
+    ON_HOLD: 'bg-orange-100 text-orange-800',
+    COMPLETED: 'bg-blue-100 text-blue-800',
+    CANCELLED: 'bg-red-100 text-red-800',
+  }
+
+  const labels: Record<ProjectStatus, string> = {
+    PLANNING: 'Planning',
+    ACTIVE: 'Active',
+    ON_HOLD: 'On Hold',
+    COMPLETED: 'Completed',
+    CANCELLED: 'Cancelled',
+  }
+
+  return (
+    <span className={`px-2 py-1 text-xs rounded ${styles[status]}`}>
+      {labels[status]}
+    </span>
+  )
+}
+
+function TaskStatusBadge({ status }: { status: TaskStatus }) {
+  const styles: Record<TaskStatus, string> = {
+    TODO: 'bg-gray-100 text-gray-800',
+    IN_PROGRESS: 'bg-blue-100 text-blue-800',
+    COMPLETED: 'bg-green-100 text-green-800',
+    CANCELLED: 'bg-red-100 text-red-800',
+  }
+
+  return (
+    <span className={`px-2 py-0.5 text-xs rounded ${styles[status]}`}>
+      {status.replace('_', ' ')}
+    </span>
+  )
+}
+
+function TaskRow({ task }: { task: Task }) {
+  return (
+    <Link
+      to="/tasks/$taskId"
+      params={{ taskId: String(task.id) }}
+      className="block bg-gray-50 p-3 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-700">{task.title}</span>
+        <TaskStatusBadge status={task.status} />
+      </div>
+    </Link>
+  )
+}
+
+function MetadataRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center text-sm">
+      <span className="text-gray-500 w-24">{label}:</span>
+      <span className="text-gray-800 font-mono">{value}</span>
     </div>
   )
 }
