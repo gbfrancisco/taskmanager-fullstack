@@ -4,6 +4,7 @@ Data fetching, caching, and server state management.
 
 ## Table of Contents
 - [What is TanStack Query?](#what-is-tanstack-query)
+- [Router Loaders vs Query Hooks](#router-loaders-vs-query-hooks)
 - [Core Concepts](#core-concepts)
 - [useQuery Hook](#usequery-hook)
 - [Query Keys](#query-keys)
@@ -74,6 +75,118 @@ TanStack Query automatically handles:
 - **Background refetching**: Stale data is refreshed automatically
 - **Retry on failure**: Failed requests are retried with exponential backoff
 - **Window focus refetching**: Data refreshes when user returns to the tab
+
+---
+
+## Router Loaders vs Query Hooks
+
+TanStack Router provides a `loader` option for fetching data before a route renders. So why use TanStack Query's `useQuery` instead?
+
+### The Router Loader Approach
+
+```tsx
+// Route with loader - data fetches BEFORE component renders
+export const Route = createFileRoute('/tasks')({
+  loader: async () => {
+    const response = await fetch('/api/tasks')
+    return response.json()
+  },
+  component: TasksPage,
+})
+
+function TasksPage() {
+  // Data is already available - no loading state needed
+  const tasks = Route.useLoaderData()
+  return <TaskList tasks={tasks} />
+}
+```
+
+**How it works:**
+1. User navigates to `/tasks`
+2. Router calls the `loader` function
+3. Navigation **waits** until data is fetched
+4. Component renders with data immediately available
+
+### The useQuery Approach (What We Use)
+
+```tsx
+// Route without loader - data fetches AFTER component mounts
+export const Route = createFileRoute('/tasks')({
+  component: TasksPage,
+})
+
+function TasksPage() {
+  const { data: tasks, isPending } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: fetchTasks,
+  })
+
+  if (isPending) return <LoadingSkeleton />
+  return <TaskList tasks={tasks} />
+}
+```
+
+**How it works:**
+1. User navigates to `/tasks`
+2. Route renders **immediately** with loading state
+3. `useQuery` triggers the fetch
+4. Component re-renders when data arrives
+
+### Comparison
+
+| Aspect | Router Loader | useQuery |
+|--------|---------------|----------|
+| **When data loads** | Before route renders | After component mounts |
+| **Navigation feel** | Waits, then shows complete page | Instant, shows loading state |
+| **Caching** | Manual (or integrate with Query) | Automatic, sophisticated |
+| **Background refetch** | Manual | Automatic |
+| **Error handling** | Route-level `errorComponent` | Component-level or boundary |
+| **Code location** | Route definition | Component |
+
+### Why We Chose useQuery
+
+For this learning project, `useQuery` is the better choice because:
+
+1. **Explicit loading states** - You see and handle loading/error states directly, which is educational
+2. **Component-level control** - Data fetching logic lives with the component that needs it
+3. **Automatic caching** - No extra setup needed for cache management
+4. **Simpler mental model** - Fetch happens where data is used
+
+### When to Use Loaders Instead
+
+Router loaders are better when:
+- You want the old-school "wait then render" navigation feel
+- Data is critical and the page is meaningless without it
+- You're combining with TanStack Query via `ensureQueryData` (advanced pattern)
+- SEO/SSR requires data before HTML generation
+
+### The Hybrid Approach (Advanced)
+
+You can combine both - use loaders to **start** fetches early, and `useQuery` to **consume** the cached data:
+
+```tsx
+export const Route = createFileRoute('/tasks')({
+  loader: ({ context }) => {
+    // Start fetch early, don't await
+    context.queryClient.prefetchQuery({
+      queryKey: ['tasks'],
+      queryFn: fetchTasks,
+    })
+  },
+  component: TasksPage,
+})
+
+function TasksPage() {
+  // Picks up prefetched data from cache
+  const { data, isPending } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: fetchTasks,
+  })
+  // ...
+}
+```
+
+This gives faster perceived loading without blocking navigation.
 
 ---
 

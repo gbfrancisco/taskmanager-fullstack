@@ -1,5 +1,6 @@
 .idea/
 .vscode/
+.claude/
 
 # AI context files (not for version control)
 CLAUDE.md
