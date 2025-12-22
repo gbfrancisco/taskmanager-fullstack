@@ -32,6 +32,14 @@ server:
     include-message: always
     include-binding-errors: always
 
+# CORS Configuration
+# Uses @ConfigurationProperties for type-safe binding (see CorsProperties.java)
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000
+
 # Logging
 logging:
   level:

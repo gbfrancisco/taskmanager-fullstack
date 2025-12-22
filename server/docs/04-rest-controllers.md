@@ -569,6 +569,144 @@ Use `@RestControllerAdvice` instead of try-catch in every controller.
 
 ---
 
+## CORS Configuration
+
+### What is CORS?
+
+**CORS (Cross-Origin Resource Sharing)** is a browser security feature that blocks requests from one origin to another.
+
+An **origin** = protocol + domain + port:
+- `http://localhost:5173` (frontend)
+- `http://localhost:8080` (backend)
+
+These are **different origins** because of the port, so the browser blocks requests by default.
+
+### The Problem
+
+Without CORS configuration:
+
+1. Frontend (`localhost:5173`) calls backend (`localhost:8080/api/tasks`)
+2. Backend returns `200 OK` with data
+3. **Browser blocks the response** - JavaScript can't access it
+4. You see the error in DevTools Network tab (red X, CORS error)
+
+The request succeeds on the server side, but the browser blocks your code from reading the response.
+
+### The Solution
+
+Configure the backend to send CORS headers that tell the browser "it's okay to allow this":
+
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")                   // Apply to all API endpoints
+                .allowedOrigins(
+                        "http://localhost:5173",         // Vite dev server
+                        "http://localhost:3000"          // Alternative port
+                )
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+    }
+}
+```
+
+### Configuration Options
+
+| Option | Purpose |
+|--------|---------|
+| `addMapping("/api/**")` | Which endpoints to apply CORS to |
+| `allowedOrigins(...)` | Which origins can make requests |
+| `allowedMethods(...)` | Which HTTP methods are allowed |
+| `allowedHeaders("*")` | Which request headers are allowed |
+| `allowCredentials(true)` | Allow cookies/auth headers |
+
+### Externalizing Configuration
+
+Hardcoding origins is bad practice. Use `@ConfigurationProperties` for type-safe binding.
+
+**1. Create a properties class:**
+
+```java
+@ConfigurationProperties(prefix = "app.cors")
+public class CorsProperties {
+    private List<String> allowedOrigins = new ArrayList<>();
+
+    public List<String> getAllowedOrigins() {
+        return allowedOrigins;
+    }
+
+    public void setAllowedOrigins(List<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
+    }
+}
+```
+
+**2. Configure in `application.yml` with proper YAML list syntax:**
+
+```yaml
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000
+```
+
+**3. Inject and use in `WebConfig`:**
+
+```java
+@Configuration
+@EnableConfigurationProperties(CorsProperties.class)
+public class WebConfig implements WebMvcConfigurer {
+
+    private final CorsProperties corsProperties;
+
+    public WebConfig(CorsProperties corsProperties) {
+        this.corsProperties = corsProperties;
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+                .allowedOrigins(corsProperties.getAllowedOrigins().toArray(String[]::new))
+                // ...
+    }
+}
+```
+
+**Why @ConfigurationProperties over @Value?**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| `@Value` with SpEL | Quick for single values | Hacky string splitting, no type safety |
+| `@ConfigurationProperties` | Type-safe, IDE support, validation | Requires extra class |
+
+**Benefits of @ConfigurationProperties:**
+- Type-safe binding - YAML lists bind directly to Java `List<String>`
+- IDE autocomplete for property names
+- Validation support with `@Validated` and JSR-303 annotations
+- Cleaner YAML syntax (proper list, not comma-separated)
+- Change origins without recompiling
+- Different values per environment (dev, staging, prod)
+
+### Alternative: Vite Proxy
+
+Instead of configuring CORS on the backend, you can use Vite's proxy feature to make requests appear same-origin. See the frontend documentation (`client/docs/05-api-client.md`) for details.
+
+### Common CORS Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "No 'Access-Control-Allow-Origin' header" | Backend not sending CORS headers | Add `WebConfig` class |
+| "Origin not allowed" | Frontend origin not in `allowedOrigins` | Add your origin to the list |
+| "Method not allowed" | HTTP method not in `allowedMethods` | Add the method |
+| "Credentials not supported" | `allowCredentials` mismatch | Set to `true` if sending cookies |
+
+---
+
 ## Files Reference
 
 | File | Description |
@@ -583,3 +721,5 @@ Use `@RestControllerAdvice` instead of try-catch in every controller.
 | `test/controller/TaskControllerTest.java` | Task controller slice tests |
 | `test/controller/ProjectControllerTest.java` | Project controller slice tests |
 | `test/exception/GlobalExceptionHandlerTest.java` | Exception handler tests |
+| `config/CorsProperties.java` | CORS configuration properties (@ConfigurationProperties) |
+| `config/WebConfig.java` | CORS configuration (uses CorsProperties) |
