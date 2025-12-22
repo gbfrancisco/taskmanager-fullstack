@@ -5,14 +5,18 @@
  * - Using route parameters with TanStack Query
  * - Fetching a single resource by ID
  * - Combining useParams with useQuery
+ * - useMutation for delete operations
+ * - Edit mode with inline form
  *
  * IMPORTANT: Route params are always strings!
  * We need to parse them to numbers for API calls.
  */
 
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { fetchTaskById, taskKeys } from '../../api/tasks'
+import { useState } from 'react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchTaskById, deleteTask, taskKeys } from '../../api/tasks'
+import { TaskForm } from '../../components/TaskForm'
 import type { TaskStatus } from '../../types/api'
 
 export const Route = createFileRoute('/tasks/$taskId')({
@@ -22,6 +26,12 @@ export const Route = createFileRoute('/tasks/$taskId')({
 function TaskDetailPage() {
   // Get the taskId from the URL
   const { taskId } = Route.useParams()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  // State for edit mode and delete confirmation
+  const [isEditing, setIsEditing] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   /**
    * Parse the taskId to a number
@@ -47,6 +57,30 @@ function TaskDetailPage() {
     // Only run the query if we have a valid ID
     enabled: !isNaN(id),
   })
+
+  /**
+   * Delete mutation
+   *
+   * After successfully deleting, we:
+   * 1. Invalidate the tasks list (so it refetches without this task)
+   * 2. Navigate back to the tasks list
+   */
+  const deleteMutation = useMutation({
+    mutationFn: deleteTask,
+    onSuccess: () => {
+      // Invalidate the tasks list
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
+      // Navigate back to the list
+      navigate({ to: '/tasks' })
+    },
+  })
+
+  /**
+   * Handle delete with confirmation
+   */
+  function handleDelete() {
+    deleteMutation.mutate(id)
+  }
 
   // Invalid ID handling
   if (isNaN(id)) {
@@ -92,36 +126,102 @@ function TaskDetailPage() {
     )
   }
 
-  // Success state - render task details
+  // Success state - render task details or edit form
   return (
     <div className="p-6">
       <BackLink />
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-4">
-        {/* Header with title and status */}
-        <div className="flex items-start justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">{task.title}</h1>
-          <StatusBadge status={task.status} />
-        </div>
-
-        {/* Description */}
-        {task.description ? (
-          <p className="text-gray-600 mb-6">{task.description}</p>
+        {isEditing ? (
+          // Edit mode - show the form
+          <>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Edit Task</h2>
+            <TaskForm
+              task={task}
+              onSuccess={() => setIsEditing(false)}
+              onCancel={() => setIsEditing(false)}
+            />
+          </>
         ) : (
-          <p className="text-gray-400 italic mb-6">No description</p>
-        )}
+          // View mode - show task details
+          <>
+            {/* Header with title and status */}
+            <div className="flex items-start justify-between mb-4">
+              <h1 className="text-2xl font-bold text-gray-800">{task.title}</h1>
+              <StatusBadge status={task.status} />
+            </div>
 
-        {/* Metadata */}
-        <div className="border-t border-gray-100 pt-4 space-y-2">
-          <MetadataRow label="Task ID" value={String(task.id)} />
-          <MetadataRow label="User ID" value={String(task.appUserId)} />
-          {task.projectId && (
-            <MetadataRow label="Project ID" value={String(task.projectId)} />
-          )}
-          {task.dueDate && (
-            <MetadataRow label="Due Date" value={formatDate(task.dueDate)} />
-          )}
-        </div>
+            {/* Description */}
+            {task.description ? (
+              <p className="text-gray-600 mb-6">{task.description}</p>
+            ) : (
+              <p className="text-gray-400 italic mb-6">No description</p>
+            )}
+
+            {/* Metadata */}
+            <div className="border-t border-gray-100 pt-4 space-y-2">
+              <MetadataRow label="Task ID" value={String(task.id)} />
+              <MetadataRow label="User ID" value={String(task.appUserId)} />
+              {task.projectId && (
+                <MetadataRow label="Project ID" value={String(task.projectId)} />
+              )}
+              {task.dueDate && (
+                <MetadataRow label="Due Date" value={formatDate(task.dueDate)} />
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="border-t border-gray-100 pt-4 mt-4 flex gap-3">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Edit Task
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              >
+                Delete Task
+              </button>
+            </div>
+
+            {/* Delete Confirmation Dialog */}
+            {showDeleteConfirm && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-800 font-medium">
+                  Are you sure you want to delete this task?
+                </p>
+                <p className="text-red-600 text-sm mt-1">
+                  This action cannot be undone.
+                </p>
+                <div className="mt-3 flex gap-3">
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleteMutation.isPending}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {deleteMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={deleteMutation.isPending}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {deleteMutation.isError && (
+                  <p className="text-red-600 text-sm mt-2">
+                    {deleteMutation.error instanceof Error
+                      ? deleteMutation.error.message
+                      : 'Failed to delete task'}
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )
@@ -188,13 +288,32 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
 
 /**
  * Format an ISO date string for display
+ *
+ * Shows time only if it's not midnight (00:00).
+ * This matches our form behavior where users can optionally include time.
  */
 function formatDate(isoString: string): string {
   const date = new Date(isoString)
-  return date.toLocaleDateString('en-US', {
+
+  const dateStr = date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   })
+
+  // Check if time is midnight (meaning no specific time was set)
+  const hours = date.getHours()
+  const minutes = date.getMinutes()
+  if (hours === 0 && minutes === 0) {
+    return dateStr
+  }
+
+  // Include time if it was explicitly set
+  const timeStr = date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+
+  return `${dateStr} at ${timeStr}`
 }

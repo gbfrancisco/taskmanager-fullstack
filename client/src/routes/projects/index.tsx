@@ -3,20 +3,25 @@
  *
  * Same pattern as tasks.tsx:
  * - useQuery for data fetching
+ * - useMutation for creating projects (via ProjectForm)
  * - Loading, error, and success states
  * - Query key factory for consistent caching
  */
 
+import { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { fetchProjects, projectKeys } from '../api/projects'
-import type { Project, ProjectStatus } from '../types/api'
+import { fetchProjects, projectKeys } from '../../api/projects'
+import { ProjectForm } from '../../components/ProjectForm'
+import type { Project, ProjectStatus } from '../../types/api'
 
-export const Route = createFileRoute('/projects')({
+export const Route = createFileRoute('/projects/')({
   component: ProjectsPage,
 })
 
 function ProjectsPage() {
+  const [showCreateForm, setShowCreateForm] = useState(false)
+
   const {
     data: projects,
     isPending,
@@ -66,7 +71,27 @@ function ProjectsPage() {
   // Success state
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">Projects</h1>
+      {/* Header with title and create button */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">Projects</h1>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          {showCreateForm ? 'Cancel' : '+ New Project'}
+        </button>
+      </div>
+
+      {/* Create Project Form */}
+      {showCreateForm && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">Create New Project</h2>
+          <ProjectForm
+            onSuccess={() => setShowCreateForm(false)}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        </div>
+      )}
 
       {projects.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">

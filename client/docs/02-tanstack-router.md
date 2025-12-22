@@ -183,6 +183,8 @@ The route tree is generated when:
 | `npm run build` | Plugin generates before building |
 | Dev server NOT running | Nothing - changes won't be picked up until next start |
 
+**Important:** If you move or rename route files while the dev server is running, you may need to **restart the dev server** for the route tree to regenerate correctly. This is especially true for structural changes like moving `posts.tsx` to `posts/index.tsx`.
+
 **Manual generation** (useful if things get out of sync):
 ```bash
 npx tsr generate
@@ -446,6 +448,61 @@ routes/
 │   └── $widgetId.tsx       # /dashboard/:widgetId
 ```
 
+### Sibling Routes vs Layout Routes
+
+**Common gotcha:** If you have both `posts.tsx` and `posts/$postId.tsx`, TanStack Router treats `posts.tsx` as a **layout** that wraps `posts/$postId.tsx`. If `posts.tsx` doesn't have an `<Outlet />`, the child route content won't render!
+
+**Problem structure:**
+```
+routes/
+├── posts.tsx           # Layout for /posts/* (needs <Outlet />!)
+└── posts/
+    └── $postId.tsx     # Child route - won't render without Outlet in parent
+```
+
+**Solution - Use index.tsx for sibling routes:**
+```
+routes/
+└── posts/
+    ├── index.tsx       # /posts - the list page
+    └── $postId.tsx     # /posts/:postId - the detail page
+```
+
+With this structure, both routes are **siblings** under the same folder, not parent-child. Neither needs an `<Outlet />`.
+
+### Why `index.tsx`?
+
+The name `index.tsx` is special - it means "this is the route for the folder itself" (similar to `index.html` in web servers). When you navigate to `/posts`, TanStack Router looks for `posts/index.tsx`.
+
+**When to use each pattern:**
+
+| Pattern | Structure | Use Case |
+|---------|-----------|----------|
+| `posts.tsx` + `posts/*.tsx` | Parent-child | Shared layout (sidebar, tabs) that stays visible across all `/posts/*` pages |
+| `posts/index.tsx` + `posts/*.tsx` | Siblings | Independent pages with no shared UI between list and detail |
+
+**Example: When you WOULD want a layout:**
+
+```tsx
+// routes/dashboard.tsx - Layout with persistent sidebar
+function DashboardLayout() {
+  return (
+    <div className="flex">
+      <Sidebar />           {/* Always visible */}
+      <main>
+        <Outlet />          {/* Child routes render here */}
+      </main>
+    </div>
+  )
+}
+```
+
+Navigate to `/dashboard/settings` → Sidebar stays, settings page renders in `<Outlet />`.
+
+**Example: When you want sibling routes (our approach):**
+
+List page and detail page are completely independent - navigating from `/tasks` to `/tasks/123` replaces the entire page content. No shared UI needed.
+
 ### Layout Routes
 
 If a route file contains an `<Outlet />`, it becomes a layout for its child routes:
@@ -484,11 +541,13 @@ This section lists the actual files in our Task Manager app. Refer to the source
 |------|-----|-------------|
 | `src/routes/__root.tsx` | (all) | Root layout with Header and `<Outlet />` |
 | `src/routes/index.tsx` | `/` | Home page |
-| `src/routes/tasks.tsx` | `/tasks` | Task list with links to details |
+| `src/routes/tasks/index.tsx` | `/tasks` | Task list with links to details |
 | `src/routes/tasks/$taskId.tsx` | `/tasks/:taskId` | Task detail using `Route.useParams()` |
-| `src/routes/projects.tsx` | `/projects` | Project list with links to details |
+| `src/routes/projects/index.tsx` | `/projects` | Project list with links to details |
 | `src/routes/projects/$projectId.tsx` | `/projects/:projectId` | Project detail using `Route.useParams()` |
 | `src/components/Header.tsx` | — | Navigation with `<Link>` and `activeProps` |
+
+Note: We use `tasks/index.tsx` instead of `tasks.tsx` so that the list page and detail page are **sibling routes**, not parent-child. This avoids needing an `<Outlet />` in the list page.
 
 ---
 
