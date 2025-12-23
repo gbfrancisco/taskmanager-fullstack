@@ -20,10 +20,15 @@ import java.util.List;
  * DTOs, including proper handling of the AppUser relationship.
  *
  * <p><strong>Relationship Mapping Strategy:</strong>
+ * The owner relationship is mapped to an embedded summary DTO:
  * <ul>
- *   <li>Entity → DTO: Maps {@code appUser.id} to {@code appUserId}</li>
+ *   <li>Entity → DTO: Maps {@code appUser} to embedded {@code AppUserSummaryDto}</li>
  *   <li>DTO → Entity: AppUser ID is set in the service layer (not mapped here)</li>
  * </ul>
+ *
+ * <p><strong>Automatic Nested Object Mapping:</strong>
+ * MapStruct automatically uses {@link AppUserMapper#toSummary} for the appUser field
+ * via the {@code uses} attribute.
  *
  * <p><strong>Tasks Collection:</strong>
  * The tasks collection is ignored in all mappings to prevent circular references
@@ -33,10 +38,12 @@ import java.util.List;
  * @see ProjectCreateDto
  * @see ProjectUpdateDto
  * @see ProjectResponseDto
+ * @see AppUserMapper
  */
 @Mapper(
     componentModel = "spring",
-    unmappedTargetPolicy = ReportingPolicy.WARN
+    unmappedTargetPolicy = ReportingPolicy.WARN,
+    uses = AppUserMapper.class
 )
 public interface ProjectMapper {
 
@@ -74,18 +81,19 @@ public interface ProjectMapper {
      *   <li>name → name</li>
      *   <li>description → description</li>
      *   <li>status → status</li>
-     *   <li>createdAt → createdAt</li>
-     *   <li>updatedAt → updatedAt</li>
-     *   <li>appUser.id → appUserId (explicit mapping)</li>
+     *   <li>appUser → appUser (uses {@link AppUserMapper#toSummary} via 'uses' attribute)</li>
      * </ul>
      *
+     * <p><strong>Note:</strong> The taskCount field is NOT mapped here. It is a computed
+     * field populated by the service layer using an efficient COUNT query.
+     *
      * <p><strong>Null safety:</strong>
-     * If project.appUser is null, appUserId will be null (safe navigation).
+     * If project.appUser is null, appUser summary will be null (safe navigation).
      *
      * @param entity the Project entity
-     * @return a DTO suitable for API responses
+     * @return a DTO suitable for API responses (taskCount not set)
      */
-    @Mapping(source = "appUser.id", target = "appUserId")
+    @Mapping(target = "taskCount", ignore = true)
     ProjectResponseDto toResponseDto(Project entity);
 
     /**

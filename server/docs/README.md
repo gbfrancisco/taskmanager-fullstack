@@ -18,6 +18,7 @@ This cookbook demonstrates Spring Boot 3 features through a Task Manager applica
 - [x] **[07-jpa-entities.md](07-jpa-entities.md)** - JPA entities, relationships, and repositories
 - [x] **[08-jpa-entity-lifecycle.md](08-jpa-entity-lifecycle.md)** - Entity states, persistence context, and state transitions
 - [x] **[09-jpa-query-methods.md](09-jpa-query-methods.md)** - Query method derivation and performance optimization
+- [x] **[10-jpa-entity-graph.md](10-jpa-entity-graph.md)** - Entity graphs for efficient relationship fetching
 - [ ] **database-configuration.md** - DataSource setup, connection pools, H2 console (future)
 
 ### Validation & Error Handling

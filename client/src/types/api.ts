@@ -52,6 +52,19 @@ export interface User {
 }
 
 /**
+ * UserSummary - Matches AppUserSummaryDto
+ *
+ * A lightweight user representation used when embedding user info
+ * in other responses (e.g., in TaskResponseDto, ProjectResponseDto).
+ *
+ * Contains only essential fields for display purposes.
+ */
+export interface UserSummary {
+  id: number;
+  username: string;
+}
+
+/**
  * UserCreateInput - Matches AppUserCreateDto
  *
  * Used when creating a new user.
@@ -80,9 +93,9 @@ export interface UserUpdateInput {
 /**
  * Task - Matches TaskResponseDto
  *
- * Notice we use IDs for relationships (appUserId, projectId) instead
- * of nested objects. This prevents circular references and matches
- * the backend's approach.
+ * Relationships are embedded as summary DTOs for convenience:
+ * - appUser: UserSummary with id and username
+ * - project: ProjectSummary with id, name, and status
  *
  * The dueDate comes from the backend as an ISO string (LocalDateTime).
  */
@@ -92,7 +105,7 @@ export interface Task {
   description: string | null;
   status: TaskStatus;
   dueDate: string | null; // ISO date string (e.g., "2024-12-31T23:59:59")
-  appUserId: number;
+  appUser: UserSummary; // Embedded user summary (always present)
   project: ProjectSummary | null; // Embedded project summary (null if not assigned)
 }
 
@@ -144,15 +157,14 @@ export interface ProjectSummary {
 /**
  * Project - Matches ProjectResponseDto
  *
- * Uses appUserId to reference the project owner instead of
- * a nested User object.
+ * The owner relationship is embedded as a UserSummary for convenience.
  */
 export interface Project {
   id: number;
   name: string;
   description: string | null;
   status: ProjectStatus;
-  appUserId: number;
+  appUser: UserSummary; // Embedded user summary (project owner)
   taskCount: number; // Computed field: number of tasks in this project
 }
 

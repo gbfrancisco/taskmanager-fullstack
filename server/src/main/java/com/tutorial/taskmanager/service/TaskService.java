@@ -78,7 +78,8 @@ public class TaskService {
             throw new IllegalArgumentException("id is null");
         }
 
-        return taskRepository.findById(taskId).map(taskMapper::toResponseDto);
+        // Use EntityGraph method to eagerly fetch appUser and project
+        return taskRepository.findWithRelationsById(taskId).map(taskMapper::toResponseDto);
     }
 
     @Transactional(readOnly = true)
@@ -87,14 +88,16 @@ public class TaskService {
             throw new IllegalArgumentException("id is null");
         }
 
-        return taskRepository.findById(taskId)
+        // Use EntityGraph method to eagerly fetch appUser and project
+        return taskRepository.findWithRelationsById(taskId)
             .map(taskMapper::toResponseDto)
             .orElseThrow(() -> new ResourceNotFoundException("task", taskId));
     }
 
     @Transactional(readOnly = true)
     public List<TaskResponseDto> findAll() {
-        return taskMapper.toResponseDtoList(taskRepository.findAll());
+        // Use EntityGraph method to eagerly fetch appUser and project for all tasks
+        return taskMapper.toResponseDtoList(taskRepository.findAllWithRelations());
     }
 
     @Transactional(readOnly = true)
@@ -103,7 +106,8 @@ public class TaskService {
             throw new IllegalArgumentException("appUserId is null");
         }
 
-        List<Task> tasks = taskRepository.findByAppUserId(appUserId);
+        // Use EntityGraph method to eagerly fetch relationships
+        List<Task> tasks = taskRepository.findWithRelationsByAppUserId(appUserId);
         return taskMapper.toResponseDtoList(tasks);
     }
 
@@ -113,7 +117,8 @@ public class TaskService {
             throw new IllegalArgumentException("projectId is null");
         }
 
-        List<Task> tasks = taskRepository.findByProjectId(projectId);
+        // Use EntityGraph method to eagerly fetch relationships
+        List<Task> tasks = taskRepository.findWithRelationsByProjectId(projectId);
         return taskMapper.toResponseDtoList(tasks);
     }
 
@@ -123,7 +128,8 @@ public class TaskService {
             throw new IllegalArgumentException("status is null");
         }
 
-        List<Task> tasks = taskRepository.findByStatus(status);
+        // Use EntityGraph method to eagerly fetch relationships
+        List<Task> tasks = taskRepository.findWithRelationsByStatus(status);
         return taskMapper.toResponseDtoList(tasks);
     }
 
@@ -157,7 +163,8 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public List<TaskResponseDto> findOverdueTasks() {
-        List<Task> overdueTasks = taskRepository.findByDueDateBeforeAndStatusNotIn(
+        // Use EntityGraph method to eagerly fetch relationships
+        List<Task> overdueTasks = taskRepository.findWithRelationsByDueDateBeforeAndStatusNotIn(
             LocalDateTime.now(),
             List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED)
         );

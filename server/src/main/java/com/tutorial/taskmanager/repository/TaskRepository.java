@@ -4,6 +4,7 @@ import com.tutorial.taskmanager.enums.TaskStatus;
 import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.model.Project;
 import com.tutorial.taskmanager.model.Task;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Spring Data JPA repository for {@link Task} entity.
@@ -102,6 +104,52 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     );
 
     List<Task> findByDueDateBeforeAndStatusNotIn(
+        LocalDateTime dateTimeToCompare,
+        Collection<TaskStatus> excludedStatuses
+    );
+
+    // ==================== ENTITY GRAPH METHODS ====================
+    // These methods fetch related entities (appUser, project) in a single query
+    // to avoid N+1 problems when mapping to DTOs with embedded relationships.
+    // See docs/10-jpa-entity-graph.md for details.
+
+    /**
+     * Find all tasks with appUser and project eagerly fetched.
+     * Use this for list views that display user and project info.
+     */
+    @EntityGraph(attributePaths = {"appUser", "project"})
+    List<Task> findAllWithRelations();
+
+    /**
+     * Find task by ID with appUser and project eagerly fetched.
+     * Use this for detail views.
+     */
+    @EntityGraph(attributePaths = {"appUser", "project"})
+    Optional<Task> findWithRelationsById(Long id);
+
+    /**
+     * Find tasks by user ID with relationships eagerly fetched.
+     */
+    @EntityGraph(attributePaths = {"appUser", "project"})
+    List<Task> findWithRelationsByAppUserId(Long appUserId);
+
+    /**
+     * Find tasks by project ID with relationships eagerly fetched.
+     */
+    @EntityGraph(attributePaths = {"appUser", "project"})
+    List<Task> findWithRelationsByProjectId(Long projectId);
+
+    /**
+     * Find tasks by status with relationships eagerly fetched.
+     */
+    @EntityGraph(attributePaths = {"appUser", "project"})
+    List<Task> findWithRelationsByStatus(TaskStatus status);
+
+    /**
+     * Find overdue tasks (before date, excluding certain statuses) with relationships.
+     */
+    @EntityGraph(attributePaths = {"appUser", "project"})
+    List<Task> findWithRelationsByDueDateBeforeAndStatusNotIn(
         LocalDateTime dateTimeToCompare,
         Collection<TaskStatus> excludedStatuses
     );

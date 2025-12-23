@@ -1,6 +1,7 @@
 package com.tutorial.taskmanager.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tutorial.taskmanager.dto.appuser.AppUserSummaryDto;
 import com.tutorial.taskmanager.dto.project.ProjectSummaryDto;
 import com.tutorial.taskmanager.dto.task.TaskCreateDto;
 import com.tutorial.taskmanager.dto.task.TaskResponseDto;
@@ -82,6 +83,11 @@ class TaskControllerTest {
                 .dueDate(dueDate)
                 .build();
 
+        AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
+                .id(1L)
+                .username("testuser")
+                .build();
+
         ProjectSummaryDto projectSummary = ProjectSummaryDto.builder()
                 .id(1L)
                 .name("Test Project")
@@ -94,7 +100,7 @@ class TaskControllerTest {
                 .description("Test Description")
                 .status(TaskStatus.TODO)
                 .dueDate(dueDate)
-                .appUserId(1L)
+                .appUser(userSummary)
                 .project(projectSummary)
                 .build();
     }
@@ -120,7 +126,7 @@ class TaskControllerTest {
                     .andExpect(jsonPath("$.id").value(1L))
                     .andExpect(jsonPath("$.title").value("Test Task"))
                     .andExpect(jsonPath("$.status").value("TODO"))
-                    .andExpect(jsonPath("$.appUserId").value(1L))
+                    .andExpect(jsonPath("$.appUser.id").value(1L))
                     .andExpect(jsonPath("$.project.id").value(1L))
                     .andExpect(jsonPath("$.project.name").value("Test Project"));
 
@@ -199,11 +205,15 @@ class TaskControllerTest {
         @Test
         @DisplayName("Should return all tasks with 200 OK")
         void getAllTasks_Success_Returns200() throws Exception {
+            AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
+                    .id(1L)
+                    .username("testuser")
+                    .build();
             TaskResponseDto task2 = TaskResponseDto.builder()
                     .id(2L)
                     .title("Another Task")
                     .status(TaskStatus.IN_PROGRESS)
-                    .appUserId(1L)
+                    .appUser(userSummary)
                     .build();
             List<TaskResponseDto> tasks = Arrays.asList(responseDto, task2);
             when(taskService.findAll()).thenReturn(tasks);
@@ -245,7 +255,7 @@ class TaskControllerTest {
             mockMvc.perform(get("/api/tasks").param("userId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(1))
-                    .andExpect(jsonPath("$[0].appUserId").value(1L));
+                    .andExpect(jsonPath("$[0].appUser.id").value(1L));
 
             verify(taskService).findByAppUserId(1L);
         }
@@ -344,13 +354,17 @@ class TaskControllerTest {
         @Test
         @DisplayName("Should update task and return 200 OK")
         void updateTask_Success_Returns200() throws Exception {
+            AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
+                    .id(1L)
+                    .username("testuser")
+                    .build();
             TaskResponseDto updatedResponse = TaskResponseDto.builder()
                     .id(1L)
                     .title("Updated Task")
                     .description("Updated Description")
                     .status(TaskStatus.IN_PROGRESS)
                     .dueDate(dueDate)
-                    .appUserId(1L)
+                    .appUser(userSummary)
                     .build();
             when(taskService.updateTask(eq(1L), any(TaskUpdateDto.class)))
                     .thenReturn(updatedResponse);
@@ -389,6 +403,10 @@ class TaskControllerTest {
         @Test
         @DisplayName("Should assign task to project and return 200 OK")
         void assignToProject_Success_Returns200() throws Exception {
+            AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
+                    .id(1L)
+                    .username("testuser")
+                    .build();
             ProjectSummaryDto project2Summary = ProjectSummaryDto.builder()
                     .id(2L)
                     .name("Project 2")
@@ -397,7 +415,7 @@ class TaskControllerTest {
             TaskResponseDto assignedTask = TaskResponseDto.builder()
                     .id(1L)
                     .title("Test Task")
-                    .appUserId(1L)
+                    .appUser(userSummary)
                     .project(project2Summary)
                     .build();
             when(taskService.assignToProject(1L, 2L)).thenReturn(assignedTask);
@@ -432,10 +450,14 @@ class TaskControllerTest {
         @Test
         @DisplayName("Should remove task from project and return 200 OK")
         void removeFromProject_Success_Returns200() throws Exception {
+            AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
+                    .id(1L)
+                    .username("testuser")
+                    .build();
             TaskResponseDto taskWithoutProject = TaskResponseDto.builder()
                     .id(1L)
                     .title("Test Task")
-                    .appUserId(1L)
+                    .appUser(userSummary)
                     .project(null)
                     .build();
             when(taskService.removeFromProject(1L)).thenReturn(taskWithoutProject);

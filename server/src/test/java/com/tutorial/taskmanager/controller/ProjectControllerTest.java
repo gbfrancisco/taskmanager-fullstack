@@ -1,6 +1,7 @@
 package com.tutorial.taskmanager.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tutorial.taskmanager.dto.appuser.AppUserSummaryDto;
 import com.tutorial.taskmanager.dto.project.ProjectCreateDto;
 import com.tutorial.taskmanager.dto.project.ProjectResponseDto;
 import com.tutorial.taskmanager.dto.project.ProjectUpdateDto;
@@ -72,12 +73,17 @@ class ProjectControllerTest {
                 .status(ProjectStatus.ACTIVE)
                 .build();
 
+        AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
+                .id(1L)
+                .username("testuser")
+                .build();
+
         responseDto = ProjectResponseDto.builder()
                 .id(1L)
                 .name("Test Project")
                 .description("Test Description")
                 .status(ProjectStatus.PLANNING)
-                .appUserId(1L)
+                .appUser(userSummary)
                 .build();
     }
 
@@ -102,7 +108,7 @@ class ProjectControllerTest {
                     .andExpect(jsonPath("$.id").value(1L))
                     .andExpect(jsonPath("$.name").value("Test Project"))
                     .andExpect(jsonPath("$.status").value("PLANNING"))
-                    .andExpect(jsonPath("$.appUserId").value(1L));
+                    .andExpect(jsonPath("$.appUser.id").value(1L));
 
             verify(projectService).createProject(any(ProjectCreateDto.class));
         }
@@ -167,11 +173,15 @@ class ProjectControllerTest {
         @Test
         @DisplayName("Should return all projects with 200 OK")
         void getAllProjects_Success_Returns200() throws Exception {
+            AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
+                    .id(1L)
+                    .username("testuser")
+                    .build();
             ProjectResponseDto project2 = ProjectResponseDto.builder()
                     .id(2L)
                     .name("Another Project")
                     .status(ProjectStatus.ACTIVE)
-                    .appUserId(1L)
+                    .appUser(userSummary)
                     .build();
             List<ProjectResponseDto> projects = Arrays.asList(responseDto, project2);
             when(projectService.findAll()).thenReturn(projects);
@@ -213,7 +223,7 @@ class ProjectControllerTest {
             mockMvc.perform(get("/api/projects").param("userId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(1))
-                    .andExpect(jsonPath("$[0].appUserId").value(1L));
+                    .andExpect(jsonPath("$[0].appUser.id").value(1L));
 
             verify(projectService).findByAppUserId(1L);
         }
@@ -286,12 +296,16 @@ class ProjectControllerTest {
         @Test
         @DisplayName("Should update project and return 200 OK")
         void updateProject_Success_Returns200() throws Exception {
+            AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
+                    .id(1L)
+                    .username("testuser")
+                    .build();
             ProjectResponseDto updatedResponse = ProjectResponseDto.builder()
                     .id(1L)
                     .name("Updated Project")
                     .description("Updated Description")
                     .status(ProjectStatus.ACTIVE)
-                    .appUserId(1L)
+                    .appUser(userSummary)
                     .build();
             when(projectService.updateProject(eq(1L), any(ProjectUpdateDto.class)))
                     .thenReturn(updatedResponse);

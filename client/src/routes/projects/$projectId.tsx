@@ -168,7 +168,7 @@ function ProjectDetailPage() {
 
             <div className="border-t-2 border-ink pt-4 space-y-2">
               <MetadataRow label="Project ID" value={String(project.id)} />
-              <MetadataRow label="Owner ID" value={String(project.appUserId)} />
+              <MetadataRow label="Owner" value={project.appUser.username} />
             </div>
 
             {/* Action Buttons */}

@@ -1,5 +1,6 @@
 package com.tutorial.taskmanager.dto.project;
 
+import com.tutorial.taskmanager.dto.appuser.AppUserSummaryDto;
 import com.tutorial.taskmanager.enums.ProjectStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,9 +14,8 @@ import lombok.NoArgsConstructor;
  * by {@link com.tutorial.taskmanager.mapper.ProjectMapper}.
  *
  * <p><strong>Relationship Handling:</strong>
- * Instead of including the nested AppUser object (which would cause
- * circular references), we include only the appUserId. Clients can fetch
- * full user details separately if needed.
+ * The owner relationship is embedded as a lightweight summary DTO to provide
+ * descriptive information without circular references.
  *
  * <p><strong>Fields:</strong>
  * <ul>
@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
  *   <li>name - Project name</li>
  *   <li>description - Project description</li>
  *   <li>status - Current project status</li>
- *   <li>appUserId - ID of the project owner</li>
+ *   <li>appUser - Project owner summary (id, username)</li>
  *   <li>taskCount - Number of tasks in this project (computed field)</li>
  * </ul>
  */
@@ -36,7 +36,12 @@ public class ProjectResponseDto {
     private String name;
     private String description;
     private ProjectStatus status;
-    private Long appUserId;
+
+    /**
+     * Embedded owner summary with id and username.
+     * Provides descriptive user info without exposing sensitive data.
+     */
+    private AppUserSummaryDto appUser;
 
     /**
      * Number of tasks associated with this project.

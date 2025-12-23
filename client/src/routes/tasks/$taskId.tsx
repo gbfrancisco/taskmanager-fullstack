@@ -168,7 +168,7 @@ function TaskDetailPage() {
             {/* Metadata */}
             <div className="border-t-2 border-ink pt-4 space-y-2">
               <MetadataRow label="Task ID" value={String(task.id)} />
-              <MetadataRow label="User ID" value={String(task.appUserId)} />
+              <MetadataRow label="Owner" value={task.appUser.username} />
               {task.project && (
                 <div className="flex items-center text-sm">
                   <span className="text-ink-light w-24">Project:</span>

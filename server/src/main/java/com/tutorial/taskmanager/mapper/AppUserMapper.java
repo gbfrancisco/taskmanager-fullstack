@@ -2,6 +2,7 @@ package com.tutorial.taskmanager.mapper;
 
 import com.tutorial.taskmanager.dto.appuser.AppUserCreateDto;
 import com.tutorial.taskmanager.dto.appuser.AppUserResponseDto;
+import com.tutorial.taskmanager.dto.appuser.AppUserSummaryDto;
 import com.tutorial.taskmanager.dto.appuser.AppUserUpdateDto;
 import com.tutorial.taskmanager.model.AppUser;
 import org.mapstruct.BeanMapping;
@@ -104,6 +105,23 @@ public interface AppUserMapper {
      * @return list of response DTOs
      */
     List<AppUserResponseDto> toResponseDtoList(List<AppUser> entities);
+
+    /**
+     * Converts an AppUser entity to a lightweight summary DTO.
+     *
+     * <p>This method is used by other mappers (TaskMapper, ProjectMapper) when they
+     * need to embed user information in their response DTOs. By defining it here
+     * and using the {@code uses} attribute, MapStruct automatically applies this
+     * conversion when mapping nested AppUser relationships.
+     *
+     * <p>Maps: id → id, username → username
+     *
+     * @param entity the AppUser entity (can be null)
+     * @return a lightweight summary DTO, or null if entity is null
+     * @see TaskMapper
+     * @see ProjectMapper
+     */
+    AppUserSummaryDto toSummary(AppUser entity);
 
     /**
      * Updates an existing AppUser entity from an UpdateDto.

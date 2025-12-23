@@ -115,7 +115,8 @@ public class ProjectService {
             throw new IllegalArgumentException("id is null");
         }
 
-        return projectRepository.findById(projectId)
+        // Use EntityGraph method to eagerly fetch appUser
+        return projectRepository.findWithOwnerById(projectId)
             .map(projectMapper::toResponseDto)
             .map(this::enrichWithTaskCount);
     }
@@ -126,7 +127,8 @@ public class ProjectService {
             throw new IllegalArgumentException("id is null");
         }
 
-        return projectRepository.findById(projectId)
+        // Use EntityGraph method to eagerly fetch appUser
+        return projectRepository.findWithOwnerById(projectId)
             .map(projectMapper::toResponseDto)
             .map(this::enrichWithTaskCount)
             .orElseThrow(() -> new ResourceNotFoundException("project", projectId));
@@ -134,7 +136,8 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> findAll() {
-        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findAll());
+        // Use EntityGraph method to eagerly fetch appUser for all projects
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findAllWithOwner());
         return enrichWithTaskCounts(dtos);
     }
 
@@ -144,7 +147,10 @@ public class ProjectService {
             throw new IllegalArgumentException("appUserId is null");
         }
 
-        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findByAppUserId(appUserId));
+        // Use EntityGraph method to eagerly fetch appUser
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
+            projectRepository.findWithOwnerByAppUserId(appUserId)
+        );
         return enrichWithTaskCounts(dtos);
     }
 
@@ -154,7 +160,10 @@ public class ProjectService {
             throw new IllegalArgumentException("projectStatus is null");
         }
 
-        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findByStatus(projectStatus));
+        // Use EntityGraph method to eagerly fetch appUser
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
+            projectRepository.findWithOwnerByStatus(projectStatus)
+        );
         return enrichWithTaskCounts(dtos);
     }
 
@@ -168,8 +177,9 @@ public class ProjectService {
             throw new IllegalArgumentException("projectStatus is null");
         }
 
+        // Use EntityGraph method to eagerly fetch appUser
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findByAppUserIdAndStatus(appUserId, projectStatus)
+            projectRepository.findWithOwnerByAppUserIdAndStatus(appUserId, projectStatus)
         );
         return enrichWithTaskCounts(dtos);
     }
@@ -180,8 +190,9 @@ public class ProjectService {
             throw new IllegalArgumentException("nameQuery is empty");
         }
 
+        // Use EntityGraph method to eagerly fetch appUser
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findByNameContainingIgnoreCase(nameQuery)
+            projectRepository.findWithOwnerByNameContainingIgnoreCase(nameQuery)
         );
         return enrichWithTaskCounts(dtos);
     }
@@ -196,7 +207,10 @@ public class ProjectService {
             throw new IllegalArgumentException("nameQuery is empty");
         }
 
-        List<Project> projects = projectRepository.findByAppUserIdAndNameContainingIgnoreCase(appUserId, nameQuery);
+        // Use EntityGraph method to eagerly fetch appUser
+        List<Project> projects = projectRepository.findWithOwnerByAppUserIdAndNameContainingIgnoreCase(
+            appUserId, nameQuery
+        );
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projects);
         return enrichWithTaskCounts(dtos);
     }

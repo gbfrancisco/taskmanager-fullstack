@@ -22,15 +22,19 @@ import java.util.List;
  * DTOs, including proper handling of relationships (AppUser and Project).
  *
  * <p><strong>Relationship Mapping Strategy:</strong>
+ * Both relationships are mapped to embedded summary DTOs:
  * <ul>
- *   <li>Entity → DTO: Maps {@code appUser.id} to {@code appUserId}</li>
+ *   <li>Entity → DTO: Maps {@code appUser} to embedded {@code AppUserSummaryDto}</li>
  *   <li>Entity → DTO: Maps {@code project} to embedded {@code ProjectSummaryDto}</li>
  *   <li>DTO → Entity: IDs are set separately in the service layer (not mapped here)</li>
  * </ul>
  *
  * <p><strong>Automatic Nested Object Mapping:</strong>
- * MapStruct automatically finds and uses the {@link #toProjectSummary(Project)} method
- * when mapping the {@code project} field from Task to TaskResponseDto.
+ * MapStruct automatically finds and uses mapping methods for nested objects:
+ * <ul>
+ *   <li>{@link AppUserMapper#toSummary} for appUser → AppUserSummaryDto</li>
+ *   <li>{@link #toProjectSummary} for project → ProjectSummaryDto</li>
+ * </ul>
  *
  * <p><strong>Why not map IDs to entities automatically?</strong>
  * MapStruct cannot automatically convert an ID (Long) to an entity (AppUser/Project).
@@ -41,10 +45,12 @@ import java.util.List;
  * @see TaskUpdateDto
  * @see TaskResponseDto
  * @see ProjectSummaryDto
+ * @see AppUserMapper
  */
 @Mapper(
     componentModel = "spring",
-    unmappedTargetPolicy = ReportingPolicy.WARN
+    unmappedTargetPolicy = ReportingPolicy.WARN,
+    uses = AppUserMapper.class
 )
 public interface TaskMapper {
 
@@ -85,19 +91,18 @@ public interface TaskMapper {
      *   <li>description → description</li>
      *   <li>status → status</li>
      *   <li>dueDate → dueDate</li>
-     *   <li>appUser.id → appUserId (explicit mapping)</li>
+     *   <li>appUser → appUser (uses {@link AppUserMapper#toSummary} via 'uses' attribute)</li>
      *   <li>project → project (uses {@link #toProjectSummary(Project)} automatically)</li>
      * </ul>
      *
      * <p><strong>Handling null relationships:</strong>
-     * If task.appUser is null, appUserId will be null.
-     * If task.project is null, project will be null.
+     * If task.appUser is null, appUser summary will be null.
+     * If task.project is null, project summary will be null.
      * MapStruct uses null-safe navigation by default.
      *
      * @param entity the Task entity
      * @return a DTO suitable for API responses
      */
-    @Mapping(source = "appUser.id", target = "appUserId")
     TaskResponseDto toResponseDto(Task entity);
 
     /**

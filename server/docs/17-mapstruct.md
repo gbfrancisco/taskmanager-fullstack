@@ -851,7 +851,7 @@ public TaskResponseDto getTask(@PathVariable Long id) {
 | **Map in service layer** (recommended) | Clean, predictable | Must return DTOs from service |
 | **Eager fetch** (`FetchType.EAGER`) | Simple | N+1 query problems, loads data you may not need |
 | **Join fetch in query** | Efficient, explicit | Custom query per use case |
-| **Entity graph** | Declarative, reusable | More complex setup |
+| **Entity graph** ([see doc](10-jpa-entity-graph.md)) | Declarative, reusable | More complex setup |
 
 **Join fetch example:**
 
