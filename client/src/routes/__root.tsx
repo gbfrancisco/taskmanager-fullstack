@@ -27,6 +27,8 @@ import { TanStackDevtools } from '@tanstack/react-devtools';
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
 import { Header } from '../components/Header';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { RouteErrorComponent } from '../components/RouteErrorComponent';
 
 import type { QueryClient } from '@tanstack/react-query';
 
@@ -50,9 +52,15 @@ interface MyRouterContext {
  * 1. Accepts typed context (MyRouterContext)
  * 2. Makes that context available to all child routes
  * 3. Renders the root layout component
+ *
+ * errorComponent:
+ * - Displayed when any child route fails to load
+ * - Can be overridden per-route if needed
+ * - Receives error info and reset function
  */
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  component: RootLayout
+  component: RootLayout,
+  errorComponent: RouteErrorComponent
 });
 
 /**
@@ -70,6 +78,10 @@ function RootLayout() {
       {/* Main content area */}
       <main>
         {/*
+         * ErrorBoundary wraps the Outlet to catch rendering errors.
+         * If any child route component throws during render,
+         * the ErrorBoundary catches it and shows a fallback UI.
+         *
          * <Outlet /> - The magic component
          *
          * This is where child routes render their content:
@@ -79,7 +91,9 @@ function RootLayout() {
          *
          * The Header stays in place, only this Outlet swaps content.
          */}
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Development tools - only visible in dev mode */}

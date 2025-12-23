@@ -18,7 +18,7 @@ This folder contains learning documentation for the React frontend, organized by
 | 05 | [API Client Setup](./05-api-client.md) | Complete | Fetch wrapper, error handling, types |
 | 06 | [Route Loaders](./06-route-loaders.md) | Pending | Prefetching data, loading states |
 | 07 | [Displaying Data](./07-displaying-data.md) | Pending | Lists, cards, conditional rendering |
-| 08 | [Error Handling](./08-error-handling.md) | Pending | Error boundaries, error states |
+| 08 | [Error Handling](./08-error-handling.md) | Complete | Error boundaries, error states |
 
 ### Phase 3: Interactivity
 | # | Topic | Status | Description |
@@ -55,4 +55,5 @@ This folder contains learning documentation for the React frontend, organized by
 | FE-06 | Forms & Mutations | Complete |
 | FE-07 | Form Validation (RHF + Zod) | Complete |
 | FE-08 | taskCount & Delete Warning | Complete |
-| FE-09 | Optimistic Updates | Next |
+| FE-09 | Error Handling | Complete |
+| FE-10 | TBD | Next |
