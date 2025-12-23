@@ -139,6 +139,7 @@ export interface Project {
   description: string | null;
   status: ProjectStatus;
   appUserId: number;
+  taskCount: number; // Computed field: number of tasks in this project
 }
 
 /**

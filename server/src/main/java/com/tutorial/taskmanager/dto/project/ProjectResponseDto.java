@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
  *   <li>description - Project description</li>
  *   <li>status - Current project status</li>
  *   <li>appUserId - ID of the project owner</li>
+ *   <li>taskCount - Number of tasks in this project (computed field)</li>
  * </ul>
  */
 @Data
@@ -36,4 +37,11 @@ public class ProjectResponseDto {
     private String description;
     private ProjectStatus status;
     private Long appUserId;
+
+    /**
+     * Number of tasks associated with this project.
+     * This is a computed field, populated by the service layer
+     * using an efficient COUNT query (not by loading all tasks).
+     */
+    private Long taskCount;
 }

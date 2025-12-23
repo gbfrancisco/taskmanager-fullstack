@@ -193,9 +193,17 @@ function ProjectDetailPage() {
                 <p className="text-red-800 font-medium">
                   Are you sure you want to delete this project?
                 </p>
-                <p className="text-red-600 text-sm mt-1">
-                  This will also affect any tasks assigned to this project.
-                </p>
+                {project.taskCount > 0 ? (
+                  <p className="text-red-600 text-sm mt-1">
+                    This project has {project.taskCount} task
+                    {project.taskCount !== 1 ? 's' : ''}. Deleting it will
+                    permanently remove all associated tasks.
+                  </p>
+                ) : (
+                  <p className="text-red-600 text-sm mt-1">
+                    This action cannot be undone.
+                  </p>
+                )}
                 <div className="mt-3 flex gap-3">
                   <button
                     onClick={handleDelete}

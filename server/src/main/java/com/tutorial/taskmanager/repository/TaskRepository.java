@@ -5,6 +5,8 @@ import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.model.Project;
 import com.tutorial.taskmanager.model.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -44,6 +46,26 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByProject(Project project);
 
     List<Task> findByProjectId(Long projectId);
+
+    // ==================== COUNT BY PROJECT ====================
+
+    /**
+     * Count tasks for a single project.
+     * Generates: SELECT COUNT(*) FROM task WHERE project_id = ?
+     */
+    long countByProjectId(Long projectId);
+
+    /**
+     * Batch count tasks for multiple projects.
+     * Returns a list of [projectId, count] pairs.
+     * Avoids N+1 queries when fetching task counts for many projects.
+     *
+     * Usage:
+     * List<Object[]> counts = taskRepository.countByProjectIds(projectIds);
+     * // counts = [[1L, 5L], [2L, 3L], ...] where first element is projectId, second is count
+     */
+    @Query("SELECT t.project.id, COUNT(t) FROM Task t WHERE t.project.id IN :projectIds GROUP BY t.project.id")
+    List<Object[]> countByProjectIds(@Param("projectIds") List<Long> projectIds);
 
     // ==================== FIND BY STATUS ====================
 

@@ -11,28 +11,77 @@ import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.model.Project;
 import com.tutorial.taskmanager.repository.AppUserRepository;
 import com.tutorial.taskmanager.repository.ProjectRepository;
+import com.tutorial.taskmanager.repository.TaskRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final AppUserRepository appUserRepository;
+    private final TaskRepository taskRepository;
     private final ProjectMapper projectMapper;
 
     public ProjectService(
             ProjectRepository projectRepository,
             AppUserRepository appUserRepository,
+            TaskRepository taskRepository,
             ProjectMapper projectMapper
     ) {
         this.projectRepository = projectRepository;
         this.appUserRepository = appUserRepository;
+        this.taskRepository = taskRepository;
         this.projectMapper = projectMapper;
+    }
+
+    // ==================== TASK COUNT ENRICHMENT ====================
+
+    /**
+     * Enrich a single DTO with task count.
+     * Uses a single COUNT query - efficient for single project lookups.
+     */
+    private ProjectResponseDto enrichWithTaskCount(ProjectResponseDto dto) {
+        if (dto != null && dto.getId() != null) {
+            dto.setTaskCount(taskRepository.countByProjectId(dto.getId()));
+        }
+        return dto;
+    }
+
+    /**
+     * Enrich multiple DTOs with task counts using a single batch query.
+     * Avoids N+1 problem when fetching many projects.
+     */
+    private List<ProjectResponseDto> enrichWithTaskCounts(List<ProjectResponseDto> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            return dtos;
+        }
+
+        // Extract project IDs
+        List<Long> projectIds = dtos.stream()
+            .map(ProjectResponseDto::getId)
+            .collect(Collectors.toList());
+
+        // Single batch query for all counts
+        List<Object[]> countResults = taskRepository.countByProjectIds(projectIds);
+
+        // Build map: projectId -> count
+        Map<Long, Long> countMap = countResults.stream()
+            .collect(Collectors.toMap(
+                row -> (Long) row[0],  // projectId
+                row -> (Long) row[1]   // count
+            ));
+
+        // Enrich each DTO (default to 0 if not in map = no tasks)
+        dtos.forEach(dto -> dto.setTaskCount(countMap.getOrDefault(dto.getId(), 0L)));
+
+        return dtos;
     }
 
     public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto) {
@@ -56,7 +105,8 @@ public class ProjectService {
         Project project = projectMapper.toEntity(projectCreateDto);
         project.setAppUser(appUser);
         project = projectRepository.save(project);
-        return projectMapper.toResponseDto(project);
+        // New project has 0 tasks, but use enrichWithTaskCount for consistency
+        return enrichWithTaskCount(projectMapper.toResponseDto(project));
     }
 
     @Transactional(readOnly = true)
@@ -65,7 +115,9 @@ public class ProjectService {
             throw new IllegalArgumentException("id is null");
         }
 
-        return projectRepository.findById(projectId).map(projectMapper::toResponseDto);
+        return projectRepository.findById(projectId)
+            .map(projectMapper::toResponseDto)
+            .map(this::enrichWithTaskCount);
     }
 
     @Transactional(readOnly = true)
@@ -76,12 +128,14 @@ public class ProjectService {
 
         return projectRepository.findById(projectId)
             .map(projectMapper::toResponseDto)
+            .map(this::enrichWithTaskCount)
             .orElseThrow(() -> new ResourceNotFoundException("project", projectId));
     }
 
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> findAll() {
-        return projectMapper.toResponseDtoList(projectRepository.findAll());
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findAll());
+        return enrichWithTaskCounts(dtos);
     }
 
     @Transactional(readOnly = true)
@@ -90,7 +144,8 @@ public class ProjectService {
             throw new IllegalArgumentException("appUserId is null");
         }
 
-        return projectMapper.toResponseDtoList(projectRepository.findByAppUserId(appUserId));
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findByAppUserId(appUserId));
+        return enrichWithTaskCounts(dtos);
     }
 
     @Transactional(readOnly = true)
@@ -99,7 +154,8 @@ public class ProjectService {
             throw new IllegalArgumentException("projectStatus is null");
         }
 
-        return projectMapper.toResponseDtoList(projectRepository.findByStatus(projectStatus));
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findByStatus(projectStatus));
+        return enrichWithTaskCounts(dtos);
     }
 
     @Transactional(readOnly = true)
@@ -112,7 +168,10 @@ public class ProjectService {
             throw new IllegalArgumentException("projectStatus is null");
         }
 
-        return projectMapper.toResponseDtoList(projectRepository.findByAppUserIdAndStatus(appUserId, projectStatus));
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
+            projectRepository.findByAppUserIdAndStatus(appUserId, projectStatus)
+        );
+        return enrichWithTaskCounts(dtos);
     }
 
     @Transactional(readOnly = true)
@@ -121,21 +180,25 @@ public class ProjectService {
             throw new IllegalArgumentException("nameQuery is empty");
         }
 
-        return projectMapper.toResponseDtoList(projectRepository.findByNameContainingIgnoreCase(nameQuery));
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
+            projectRepository.findByNameContainingIgnoreCase(nameQuery)
+        );
+        return enrichWithTaskCounts(dtos);
     }
 
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> findByAppUserIdAndNameContaining(Long appUserId, String nameQuery) {
         if (appUserId == null) {
-            throw new  IllegalArgumentException("appUserId is null");
+            throw new IllegalArgumentException("appUserId is null");
         }
 
         if (StringUtils.isEmpty(nameQuery)) {
-            throw new  IllegalArgumentException("nameQuery is empty");
+            throw new IllegalArgumentException("nameQuery is empty");
         }
 
         List<Project> projects = projectRepository.findByAppUserIdAndNameContainingIgnoreCase(appUserId, nameQuery);
-        return projectMapper.toResponseDtoList(projects);
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projects);
+        return enrichWithTaskCounts(dtos);
     }
 
     @Transactional(readOnly = true)
@@ -144,7 +207,9 @@ public class ProjectService {
             throw new IllegalArgumentException("name is empty");
         }
 
-        return projectRepository.findByName(name).map(projectMapper::toResponseDto);
+        return projectRepository.findByName(name)
+            .map(projectMapper::toResponseDto)
+            .map(this::enrichWithTaskCount);
     }
 
     public ProjectResponseDto updateProject(Long projectId, ProjectUpdateDto projectUpdateDto) {
@@ -169,7 +234,7 @@ public class ProjectService {
         }
 
         projectMapper.patchEntityFromDto(projectUpdateDto, projectToUpdate);
-        return projectMapper.toResponseDto(projectRepository.save(projectToUpdate));
+        return enrichWithTaskCount(projectMapper.toResponseDto(projectRepository.save(projectToUpdate)));
     }
 
     public void deleteProject(Long projectId) {
