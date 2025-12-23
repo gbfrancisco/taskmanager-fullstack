@@ -10,14 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TestIndexRouteImport } from './routes/test/index'
 import { Route as TasksIndexRouteImport } from './routes/tasks/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
+import { Route as TestRouteErrorRouteImport } from './routes/test/route-error'
 import { Route as TasksTaskIdRouteImport } from './routes/tasks/$taskId'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects/$projectId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestIndexRoute = TestIndexRouteImport.update({
+  id: '/test/',
+  path: '/test/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TasksIndexRoute = TasksIndexRouteImport.update({
@@ -28,6 +35,11 @@ const TasksIndexRoute = TasksIndexRouteImport.update({
 const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   id: '/projects/',
   path: '/projects/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestRouteErrorRoute = TestRouteErrorRouteImport.update({
+  id: '/test/route-error',
+  path: '/test/route-error',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TasksTaskIdRoute = TasksTaskIdRouteImport.update({
@@ -45,23 +57,29 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
+  '/test/route-error': typeof TestRouteErrorRoute
   '/projects': typeof ProjectsIndexRoute
   '/tasks': typeof TasksIndexRoute
+  '/test': typeof TestIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
+  '/test/route-error': typeof TestRouteErrorRoute
   '/projects': typeof ProjectsIndexRoute
   '/tasks': typeof TasksIndexRoute
+  '/test': typeof TestIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
+  '/test/route-error': typeof TestRouteErrorRoute
   '/projects/': typeof ProjectsIndexRoute
   '/tasks/': typeof TasksIndexRoute
+  '/test/': typeof TestIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -69,25 +87,38 @@ export interface FileRouteTypes {
     | '/'
     | '/projects/$projectId'
     | '/tasks/$taskId'
+    | '/test/route-error'
     | '/projects'
     | '/tasks'
+    | '/test'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/projects/$projectId' | '/tasks/$taskId' | '/projects' | '/tasks'
+  to:
+    | '/'
+    | '/projects/$projectId'
+    | '/tasks/$taskId'
+    | '/test/route-error'
+    | '/projects'
+    | '/tasks'
+    | '/test'
   id:
     | '__root__'
     | '/'
     | '/projects/$projectId'
     | '/tasks/$taskId'
+    | '/test/route-error'
     | '/projects/'
     | '/tasks/'
+    | '/test/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   TasksTaskIdRoute: typeof TasksTaskIdRoute
+  TestRouteErrorRoute: typeof TestRouteErrorRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   TasksIndexRoute: typeof TasksIndexRoute
+  TestIndexRoute: typeof TestIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -97,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/test/': {
+      id: '/test/'
+      path: '/test'
+      fullPath: '/test'
+      preLoaderRoute: typeof TestIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tasks/': {
@@ -111,6 +149,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof ProjectsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/test/route-error': {
+      id: '/test/route-error'
+      path: '/test/route-error'
+      fullPath: '/test/route-error'
+      preLoaderRoute: typeof TestRouteErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tasks/$taskId': {
@@ -134,8 +179,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   TasksTaskIdRoute: TasksTaskIdRoute,
+  TestRouteErrorRoute: TestRouteErrorRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   TasksIndexRoute: TasksIndexRoute,
+  TestIndexRoute: TestIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
