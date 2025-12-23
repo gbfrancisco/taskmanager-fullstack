@@ -90,7 +90,7 @@ function TaskDetailPage() {
   // Invalid ID handling
   if (isNaN(id)) {
     return (
-      <div className="p-6">
+      <div className="p-6 max-w-3xl mx-auto">
         <BackLink />
         <div className="bg-danger-bg border-comic p-4 mt-4">
           <p className="text-danger font-medium">Invalid task ID</p>
@@ -105,9 +105,9 @@ function TaskDetailPage() {
   // Loading state
   if (isPending) {
     return (
-      <div className="p-6">
+      <div className="p-6 max-w-3xl mx-auto">
         <BackLink />
-        <div className="bg-paper p-6 border-comic shadow-comic-lg mt-4 animate-pulse">
+        <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4 animate-pulse">
           <div className="h-7 bg-paper-dark w-1/2 mb-4"></div>
           <div className="h-4 bg-paper-dark w-3/4 mb-2"></div>
           <div className="h-4 bg-paper-dark w-1/2"></div>
@@ -119,7 +119,7 @@ function TaskDetailPage() {
   // Error state
   if (isError) {
     return (
-      <div className="p-6">
+      <div className="p-6 max-w-3xl mx-auto">
         <BackLink />
         <div className="bg-danger-bg border-comic p-4 mt-4">
           <p className="text-danger font-medium">Failed to load task</p>
@@ -133,10 +133,10 @@ function TaskDetailPage() {
 
   // Success state - render task details or edit form
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-3xl mx-auto">
       <BackLink />
 
-      <div className="bg-paper p-6 border-comic shadow-comic-lg mt-4">
+      <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4">
         {isEditing ? (
           // Edit mode - show the form
           <>

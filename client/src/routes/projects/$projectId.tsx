@@ -88,7 +88,7 @@ function ProjectDetailPage() {
   // Invalid ID
   if (isNaN(id)) {
     return (
-      <div className="p-6">
+      <div className="p-6 max-w-3xl mx-auto">
         <BackLink />
         <div className="bg-danger-bg border-comic p-4 mt-4">
           <p className="text-danger font-medium">Invalid project ID</p>
@@ -103,9 +103,9 @@ function ProjectDetailPage() {
   // Loading state
   if (isProjectPending) {
     return (
-      <div className="p-6">
+      <div className="p-6 max-w-3xl mx-auto">
         <BackLink />
-        <div className="bg-paper p-6 border-comic shadow-comic-lg mt-4 animate-pulse">
+        <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4 animate-pulse">
           <div className="h-7 bg-paper-dark w-1/2 mb-4"></div>
           <div className="h-4 bg-paper-dark w-3/4 mb-2"></div>
           <div className="h-4 bg-paper-dark w-1/2"></div>
@@ -117,7 +117,7 @@ function ProjectDetailPage() {
   // Error state
   if (isProjectError) {
     return (
-      <div className="p-6">
+      <div className="p-6 max-w-3xl mx-auto">
         <BackLink />
         <div className="bg-danger-bg border-comic p-4 mt-4">
           <p className="text-danger font-medium">Failed to load project</p>
@@ -133,11 +133,11 @@ function ProjectDetailPage() {
 
   // Success state
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-3xl mx-auto">
       <BackLink />
 
       {/* Project details card */}
-      <div className="bg-paper p-6 border-comic shadow-comic-lg mt-4 mb-6">
+      <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4 mb-6">
         {isEditing ? (
           // Edit mode
           <>
@@ -336,7 +336,7 @@ function TaskRow({ task }: { task: Task }) {
     <Link
       to="/tasks/$taskId"
       params={{ taskId: String(task.id) }}
-      className="block bg-paper p-3 border-comic shadow-comic-sm shadow-comic-interactive"
+      className="block bg-paper p-3 border-comic shadow-comic-soft-interactive"
     >
       <div className="flex items-center justify-between">
         <span className="text-sm text-ink">{task.title}</span>

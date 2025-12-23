@@ -57,6 +57,10 @@
   --shadow-comic-sm: 2px 2px 0 var(--color-ink);
   --shadow-comic: 4px 4px 0 var(--color-ink);
   --shadow-comic-lg: 6px 6px 0 var(--color-ink);
+
+  /* Soft shadows - grey for larger containers */
+  --shadow-comic-soft: 4px 4px 0 #999;
+  --shadow-comic-soft-lg: 6px 6px 0 #999;
 }
 
 /* ============================================================
@@ -111,6 +115,14 @@ code {
   box-shadow: var(--shadow-comic-lg);
 }
 
+.shadow-comic-soft {
+  box-shadow: var(--shadow-comic-soft);
+}
+
+.shadow-comic-soft-lg {
+  box-shadow: var(--shadow-comic-soft-lg);
+}
+
 /* Interactive shadow - press effect on hover/active */
 .shadow-comic-interactive {
   box-shadow: var(--shadow-comic);
@@ -123,6 +135,22 @@ code {
 }
 
 .shadow-comic-interactive:active {
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+/* Soft interactive shadow - grey version for cards */
+.shadow-comic-soft-interactive {
+  box-shadow: var(--shadow-comic-soft);
+  transition: box-shadow 0.1s ease-out, transform 0.1s ease-out;
+}
+
+.shadow-comic-soft-interactive:hover {
+  box-shadow: 2px 2px 0 #999;
+  transform: translate(2px, 2px);
+}
+
+.shadow-comic-soft-interactive:active {
   box-shadow: none;
   transform: translate(4px, 4px);
 }

@@ -83,8 +83,8 @@ function ProjectsPage() {
       </div>
 
       {/* Create Project Form */}
-      {showCreateForm && (
-        <div className="bg-paper border-comic shadow-comic p-6 mb-6">
+      {showCreateForm ? (
+        <div className="bg-paper border-comic shadow-comic-soft-lg p-6 max-w-3xl mx-auto">
           <h2 className="text-display text-xl text-ink mb-4">
             Create New Project
           </h2>
@@ -93,9 +93,7 @@ function ProjectsPage() {
             onCancel={() => setShowCreateForm(false)}
           />
         </div>
-      )}
-
-      {projects.length === 0 ? (
+      ) : projects.length === 0 ? (
         <div className="bg-paper-dark border-comic p-6 text-center">
           <p className="text-ink-soft">
             No projects yet. Create your first project!
@@ -121,7 +119,7 @@ function ProjectCard({ project }: { project: Project }) {
     <Link
       to="/projects/$projectId"
       params={{ projectId: String(project.id) }}
-      className="bg-paper p-4 border-comic shadow-comic shadow-comic-interactive"
+      className="bg-paper p-4 border-comic shadow-comic-soft-interactive"
     >
       <h3 className="text-display text-xl text-ink mb-2">{project.name}</h3>
 

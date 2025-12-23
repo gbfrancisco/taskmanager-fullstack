@@ -73,15 +73,16 @@ function TasksPage() {
     return (
       <div className="p-6">
         <h1 className="text-display text-4xl text-ink mb-6">Tasks</h1>
-        <div className="space-y-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Skeleton loading cards */}
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
               className="bg-paper p-4 border-comic shadow-comic-sm animate-pulse"
             >
-              <div className="h-5 bg-paper-dark w-1/3 mb-2"></div>
-              <div className="h-4 bg-paper-dark w-1/4"></div>
+              <div className="h-5 bg-paper-dark w-2/3 mb-2"></div>
+              <div className="h-4 bg-paper-dark w-full mb-3"></div>
+              <div className="h-4 bg-paper-dark w-1/2"></div>
             </div>
           ))}
         </div>
@@ -118,8 +119,8 @@ function TasksPage() {
         </button>
       </div>
       {/* Create Task Form - shown when showCreateForm is true */}
-      {showCreateForm && (
-        <div className="bg-paper border-comic shadow-comic p-6 mb-6">
+      {showCreateForm ? (
+        <div className="bg-paper border-comic shadow-comic-soft-lg p-6 max-w-3xl mx-auto">
           <h2 className="text-display text-xl text-ink mb-4">
             Create New Task
           </h2>
@@ -128,15 +129,14 @@ function TasksPage() {
             onCancel={() => setShowCreateForm(false)}
           />
         </div>
-      )}
-      {tasks.length === 0 ? (
+      ) : tasks.length === 0 ? (
         // Empty state
         <div className="bg-paper-dark border-comic p-6 text-center">
           <p className="text-ink-soft">No tasks yet. Create your first task!</p>
         </div>
       ) : (
-        // Task list
-        <div className="space-y-4">
+        // Task grid
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}
@@ -161,7 +161,7 @@ function TaskCard({ task }: { task: Task }) {
     <Link
       to="/tasks/$taskId"
       params={{ taskId: String(task.id) }}
-      className="block bg-paper p-4 border-comic shadow-comic shadow-comic-interactive"
+      className="block bg-paper p-4 border-comic shadow-comic-soft-interactive"
     >
       <div className="flex items-start justify-between">
         <div>
