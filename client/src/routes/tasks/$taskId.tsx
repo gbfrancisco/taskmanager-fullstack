@@ -92,9 +92,9 @@ function TaskDetailPage() {
     return (
       <div className="p-6">
         <BackLink />
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-          <p className="text-red-800 font-medium">Invalid task ID</p>
-          <p className="text-red-600 text-sm mt-1">
+        <div className="bg-danger-bg border-comic p-4 mt-4">
+          <p className="text-danger font-medium">Invalid task ID</p>
+          <p className="text-danger text-sm mt-1">
             "{taskId}" is not a valid task ID
           </p>
         </div>
@@ -107,10 +107,10 @@ function TaskDetailPage() {
     return (
       <div className="p-6">
         <BackLink />
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-4 animate-pulse">
-          <div className="h-7 bg-gray-200 rounded w-1/2 mb-4"></div>
-          <div className="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+        <div className="bg-paper p-6 border-comic shadow-comic-lg mt-4 animate-pulse">
+          <div className="h-7 bg-paper-dark w-1/2 mb-4"></div>
+          <div className="h-4 bg-paper-dark w-3/4 mb-2"></div>
+          <div className="h-4 bg-paper-dark w-1/2"></div>
         </div>
       </div>
     );
@@ -121,9 +121,9 @@ function TaskDetailPage() {
     return (
       <div className="p-6">
         <BackLink />
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-          <p className="text-red-800 font-medium">Failed to load task</p>
-          <p className="text-red-600 text-sm mt-1">
+        <div className="bg-danger-bg border-comic p-4 mt-4">
+          <p className="text-danger font-medium">Failed to load task</p>
+          <p className="text-danger text-sm mt-1">
             {error instanceof Error ? error.message : 'Unknown error occurred'}
           </p>
         </div>
@@ -136,11 +136,11 @@ function TaskDetailPage() {
     <div className="p-6">
       <BackLink />
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-4">
+      <div className="bg-paper p-6 border-comic shadow-comic-lg mt-4">
         {isEditing ? (
           // Edit mode - show the form
           <>
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            <h2 className="text-display text-xl text-ink mb-4">
               Edit Task
             </h2>
             <TaskForm
@@ -154,19 +154,19 @@ function TaskDetailPage() {
           <>
             {/* Header with title and status */}
             <div className="flex items-start justify-between mb-4">
-              <h1 className="text-2xl font-bold text-gray-800">{task.title}</h1>
+              <h1 className="text-display text-3xl text-ink">{task.title}</h1>
               <StatusBadge status={task.status} />
             </div>
 
             {/* Description */}
             {task.description ? (
-              <p className="text-gray-600 mb-6">{task.description}</p>
+              <p className="text-ink-soft mb-6">{task.description}</p>
             ) : (
-              <p className="text-gray-400 italic mb-6">No description</p>
+              <p className="text-ink-light italic mb-6">No description</p>
             )}
 
             {/* Metadata */}
-            <div className="border-t border-gray-100 pt-4 space-y-2">
+            <div className="border-t-2 border-ink pt-4 space-y-2">
               <MetadataRow label="Task ID" value={String(task.id)} />
               <MetadataRow label="User ID" value={String(task.appUserId)} />
               {task.projectId && (
@@ -184,16 +184,16 @@ function TaskDetailPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="border-t border-gray-100 pt-4 mt-4 flex gap-3">
+            <div className="border-t-2 border-ink pt-4 mt-4 flex gap-3">
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="px-6 py-3 bg-amber-vivid text-ink border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
               >
                 Edit Task
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="px-6 py-3 bg-danger text-paper border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
               >
                 Delete Task
               </button>
@@ -201,31 +201,31 @@ function TaskDetailPage() {
 
             {/* Delete Confirmation Dialog */}
             {showDeleteConfirm && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-800 font-medium">
+              <div className="mt-4 p-4 bg-danger-bg border-comic">
+                <p className="text-ink font-medium">
                   Are you sure you want to delete this task?
                 </p>
-                <p className="text-red-600 text-sm mt-1">
+                <p className="text-danger text-sm mt-1">
                   This action cannot be undone.
                 </p>
                 <div className="mt-3 flex gap-3">
                   <button
                     onClick={handleDelete}
                     disabled={deleteMutation.isPending}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                    className="px-6 py-3 bg-danger text-paper border-comic shadow-comic text-display tracking-wide shadow-comic-interactive disabled:opacity-50"
                   >
                     {deleteMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
                     disabled={deleteMutation.isPending}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    className="px-6 py-3 bg-paper text-ink border-comic shadow-comic text-display tracking-wide shadow-comic-interactive"
                   >
                     Cancel
                   </button>
                 </div>
                 {deleteMutation.isError && (
-                  <p className="text-red-600 text-sm mt-2">
+                  <p className="text-danger text-sm mt-2">
                     {deleteMutation.error instanceof Error
                       ? deleteMutation.error.message
                       : 'Failed to delete task'}
@@ -251,7 +251,7 @@ function BackLink() {
   return (
     <Link
       to="/tasks"
-      className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+      className="text-amber-dark text-display hover:text-amber-vivid flex items-center gap-1"
     >
       <span>←</span>
       <span>Back to tasks</span>
@@ -267,10 +267,10 @@ function BackLink() {
  */
 function StatusBadge({ status }: { status: TaskStatus }) {
   const styles: Record<TaskStatus, string> = {
-    TODO: 'bg-gray-100 text-gray-800',
-    IN_PROGRESS: 'bg-blue-100 text-blue-800',
-    COMPLETED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-red-100 text-red-800'
+    TODO: 'bg-status-todo',
+    IN_PROGRESS: 'bg-status-progress',
+    COMPLETED: 'bg-status-complete',
+    CANCELLED: 'bg-status-cancelled'
   };
 
   const labels: Record<TaskStatus, string> = {
@@ -281,7 +281,9 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   };
 
   return (
-    <span className={`px-2 py-1 text-xs rounded ${styles[status]}`}>
+    <span
+      className={`px-2 py-1 text-xs text-ink border-2 border-ink shadow-comic-sm ${styles[status]}`}
+    >
       {labels[status]}
     </span>
   );
@@ -293,8 +295,8 @@ function StatusBadge({ status }: { status: TaskStatus }) {
 function MetadataRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center text-sm">
-      <span className="text-gray-500 w-24">{label}:</span>
-      <span className="text-gray-800 font-mono">{value}</span>
+      <span className="text-ink-light w-24">{label}:</span>
+      <span className="text-ink font-mono">{value}</span>
     </div>
   );
 }

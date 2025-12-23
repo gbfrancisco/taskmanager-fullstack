@@ -176,21 +176,21 @@ export function ProjectForm({
       <div>
         <label
           htmlFor="name"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-display text-ink mb-1"
         >
-          Project Name <span className="text-red-500">*</span>
+          Project Name <span className="text-danger">*</span>
         </label>
         <input
           type="text"
           id="name"
           {...register('name')}
-          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            errors.name ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
+            errors.name ? 'border-danger' : ''
           }`}
           placeholder="Enter project name"
         />
         {errors.name && (
-          <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>
+          <p className="text-danger text-sm mt-1">{errors.name.message}</p>
         )}
       </div>
 
@@ -198,7 +198,7 @@ export function ProjectForm({
       <div>
         <label
           htmlFor="description"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-display text-ink mb-1"
         >
           Description
         </label>
@@ -206,13 +206,13 @@ export function ProjectForm({
           id="description"
           {...register('description')}
           rows={3}
-          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            errors.description ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
+            errors.description ? 'border-danger' : ''
           }`}
           placeholder="Enter project description (optional)"
         />
         {errors.description && (
-          <p className="text-red-600 text-sm mt-1">
+          <p className="text-danger text-sm mt-1">
             {errors.description.message}
           </p>
         )}
@@ -222,14 +222,14 @@ export function ProjectForm({
       <div>
         <label
           htmlFor="status"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-display text-ink mb-1"
         >
           Status
         </label>
         <select
           id="status"
           {...register('status')}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2"
         >
           {PROJECT_STATUSES.map((s) => (
             <option key={s.value} value={s.value}>
@@ -241,8 +241,8 @@ export function ProjectForm({
 
       {/* Server Error Message - show errors from mutations */}
       {mutation.isError && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-3">
-          <p className="text-red-800 text-sm">
+        <div className="bg-danger-bg border-comic p-4">
+          <p className="text-danger text-sm font-medium">
             {mutation.error instanceof Error
               ? mutation.error.message
               : 'An error occurred. Please try again.'}
@@ -255,7 +255,7 @@ export function ProjectForm({
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-amber-vivid text-ink border-comic shadow-comic py-3 px-6 text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending
             ? 'Saving...'
@@ -269,7 +269,7 @@ export function ProjectForm({
             type="button"
             onClick={onCancel}
             disabled={isPending}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            className="px-6 py-3 bg-paper text-ink border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 disabled:opacity-50"
           >
             Cancel
           </button>

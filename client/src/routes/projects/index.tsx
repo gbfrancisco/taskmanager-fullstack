@@ -36,16 +36,16 @@ function ProjectsPage() {
   if (isPending) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Projects</h1>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <h1 className="text-display text-4xl text-ink mb-6">Projects</h1>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 animate-pulse"
+              className="bg-paper p-4 border-comic shadow-comic-sm animate-pulse"
             >
-              <div className="h-5 bg-gray-200 rounded w-2/3 mb-2"></div>
-              <div className="h-4 bg-gray-100 rounded w-full mb-3"></div>
-              <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+              <div className="h-5 bg-paper-dark w-2/3 mb-2"></div>
+              <div className="h-4 bg-paper-dark w-full mb-3"></div>
+              <div className="h-4 bg-paper-dark w-1/2"></div>
             </div>
           ))}
         </div>
@@ -57,10 +57,10 @@ function ProjectsPage() {
   if (isError) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Projects</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 font-medium">Failed to load projects</p>
-          <p className="text-red-600 text-sm mt-1">
+        <h1 className="text-display text-4xl text-ink mb-6">Projects</h1>
+        <div className="bg-danger-bg border-comic p-4">
+          <p className="text-danger font-medium">Failed to load projects</p>
+          <p className="text-danger text-sm mt-1">
             {error instanceof Error ? error.message : 'Unknown error occurred'}
           </p>
         </div>
@@ -72,11 +72,11 @@ function ProjectsPage() {
   return (
     <div className="p-6">
       {/* Header with title and create button */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Projects</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-display text-4xl text-ink">Projects</h1>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="bg-amber-vivid text-ink px-6 py-3 border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
         >
           {showCreateForm ? 'Cancel' : '+ New Project'}
         </button>
@@ -84,8 +84,8 @@ function ProjectsPage() {
 
       {/* Create Project Form */}
       {showCreateForm && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">
+        <div className="bg-paper border-comic shadow-comic p-6 mb-6">
+          <h2 className="text-display text-xl text-ink mb-4">
             Create New Project
           </h2>
           <ProjectForm
@@ -96,13 +96,13 @@ function ProjectsPage() {
       )}
 
       {projects.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <p className="text-gray-600">
+        <div className="bg-paper-dark border-comic p-6 text-center">
+          <p className="text-ink-soft">
             No projects yet. Create your first project!
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
             <ProjectCard key={project.id} project={project} />
           ))}
@@ -121,20 +121,24 @@ function ProjectCard({ project }: { project: Project }) {
     <Link
       to="/projects/$projectId"
       params={{ projectId: String(project.id) }}
-      className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+      className="bg-paper p-4 border-comic shadow-comic shadow-comic-interactive"
     >
-      <h3 className="font-semibold text-gray-800 mb-2">{project.name}</h3>
+      <h3 className="text-display text-xl text-ink mb-2">{project.name}</h3>
 
       {project.description ? (
-        <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+        <p className="text-sm text-ink-soft mb-3 line-clamp-2">
           {project.description}
         </p>
       ) : (
-        <p className="text-sm text-gray-400 italic mb-3">No description</p>
+        <p className="text-sm text-ink-light italic mb-3">No description</p>
       )}
 
       <div className="flex justify-between items-center">
-        <span className="text-xs text-gray-400">ID: {project.id}</span>
+        <span className="text-xs text-ink-light">
+          {project.taskCount !== undefined && project.taskCount > 0
+            ? `${project.taskCount} task${project.taskCount !== 1 ? 's' : ''}`
+            : 'No tasks'}
+        </span>
         <StatusBadge status={project.status} />
       </div>
     </Link>
@@ -147,11 +151,11 @@ function ProjectCard({ project }: { project: Project }) {
 
 function StatusBadge({ status }: { status: ProjectStatus }) {
   const styles: Record<ProjectStatus, string> = {
-    PLANNING: 'bg-yellow-100 text-yellow-800',
-    ACTIVE: 'bg-green-100 text-green-800',
-    ON_HOLD: 'bg-orange-100 text-orange-800',
-    COMPLETED: 'bg-blue-100 text-blue-800',
-    CANCELLED: 'bg-red-100 text-red-800'
+    PLANNING: 'bg-status-planning',
+    ACTIVE: 'bg-status-active',
+    ON_HOLD: 'bg-status-on-hold',
+    COMPLETED: 'bg-status-completed',
+    CANCELLED: 'bg-status-cancelled'
   };
 
   const labels: Record<ProjectStatus, string> = {
@@ -163,7 +167,9 @@ function StatusBadge({ status }: { status: ProjectStatus }) {
   };
 
   return (
-    <span className={`px-2 py-1 text-xs rounded ${styles[status]}`}>
+    <span
+      className={`px-2 py-1 text-xs text-ink border-2 border-ink shadow-comic-sm ${styles[status]}`}
+    >
       {labels[status]}
     </span>
   );

@@ -90,9 +90,9 @@ function ProjectDetailPage() {
     return (
       <div className="p-6">
         <BackLink />
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-          <p className="text-red-800 font-medium">Invalid project ID</p>
-          <p className="text-red-600 text-sm mt-1">
+        <div className="bg-danger-bg border-comic p-4 mt-4">
+          <p className="text-danger font-medium">Invalid project ID</p>
+          <p className="text-danger text-sm mt-1">
             "{projectId}" is not a valid project ID
           </p>
         </div>
@@ -105,10 +105,10 @@ function ProjectDetailPage() {
     return (
       <div className="p-6">
         <BackLink />
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-4 animate-pulse">
-          <div className="h-7 bg-gray-200 rounded w-1/2 mb-4"></div>
-          <div className="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+        <div className="bg-paper p-6 border-comic shadow-comic-lg mt-4 animate-pulse">
+          <div className="h-7 bg-paper-dark w-1/2 mb-4"></div>
+          <div className="h-4 bg-paper-dark w-3/4 mb-2"></div>
+          <div className="h-4 bg-paper-dark w-1/2"></div>
         </div>
       </div>
     );
@@ -119,9 +119,9 @@ function ProjectDetailPage() {
     return (
       <div className="p-6">
         <BackLink />
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-          <p className="text-red-800 font-medium">Failed to load project</p>
-          <p className="text-red-600 text-sm mt-1">
+        <div className="bg-danger-bg border-comic p-4 mt-4">
+          <p className="text-danger font-medium">Failed to load project</p>
+          <p className="text-danger text-sm mt-1">
             {projectError instanceof Error
               ? projectError.message
               : 'Unknown error occurred'}
@@ -137,11 +137,11 @@ function ProjectDetailPage() {
       <BackLink />
 
       {/* Project details card */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-4 mb-6">
+      <div className="bg-paper p-6 border-comic shadow-comic-lg mt-4 mb-6">
         {isEditing ? (
           // Edit mode
           <>
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            <h2 className="text-display text-xl text-ink mb-4">
               Edit Project
             </h2>
             <ProjectForm
@@ -154,34 +154,34 @@ function ProjectDetailPage() {
           // View mode
           <>
             <div className="flex items-start justify-between mb-4">
-              <h1 className="text-2xl font-bold text-gray-800">
+              <h1 className="text-display text-3xl text-ink">
                 {project.name}
               </h1>
               <ProjectStatusBadge status={project.status} />
             </div>
 
             {project.description ? (
-              <p className="text-gray-600 mb-6">{project.description}</p>
+              <p className="text-ink-soft mb-6">{project.description}</p>
             ) : (
-              <p className="text-gray-400 italic mb-6">No description</p>
+              <p className="text-ink-light italic mb-6">No description</p>
             )}
 
-            <div className="border-t border-gray-100 pt-4 space-y-2">
+            <div className="border-t-2 border-ink pt-4 space-y-2">
               <MetadataRow label="Project ID" value={String(project.id)} />
               <MetadataRow label="Owner ID" value={String(project.appUserId)} />
             </div>
 
             {/* Action Buttons */}
-            <div className="border-t border-gray-100 pt-4 mt-4 flex gap-3">
+            <div className="border-t-2 border-ink pt-4 mt-4 flex gap-3">
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="px-6 py-3 bg-amber-vivid text-ink border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
               >
                 Edit Project
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="px-6 py-3 bg-danger text-paper border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
               >
                 Delete Project
               </button>
@@ -189,18 +189,18 @@ function ProjectDetailPage() {
 
             {/* Delete Confirmation */}
             {showDeleteConfirm && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-800 font-medium">
+              <div className="mt-4 p-4 bg-danger-bg border-comic">
+                <p className="text-ink font-medium">
                   Are you sure you want to delete this project?
                 </p>
                 {project.taskCount > 0 ? (
-                  <p className="text-red-600 text-sm mt-1">
+                  <p className="text-danger text-sm mt-1">
                     This project has {project.taskCount} task
                     {project.taskCount !== 1 ? 's' : ''}. Deleting it will
                     permanently remove all associated tasks.
                   </p>
                 ) : (
-                  <p className="text-red-600 text-sm mt-1">
+                  <p className="text-danger text-sm mt-1">
                     This action cannot be undone.
                   </p>
                 )}
@@ -208,20 +208,20 @@ function ProjectDetailPage() {
                   <button
                     onClick={handleDelete}
                     disabled={deleteMutation.isPending}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                    className="px-6 py-3 bg-danger text-paper border-comic shadow-comic text-display tracking-wide shadow-comic-interactive disabled:opacity-50"
                   >
                     {deleteMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
                     disabled={deleteMutation.isPending}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    className="px-6 py-3 bg-paper text-ink border-comic shadow-comic text-display tracking-wide shadow-comic-interactive"
                   >
                     Cancel
                   </button>
                 </div>
                 {deleteMutation.isError && (
-                  <p className="text-red-600 text-sm mt-2">
+                  <p className="text-danger text-sm mt-2">
                     {deleteMutation.error instanceof Error
                       ? deleteMutation.error.message
                       : 'Failed to delete project'}
@@ -235,34 +235,34 @@ function ProjectDetailPage() {
 
       {/* Project tasks section */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">
+        <h2 className="text-display text-2xl text-ink mb-4">
           Project Tasks
         </h2>
 
         {isTasksPending ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="bg-gray-50 p-3 rounded border border-gray-200 animate-pulse"
+                className="bg-paper p-3 border-comic shadow-comic-sm animate-pulse"
               >
-                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                <div className="h-4 bg-paper-dark w-1/3"></div>
               </div>
             ))}
           </div>
         ) : isTasksError ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p className="text-red-600 text-sm">Failed to load tasks</p>
+          <div className="bg-danger-bg border-comic p-3">
+            <p className="text-danger text-sm">Failed to load tasks</p>
           </div>
         ) : tasks && tasks.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {tasks.map((task) => (
               <TaskRow key={task.id} task={task} />
             ))}
           </div>
         ) : (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-            <p className="text-gray-500 text-sm">
+          <div className="bg-paper-dark border-comic p-4 text-center">
+            <p className="text-ink-soft text-sm">
               No tasks in this project yet
             </p>
           </div>
@@ -280,7 +280,7 @@ function BackLink() {
   return (
     <Link
       to="/projects"
-      className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+      className="text-amber-dark text-display hover:text-amber-vivid flex items-center gap-1"
     >
       <span>←</span>
       <span>Back to projects</span>
@@ -290,11 +290,11 @@ function BackLink() {
 
 function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
   const styles: Record<ProjectStatus, string> = {
-    PLANNING: 'bg-yellow-100 text-yellow-800',
-    ACTIVE: 'bg-green-100 text-green-800',
-    ON_HOLD: 'bg-orange-100 text-orange-800',
-    COMPLETED: 'bg-blue-100 text-blue-800',
-    CANCELLED: 'bg-red-100 text-red-800'
+    PLANNING: 'bg-status-planning',
+    ACTIVE: 'bg-status-active',
+    ON_HOLD: 'bg-status-on-hold',
+    COMPLETED: 'bg-status-completed',
+    CANCELLED: 'bg-status-cancelled'
   };
 
   const labels: Record<ProjectStatus, string> = {
@@ -306,7 +306,9 @@ function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
   };
 
   return (
-    <span className={`px-2 py-1 text-xs rounded ${styles[status]}`}>
+    <span
+      className={`px-2 py-1 text-xs text-ink border-2 border-ink shadow-comic-sm ${styles[status]}`}
+    >
       {labels[status]}
     </span>
   );
@@ -314,14 +316,16 @@ function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
 
 function TaskStatusBadge({ status }: { status: TaskStatus }) {
   const styles: Record<TaskStatus, string> = {
-    TODO: 'bg-gray-100 text-gray-800',
-    IN_PROGRESS: 'bg-blue-100 text-blue-800',
-    COMPLETED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-red-100 text-red-800'
+    TODO: 'bg-status-todo',
+    IN_PROGRESS: 'bg-status-progress',
+    COMPLETED: 'bg-status-complete',
+    CANCELLED: 'bg-status-cancelled'
   };
 
   return (
-    <span className={`px-2 py-0.5 text-xs rounded ${styles[status]}`}>
+    <span
+      className={`px-2 py-0.5 text-xs text-ink border-2 border-ink shadow-comic-sm ${styles[status]}`}
+    >
       {status.replace('_', ' ')}
     </span>
   );
@@ -332,10 +336,10 @@ function TaskRow({ task }: { task: Task }) {
     <Link
       to="/tasks/$taskId"
       params={{ taskId: String(task.id) }}
-      className="block bg-gray-50 p-3 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
+      className="block bg-paper p-3 border-comic shadow-comic-sm shadow-comic-interactive"
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-700">{task.title}</span>
+        <span className="text-sm text-ink">{task.title}</span>
         <TaskStatusBadge status={task.status} />
       </div>
     </Link>
@@ -345,8 +349,8 @@ function TaskRow({ task }: { task: Task }) {
 function MetadataRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center text-sm">
-      <span className="text-gray-500 w-24">{label}:</span>
-      <span className="text-gray-800 font-mono">{value}</span>
+      <span className="text-ink-light w-24">{label}:</span>
+      <span className="text-ink font-mono">{value}</span>
     </div>
   );
 }

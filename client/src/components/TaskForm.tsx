@@ -358,29 +358,21 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       <div>
         <label
           htmlFor="title"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-display text-ink mb-1"
         >
-          Title <span className="text-red-500">*</span>
+          Title <span className="text-danger">*</span>
         </label>
-        {/*
-          register('title') returns:
-          - name: 'title'
-          - ref: for DOM access
-          - onChange: updates form state
-          - onBlur: triggers validation
-        */}
         <input
           type="text"
           id="title"
           {...register('title')}
-          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            errors.title ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
+            errors.title ? 'border-danger' : ''
           }`}
           placeholder="Enter task title"
         />
-        {/* Error message - shown only when there's an error */}
         {errors.title && (
-          <p className="text-red-600 text-sm mt-1">{errors.title.message}</p>
+          <p className="text-danger text-sm mt-1">{errors.title.message}</p>
         )}
       </div>
 
@@ -388,7 +380,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       <div>
         <label
           htmlFor="description"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-display text-ink mb-1"
         >
           Description
         </label>
@@ -396,13 +388,13 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
           id="description"
           {...register('description')}
           rows={3}
-          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            errors.description ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
+            errors.description ? 'border-danger' : ''
           }`}
           placeholder="Enter task description (optional)"
         />
         {errors.description && (
-          <p className="text-red-600 text-sm mt-1">
+          <p className="text-danger text-sm mt-1">
             {errors.description.message}
           </p>
         )}
@@ -412,14 +404,14 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       <div>
         <label
           htmlFor="status"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-display text-ink mb-1"
         >
           Status
         </label>
         <select
           id="status"
           {...register('status')}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2"
         >
           {TASK_STATUSES.map((s) => (
             <option key={s.value} value={s.value}>
@@ -433,23 +425,17 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       <div>
         <label
           htmlFor="projectId"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-display text-ink mb-1"
         >
           Project
         </label>
-        {/*
-          For select with numbers, we need special handling:
-          - register returns onChange that passes string
-          - We need to convert to number for our schema
-          - Empty string means null (no project)
-        */}
         <select
           id="projectId"
           {...register('projectId', {
             setValueAs: (v) => (v === '' ? null : parseInt(v, 10))
           })}
           defaultValue={task?.projectId ?? ''}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2"
         >
           <option value="">No project</option>
           {projects?.map((p) => (
@@ -458,7 +444,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
             </option>
           ))}
         </select>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-ink-light mt-1">
           {isEditing
             ? 'Move task to a different project'
             : 'Assign this task to a project (optional)'}
@@ -469,7 +455,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       <div>
         <label
           htmlFor="dueDate"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-display text-ink mb-1"
         >
           Due Date
         </label>
@@ -478,8 +464,8 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
             type="date"
             id="dueDate"
             {...register('dueDate')}
-            className={`flex-1 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              errors.dueDate ? 'border-red-500' : 'border-gray-300'
+            className={`flex-1 px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
+              errors.dueDate ? 'border-danger' : ''
             }`}
           />
           {watchDueDate && (
@@ -488,23 +474,23 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
               id="dueTime"
               {...register('dueTime')}
               disabled={!watchIncludeTime}
-              className="w-32 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+              className="w-32 px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 disabled:bg-paper-dark disabled:text-ink-light"
             />
           )}
         </div>
         {errors.dueDate && (
-          <p className="text-red-600 text-sm mt-1">{errors.dueDate.message}</p>
+          <p className="text-danger text-sm mt-1">{errors.dueDate.message}</p>
         )}
         {watchDueDate && (
-          <label className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+          <label className="flex items-center gap-2 mt-2 text-sm text-ink-soft">
             <input
               type="checkbox"
               {...register('includeTime')}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="w-5 h-5 border-comic text-amber-vivid focus:ring-amber-vivid"
             />
             Include specific time
             {!watchIncludeTime && (
-              <span className="text-gray-400">(defaults to 00:00)</span>
+              <span className="text-ink-light">(defaults to 00:00)</span>
             )}
           </label>
         )}
@@ -512,8 +498,8 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
 
       {/* Server Error Message - show errors from mutations */}
       {(mutation.isError || projectAssignmentMutation.isError) && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-3">
-          <p className="text-red-800 text-sm">
+        <div className="bg-danger-bg border-comic p-4">
+          <p className="text-danger text-sm font-medium">
             {mutation.error instanceof Error
               ? mutation.error.message
               : projectAssignmentMutation.error instanceof Error
@@ -528,7 +514,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-amber-vivid text-ink border-comic shadow-comic py-3 px-6 text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? 'Saving...' : isEditing ? 'Update Task' : 'Create Task'}
         </button>
@@ -538,7 +524,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
             type="button"
             onClick={onCancel}
             disabled={isPending}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            className="px-6 py-3 bg-paper text-ink border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 disabled:opacity-50"
           >
             Cancel
           </button>

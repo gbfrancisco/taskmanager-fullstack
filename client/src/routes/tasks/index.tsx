@@ -72,16 +72,16 @@ function TasksPage() {
   if (isPending) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Tasks</h1>
-        <div className="space-y-3">
+        <h1 className="text-display text-4xl text-ink mb-6">Tasks</h1>
+        <div className="space-y-4">
           {/* Skeleton loading cards */}
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 animate-pulse"
+              className="bg-paper p-4 border-comic shadow-comic-sm animate-pulse"
             >
-              <div className="h-5 bg-gray-200 rounded w-1/3 mb-2"></div>
-              <div className="h-4 bg-gray-100 rounded w-1/4"></div>
+              <div className="h-5 bg-paper-dark w-1/3 mb-2"></div>
+              <div className="h-4 bg-paper-dark w-1/4"></div>
             </div>
           ))}
         </div>
@@ -93,10 +93,10 @@ function TasksPage() {
   if (isError) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Tasks</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 font-medium">Failed to load tasks</p>
-          <p className="text-red-600 text-sm mt-1">
+        <h1 className="text-display text-4xl text-ink mb-6">Tasks</h1>
+        <div className="bg-danger-bg border-comic p-4">
+          <p className="text-danger font-medium">Failed to load tasks</p>
+          <p className="text-danger text-sm mt-1">
             {error instanceof Error ? error.message : 'Unknown error occurred'}
           </p>
         </div>
@@ -108,19 +108,19 @@ function TasksPage() {
   return (
     <div className="p-6">
       {/* Header with title and create button */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Tasks</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-display text-4xl text-ink">Tasks</h1>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="bg-amber-vivid text-ink px-6 py-3 border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
         >
           {showCreateForm ? 'Cancel' : '+ New Task'}
         </button>
       </div>
       {/* Create Task Form - shown when showCreateForm is true */}
       {showCreateForm && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">
+        <div className="bg-paper border-comic shadow-comic p-6 mb-6">
+          <h2 className="text-display text-xl text-ink mb-4">
             Create New Task
           </h2>
           <TaskForm
@@ -131,12 +131,12 @@ function TasksPage() {
       )}
       {tasks.length === 0 ? (
         // Empty state
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <p className="text-gray-600">No tasks yet. Create your first task!</p>
+        <div className="bg-paper-dark border-comic p-6 text-center">
+          <p className="text-ink-soft">No tasks yet. Create your first task!</p>
         </div>
       ) : (
         // Task list
-        <div className="space-y-3">
+        <div className="space-y-4">
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}
@@ -161,13 +161,13 @@ function TaskCard({ task }: { task: Task }) {
     <Link
       to="/tasks/$taskId"
       params={{ taskId: String(task.id) }}
-      className="block bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+      className="block bg-paper p-4 border-comic shadow-comic shadow-comic-interactive"
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="font-medium text-gray-800">{task.title}</p>
+          <p className="font-medium text-ink">{task.title}</p>
           {task.description && (
-            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+            <p className="text-sm text-ink-soft mt-1 line-clamp-2">
               {task.description}
             </p>
           )}
@@ -177,7 +177,7 @@ function TaskCard({ task }: { task: Task }) {
 
       {/* Due date if present */}
       {task.dueDate && (
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-ink-light mt-2">
           Due: {formatDate(task.dueDate)}
         </p>
       )}
@@ -196,10 +196,10 @@ function TaskCard({ task }: { task: Task }) {
  */
 function StatusBadge({ status }: { status: TaskStatus }) {
   const styles: Record<TaskStatus, string> = {
-    TODO: 'bg-gray-100 text-gray-800',
-    IN_PROGRESS: 'bg-blue-100 text-blue-800',
-    COMPLETED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-red-100 text-red-800'
+    TODO: 'bg-status-todo',
+    IN_PROGRESS: 'bg-status-progress',
+    COMPLETED: 'bg-status-complete',
+    CANCELLED: 'bg-status-cancelled'
   };
 
   const labels: Record<TaskStatus, string> = {
@@ -210,7 +210,9 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   };
 
   return (
-    <span className={`px-2 py-1 text-xs rounded ${styles[status]}`}>
+    <span
+      className={`px-2 py-1 text-xs text-ink border-2 border-ink shadow-comic-sm ${styles[status]}`}
+    >
       {labels[status]}
     </span>
   );

@@ -99,25 +99,25 @@ export class ErrorBoundary extends Component<
         return this.props.fallback;
       }
 
-      // Default fallback UI
+      // Default fallback UI - Graphic Novel style
       return (
         <div className="min-h-[400px] flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <div className="text-red-600 text-4xl mb-4">⚠️</div>
-            <h2 className="text-lg font-semibold text-red-800 mb-2">
+          <div className="max-w-md w-full bg-danger-bg border-comic-heavy shadow-comic-lg p-6 text-center">
+            <div className="text-danger text-5xl mb-4">⚠️</div>
+            <h2 className="text-display text-2xl text-ink mb-2">
               Something went wrong
             </h2>
-            <p className="text-red-600 text-sm mb-4">
+            <p className="text-danger text-sm mb-4">
               An unexpected error occurred while rendering this page.
             </p>
             {this.state.error && (
-              <p className="text-red-500 text-xs font-mono mb-4 p-2 bg-red-100 rounded overflow-auto">
+              <p className="text-danger text-xs font-mono mb-4 p-3 bg-paper border-comic overflow-auto">
                 {this.state.error.message}
               </p>
             )}
             <button
               onClick={this.handleReset}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              className="px-6 py-3 bg-danger text-paper border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
             >
               Try Again
             </button>

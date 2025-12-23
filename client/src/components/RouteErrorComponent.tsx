@@ -54,18 +54,18 @@ export function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
 
   return (
     <div className="min-h-[400px] flex items-center justify-center p-6">
-      <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <div className="text-red-600 text-4xl mb-4">🚫</div>
-        <h2 className="text-lg font-semibold text-red-800 mb-2">
+      <div className="max-w-md w-full bg-danger-bg border-comic-heavy shadow-comic-lg p-6 text-center">
+        <div className="text-danger text-5xl mb-4">🚫</div>
+        <h2 className="text-display text-2xl text-ink mb-2">
           Failed to load page
         </h2>
-        <p className="text-red-600 text-sm mb-4">
+        <p className="text-danger text-sm mb-4">
           We couldn't load this page. This might be a temporary issue.
         </p>
 
         {/* Show error message in development */}
         {error instanceof Error && (
-          <p className="text-red-500 text-xs font-mono mb-4 p-2 bg-red-100 rounded overflow-auto max-h-24">
+          <p className="text-danger text-xs font-mono mb-4 p-3 bg-paper border-comic overflow-auto max-h-24">
             {error.message}
           </p>
         )}
@@ -74,13 +74,13 @@ export function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
         <div className="flex gap-3 justify-center">
           <button
             onClick={handleRetry}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            className="px-6 py-3 bg-danger text-paper border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
           >
             Try Again
           </button>
           <button
             onClick={handleGoBack}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            className="px-6 py-3 bg-paper text-ink border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
           >
             Go Back
           </button>
@@ -90,7 +90,7 @@ export function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
         <div className="mt-4">
           <Link
             to="/"
-            className="text-blue-600 hover:text-blue-800 text-sm"
+            className="text-amber-dark text-display hover:text-amber-vivid"
           >
             ← Return to home
           </Link>

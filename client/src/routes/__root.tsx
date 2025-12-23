@@ -71,7 +71,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
  */
 function RootLayout() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-halftone">
       {/* Header is OUTSIDE the Outlet - it never changes */}
       <Header />
 

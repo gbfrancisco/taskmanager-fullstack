@@ -19,16 +19,17 @@ function HomePage() {
   return (
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Hero Section */}
         <div className="text-center py-12">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            Welcome to Task Manager
+          <h1 className="text-display text-6xl text-ink mb-4">
+            Task Manager
           </h1>
-          <p className="text-gray-600 text-lg mb-8">
+          <p className="text-ink-soft text-lg mb-8">
             Your fullstack task management application
           </p>
 
           {/* Quick navigation cards */}
-          <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
+          <div className="grid gap-6 md:grid-cols-2 max-w-2xl mx-auto">
             {/*
              * <Link> with params example
              *
@@ -37,34 +38,34 @@ function HomePage() {
              */}
             <Link
               to="/tasks"
-              className="block p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+              className="block p-6 bg-paper border-comic shadow-comic shadow-comic-interactive text-left"
             >
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">
+              <h2 className="text-display text-2xl text-ink mb-2">
                 Tasks
               </h2>
-              <p className="text-gray-600">View and manage your tasks</p>
+              <p className="text-ink-soft">View and manage your tasks</p>
             </Link>
 
             <Link
               to="/projects"
-              className="block p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+              className="block p-6 bg-paper border-comic shadow-comic shadow-comic-interactive text-left"
             >
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">
+              <h2 className="text-display text-2xl text-ink mb-2">
                 Projects
               </h2>
-              <p className="text-gray-600">Organize tasks into projects</p>
+              <p className="text-ink-soft">Organize tasks into projects</p>
             </Link>
           </div>
         </div>
 
         {/* Session info */}
-        <div className="mt-12 p-4 bg-blue-50 rounded-lg border border-blue-100">
-          <h3 className="font-semibold text-blue-800 mb-2">
-            Session 02 Complete!
+        <div className="mt-12 p-4 bg-amber-light border-comic shadow-comic-sm">
+          <h3 className="text-display text-lg text-ink mb-2">
+            Learning Project
           </h3>
-          <p className="text-blue-700 text-sm">
-            You now have working routes with navigation. Next up: fetching real
-            data from the backend API using TanStack Query.
+          <p className="text-ink-soft text-sm">
+            This is a fullstack tutorial demonstrating React + Spring Boot
+            with modern patterns and best practices.
           </p>
         </div>
       </div>
