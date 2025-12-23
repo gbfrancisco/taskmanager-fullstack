@@ -601,6 +601,272 @@ public interface TaskMapper {
 }
 ```
 
+### Automatic Nested Object Mapping
+
+One of MapStruct's most powerful features is its ability to **automatically find and use mapping methods** for nested objects. If your target DTO contains a nested object type, MapStruct will look for a suitable mapping method and call it automatically.
+
+#### How It Works
+
+When MapStruct encounters a nested object that needs mapping:
+
+1. **Same Mapper**: First, it looks for a method in the **same mapper interface**
+2. **Uses Mappers**: Then, it checks mappers specified in the `uses` attribute
+3. **Automatic Conversion**: If found, it calls that method automatically
+
+**Example: Embedding ProjectSummary in TaskResponse**
+
+Suppose you want your `TaskResponseDto` to include project details (not just an ID):
+
+```java
+// A lightweight DTO for embedding in other responses
+public class ProjectSummaryDto {
+    private Long id;
+    private String name;
+    private ProjectStatus status;
+}
+
+// Task response with embedded project summary
+public class TaskResponseDto {
+    private Long id;
+    private String title;
+    private TaskStatus status;
+    private ProjectSummaryDto project;  // Embedded object, not just projectId!
+}
+```
+
+**Mapper Implementation:**
+
+```java
+@Mapper(componentModel = "spring")
+public interface TaskMapper {
+
+    // MapStruct sees that Task has a Project field
+    // and TaskResponseDto has a ProjectSummaryDto field
+    // It automatically calls toProjectSummary() below!
+    TaskResponseDto toResponseDto(Task task);
+
+    // Define the nested mapping in the SAME mapper
+    ProjectSummaryDto toProjectSummary(Project project);
+}
+```
+
+**Generated Code (simplified):**
+
+```java
+@Component
+public class TaskMapperImpl implements TaskMapper {
+
+    @Override
+    public TaskResponseDto toResponseDto(Task task) {
+        if (task == null) {
+            return null;
+        }
+
+        TaskResponseDto dto = new TaskResponseDto();
+        dto.setId(task.getId());
+        dto.setTitle(task.getTitle());
+        dto.setStatus(task.getStatus());
+
+        // MapStruct automatically calls the nested mapping method!
+        dto.setProject(toProjectSummary(task.getProject()));
+
+        return dto;
+    }
+
+    @Override
+    public ProjectSummaryDto toProjectSummary(Project project) {
+        if (project == null) {
+            return null;
+        }
+
+        ProjectSummaryDto dto = new ProjectSummaryDto();
+        dto.setId(project.getId());
+        dto.setName(project.getName());
+        dto.setStatus(project.getStatus());
+
+        return dto;
+    }
+}
+```
+
+#### Works with Collections Too
+
+The automatic mapping also works for collections:
+
+```java
+@Mapper(componentModel = "spring")
+public interface ProjectMapper {
+
+    // ProjectResponseDto has List<TaskSummaryDto> tasks
+    ProjectResponseDto toResponseDto(Project project);
+
+    // MapStruct uses this for each Task in the list
+    TaskSummaryDto toTaskSummary(Task task);
+}
+```
+
+MapStruct will iterate over the `tasks` list and call `toTaskSummary()` for each item.
+
+#### Same Mapper vs Uses Attribute
+
+| Approach | When to Use |
+|----------|-------------|
+| **Same Mapper** | Simple, single-mapper scenario. Keeps related mappings together. |
+| **`uses` Attribute** | When the nested mapper is complex or reused by multiple mappers. |
+
+**Same Mapper (simpler):**
+```java
+@Mapper(componentModel = "spring")
+public interface TaskMapper {
+    TaskResponseDto toResponseDto(Task task);
+    ProjectSummaryDto toProjectSummary(Project project);  // In same interface
+}
+```
+
+**Uses Attribute (for shared mappers):**
+
+When the nested mapping lives in a different mapper, use `uses` to reference it:
+
+```java
+// ProjectMapper.java - contains the summary mapping
+@Mapper(componentModel = "spring")
+public interface ProjectMapper {
+
+    ProjectResponseDto toResponseDto(Project project);
+
+    // This method will be used by other mappers
+    ProjectSummaryDto toSummaryDto(Project project);
+}
+```
+
+```java
+// TaskMapper.java - references ProjectMapper
+@Mapper(
+    componentModel = "spring",
+    uses = ProjectMapper.class  // Tell MapStruct to look here for mappings
+)
+public interface TaskMapper {
+
+    // MapStruct finds ProjectMapper.toSummaryDto() automatically
+    TaskResponseDto toResponseDto(Task task);
+}
+```
+
+**How MapStruct resolves it:**
+
+1. Sees `Task.project` (type `Project`) → `TaskResponseDto.project` (type `ProjectSummaryDto`)
+2. Looks in `TaskMapper` for a method `Project → ProjectSummaryDto` — not found
+3. Looks in `uses` mappers (`ProjectMapper`) — finds `toSummaryDto(Project): ProjectSummaryDto`
+4. Generates code that **injects** `ProjectMapper` and calls it
+
+**Generated code with dependency injection:**
+
+```java
+@Component
+public class TaskMapperImpl implements TaskMapper {
+
+    @Autowired
+    private ProjectMapper projectMapper;  // Injected as Spring bean!
+
+    @Override
+    public TaskResponseDto toResponseDto(Task task) {
+        if (task == null) {
+            return null;
+        }
+
+        TaskResponseDto dto = new TaskResponseDto();
+        dto.setId(task.getId());
+        dto.setTitle(task.getTitle());
+        dto.setStatus(task.getStatus());
+
+        // Delegates to the injected mapper
+        dto.setProject(projectMapper.toSummaryDto(task.getProject()));
+
+        return dto;
+    }
+}
+```
+
+**Key insight:** The method signature must match — MapStruct looks for any method in the `uses` mappers that takes `Project` as input and returns `ProjectSummaryDto`. Method names don't matter, only the type signature.
+
+#### Key Points
+
+1. **No Explicit Mapping Needed**: MapStruct finds the method by matching types automatically
+2. **Null-Safe**: Generated code always checks for null before calling nested mappings
+3. **Field Name Matching**: The source field (`project`) and target field (`project`) must have matching names (or use `@Mapping` to specify)
+4. **Priority**: Methods in the same mapper take precedence over `uses` mappers
+
+#### Common Use Cases
+
+| Scenario | Example |
+|----------|---------|
+| **Embedding related entity** | `TaskResponseDto` contains `ProjectSummaryDto` |
+| **User info in response** | `TaskResponseDto` contains `UserSummaryDto` (id, username) |
+| **Nested collections** | `ProjectResponseDto` contains `List<TaskSummaryDto>` |
+| **Avoiding circular refs** | Use `SummaryDto` (no nested objects) instead of full `ResponseDto` |
+
+#### JPA Lazy Loading Consideration
+
+When mapping nested objects, be aware of **JPA lazy loading**. If the relationship is `FetchType.LAZY`, calling `task.getProject()` in the mapper **triggers a database query**.
+
+| Scenario | What Happens |
+|----------|--------------|
+| **Within transaction** (entity is managed) | Lazy fetch executes, additional SQL query runs |
+| **Outside transaction** (entity is detached) | `LazyInitializationException` is thrown |
+
+**Safe pattern — map inside `@Transactional`:**
+
+```java
+@Service
+@RequiredArgsConstructor
+public class TaskService {
+    private final TaskRepository taskRepository;
+    private final TaskMapper taskMapper;
+
+    @Transactional(readOnly = true)
+    public TaskResponseDto getById(Long id) {
+        Task task = taskRepository.findById(id).orElseThrow();
+
+        // Still within @Transactional, so lazy fetch works
+        return taskMapper.toResponseDto(task);  // task.getProject() triggers SQL
+    }
+}
+```
+
+**Problem — mapping after transaction closes:**
+
+```java
+// In controller (outside transaction)
+@GetMapping("/{id}")
+public TaskResponseDto getTask(@PathVariable Long id) {
+    Task task = taskService.getEntityById(id);  // Transaction ends here
+    return taskMapper.toResponseDto(task);      // LazyInitializationException!
+}
+```
+
+**Solutions:**
+
+| Solution | Pros | Cons |
+|----------|------|------|
+| **Map in service layer** (recommended) | Clean, predictable | Must return DTOs from service |
+| **Eager fetch** (`FetchType.EAGER`) | Simple | N+1 query problems, loads data you may not need |
+| **Join fetch in query** | Efficient, explicit | Custom query per use case |
+| **Entity graph** | Declarative, reusable | More complex setup |
+
+**Join fetch example:**
+
+```java
+public interface TaskRepository extends JpaRepository<Task, Long> {
+
+    @Query("SELECT t FROM Task t JOIN FETCH t.project WHERE t.id = :id")
+    Optional<Task> findByIdWithProject(@Param("id") Long id);
+}
+```
+
+**Best practice:** Always perform mapping inside the `@Transactional` service method. Return DTOs from services, never entities. This ensures lazy loading works and keeps your API boundaries clean.
+
+This automatic behavior is why MapStruct is so powerful - you just define the mapping methods, and it figures out how to compose them together!
+
 ### Enums with Different Names
 
 ```java

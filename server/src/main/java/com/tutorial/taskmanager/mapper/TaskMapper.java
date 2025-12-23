@@ -1,8 +1,10 @@
 package com.tutorial.taskmanager.mapper;
 
+import com.tutorial.taskmanager.dto.project.ProjectSummaryDto;
 import com.tutorial.taskmanager.dto.task.TaskCreateDto;
 import com.tutorial.taskmanager.dto.task.TaskResponseDto;
 import com.tutorial.taskmanager.dto.task.TaskUpdateDto;
+import com.tutorial.taskmanager.model.Project;
 import com.tutorial.taskmanager.model.Task;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
@@ -21,9 +23,14 @@ import java.util.List;
  *
  * <p><strong>Relationship Mapping Strategy:</strong>
  * <ul>
- *   <li>Entity → DTO: Maps {@code appUser.id} to {@code appUserId}, {@code project.id} to {@code projectId}</li>
+ *   <li>Entity → DTO: Maps {@code appUser.id} to {@code appUserId}</li>
+ *   <li>Entity → DTO: Maps {@code project} to embedded {@code ProjectSummaryDto}</li>
  *   <li>DTO → Entity: IDs are set separately in the service layer (not mapped here)</li>
  * </ul>
+ *
+ * <p><strong>Automatic Nested Object Mapping:</strong>
+ * MapStruct automatically finds and uses the {@link #toProjectSummary(Project)} method
+ * when mapping the {@code project} field from Task to TaskResponseDto.
  *
  * <p><strong>Why not map IDs to entities automatically?</strong>
  * MapStruct cannot automatically convert an ID (Long) to an entity (AppUser/Project).
@@ -33,6 +40,7 @@ import java.util.List;
  * @see TaskCreateDto
  * @see TaskUpdateDto
  * @see TaskResponseDto
+ * @see ProjectSummaryDto
  */
 @Mapper(
     componentModel = "spring",
@@ -77,22 +85,33 @@ public interface TaskMapper {
      *   <li>description → description</li>
      *   <li>status → status</li>
      *   <li>dueDate → dueDate</li>
-     *   <li>createdAt → createdAt</li>
-     *   <li>updatedAt → updatedAt</li>
      *   <li>appUser.id → appUserId (explicit mapping)</li>
-     *   <li>project.id → projectId (explicit mapping)</li>
+     *   <li>project → project (uses {@link #toProjectSummary(Project)} automatically)</li>
      * </ul>
      *
      * <p><strong>Handling null relationships:</strong>
-     * If task.appUser or task.project is null, MapStruct will set the ID to null.
-     * This is safe because MapStruct uses null-safe navigation by default.
+     * If task.appUser is null, appUserId will be null.
+     * If task.project is null, project will be null.
+     * MapStruct uses null-safe navigation by default.
      *
      * @param entity the Task entity
      * @return a DTO suitable for API responses
      */
     @Mapping(source = "appUser.id", target = "appUserId")
-    @Mapping(source = "project.id", target = "projectId")
     TaskResponseDto toResponseDto(Task entity);
+
+    /**
+     * Converts a Project entity to a lightweight ProjectSummaryDto.
+     *
+     * <p>This method is automatically used by MapStruct when mapping
+     * Task.project to TaskResponseDto.project.
+     *
+     * <p>Maps: id → id, name → name, status → status
+     *
+     * @param project the Project entity (can be null)
+     * @return a lightweight summary DTO, or null if project is null
+     */
+    ProjectSummaryDto toProjectSummary(Project project);
 
     /**
      * Converts a list of Task entities to ResponseDtos.

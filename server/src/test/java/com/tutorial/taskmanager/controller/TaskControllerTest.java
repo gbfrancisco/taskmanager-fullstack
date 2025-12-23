@@ -1,9 +1,11 @@
 package com.tutorial.taskmanager.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tutorial.taskmanager.dto.project.ProjectSummaryDto;
 import com.tutorial.taskmanager.dto.task.TaskCreateDto;
 import com.tutorial.taskmanager.dto.task.TaskResponseDto;
 import com.tutorial.taskmanager.dto.task.TaskUpdateDto;
+import com.tutorial.taskmanager.enums.ProjectStatus;
 import com.tutorial.taskmanager.enums.TaskStatus;
 import com.tutorial.taskmanager.exception.ResourceNotFoundException;
 import com.tutorial.taskmanager.exception.ValidationException;
@@ -80,6 +82,12 @@ class TaskControllerTest {
                 .dueDate(dueDate)
                 .build();
 
+        ProjectSummaryDto projectSummary = ProjectSummaryDto.builder()
+                .id(1L)
+                .name("Test Project")
+                .status(ProjectStatus.PLANNING)
+                .build();
+
         responseDto = TaskResponseDto.builder()
                 .id(1L)
                 .title("Test Task")
@@ -87,7 +95,7 @@ class TaskControllerTest {
                 .status(TaskStatus.TODO)
                 .dueDate(dueDate)
                 .appUserId(1L)
-                .projectId(1L)
+                .project(projectSummary)
                 .build();
     }
 
@@ -113,7 +121,8 @@ class TaskControllerTest {
                     .andExpect(jsonPath("$.title").value("Test Task"))
                     .andExpect(jsonPath("$.status").value("TODO"))
                     .andExpect(jsonPath("$.appUserId").value(1L))
-                    .andExpect(jsonPath("$.projectId").value(1L));
+                    .andExpect(jsonPath("$.project.id").value(1L))
+                    .andExpect(jsonPath("$.project.name").value("Test Project"));
 
             verify(taskService).createTask(any(TaskCreateDto.class));
         }
@@ -249,7 +258,7 @@ class TaskControllerTest {
             mockMvc.perform(get("/api/tasks").param("projectId", "1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(1))
-                    .andExpect(jsonPath("$[0].projectId").value(1L));
+                    .andExpect(jsonPath("$[0].project.id").value(1L));
 
             verify(taskService).findByProjectId(1L);
         }
@@ -380,17 +389,22 @@ class TaskControllerTest {
         @Test
         @DisplayName("Should assign task to project and return 200 OK")
         void assignToProject_Success_Returns200() throws Exception {
+            ProjectSummaryDto project2Summary = ProjectSummaryDto.builder()
+                    .id(2L)
+                    .name("Project 2")
+                    .status(ProjectStatus.ACTIVE)
+                    .build();
             TaskResponseDto assignedTask = TaskResponseDto.builder()
                     .id(1L)
                     .title("Test Task")
                     .appUserId(1L)
-                    .projectId(2L)
+                    .project(project2Summary)
                     .build();
             when(taskService.assignToProject(1L, 2L)).thenReturn(assignedTask);
 
             mockMvc.perform(put("/api/tasks/{id}/project/{projectId}", 1L, 2L))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.projectId").value(2L));
+                    .andExpect(jsonPath("$.project.id").value(2L));
 
             verify(taskService).assignToProject(1L, 2L);
         }
@@ -422,13 +436,13 @@ class TaskControllerTest {
                     .id(1L)
                     .title("Test Task")
                     .appUserId(1L)
-                    .projectId(null)
+                    .project(null)
                     .build();
             when(taskService.removeFromProject(1L)).thenReturn(taskWithoutProject);
 
             mockMvc.perform(delete("/api/tasks/{id}/project", 1L))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.projectId").doesNotExist());
+                    .andExpect(jsonPath("$.project").doesNotExist());
 
             verify(taskService).removeFromProject(1L);
         }

@@ -169,11 +169,17 @@ function TaskDetailPage() {
             <div className="border-t-2 border-ink pt-4 space-y-2">
               <MetadataRow label="Task ID" value={String(task.id)} />
               <MetadataRow label="User ID" value={String(task.appUserId)} />
-              {task.projectId && (
-                <MetadataRow
-                  label="Project ID"
-                  value={String(task.projectId)}
-                />
+              {task.project && (
+                <div className="flex items-center text-sm">
+                  <span className="text-ink-light w-24">Project:</span>
+                  <Link
+                    to="/projects/$projectId"
+                    params={{ projectId: String(task.project.id) }}
+                    className="text-amber-dark hover:text-amber-vivid font-medium"
+                  >
+                    {task.project.name}
+                  </Link>
+                </div>
               )}
               {task.dueDate && (
                 <MetadataRow

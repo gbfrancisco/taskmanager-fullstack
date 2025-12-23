@@ -11,6 +11,7 @@ import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.model.Project;
 import com.tutorial.taskmanager.repository.AppUserRepository;
 import com.tutorial.taskmanager.repository.ProjectRepository;
+import com.tutorial.taskmanager.repository.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -58,6 +60,9 @@ class ProjectServiceTest {
 
     @Mock
     private ProjectMapper projectMapper;
+
+    @Mock
+    private TaskRepository taskRepository;
 
     @InjectMocks
     private ProjectService projectService;
@@ -93,6 +98,7 @@ class ProjectServiceTest {
                 .description("Test Description")
                 .status(ProjectStatus.PLANNING)
                 .appUserId(1L)
+                .taskCount(0L)
                 .build();
 
         // Set up create DTO
@@ -109,6 +115,10 @@ class ProjectServiceTest {
                 .description("Updated Description")
                 .status(ProjectStatus.ACTIVE)
                 .build();
+
+        // Set up default stubs for task count (used by enrichWithTaskCount)
+        lenient().when(taskRepository.countByProjectId(anyLong())).thenReturn(0L);
+        lenient().when(taskRepository.countByProjectIds(anyList())).thenReturn(List.of());
     }
 
     // ==================== CREATE OPERATIONS ====================

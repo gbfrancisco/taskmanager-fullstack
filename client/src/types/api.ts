@@ -93,7 +93,7 @@ export interface Task {
   status: TaskStatus;
   dueDate: string | null; // ISO date string (e.g., "2024-12-31T23:59:59")
   appUserId: number;
-  projectId: number | null; // null if not assigned to a project
+  project: ProjectSummary | null; // Embedded project summary (null if not assigned)
 }
 
 /**
@@ -126,6 +126,20 @@ export interface TaskUpdateInput {
 // =============================================================================
 // PROJECT TYPES
 // =============================================================================
+
+/**
+ * ProjectSummary - Matches ProjectSummaryDto
+ *
+ * A lightweight project representation used when embedding project info
+ * in other responses (e.g., in TaskResponseDto).
+ *
+ * Contains only essential fields for display purposes.
+ */
+export interface ProjectSummary {
+  id: number;
+  name: string;
+  status: ProjectStatus;
+}
 
 /**
  * Project - Matches ProjectResponseDto

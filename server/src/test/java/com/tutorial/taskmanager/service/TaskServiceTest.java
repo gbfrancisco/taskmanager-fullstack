@@ -1,8 +1,10 @@
 package com.tutorial.taskmanager.service;
 
+import com.tutorial.taskmanager.dto.project.ProjectSummaryDto;
 import com.tutorial.taskmanager.dto.task.TaskCreateDto;
 import com.tutorial.taskmanager.dto.task.TaskResponseDto;
 import com.tutorial.taskmanager.dto.task.TaskUpdateDto;
+import com.tutorial.taskmanager.enums.ProjectStatus;
 import com.tutorial.taskmanager.enums.TaskStatus;
 import com.tutorial.taskmanager.exception.ResourceNotFoundException;
 import com.tutorial.taskmanager.exception.ValidationException;
@@ -70,6 +72,7 @@ class TaskServiceTest {
     // Test data
     private AppUser testUser;
     private Project testProject;
+    private ProjectSummaryDto testProjectSummary;
     private Task testTask;
     private TaskResponseDto testTaskResponseDto;
     private TaskCreateDto createDto;
@@ -91,6 +94,13 @@ class TaskServiceTest {
         testProject.setDescription("Test Description");
         testProject.setAppUser(testUser);
 
+        // Set up test project summary (for response DTOs)
+        testProjectSummary = ProjectSummaryDto.builder()
+                .id(1L)
+                .name("Test Project")
+                .status(ProjectStatus.PLANNING)
+                .build();
+
         // Set up test task
         testTask = new Task();
         testTask.setId(1L);
@@ -109,7 +119,7 @@ class TaskServiceTest {
                 .status(TaskStatus.TODO)
                 .dueDate(testTask.getDueDate())
                 .appUserId(1L)
-                .projectId(1L)
+                .project(testProjectSummary)
                 .build();
 
         // Set up create DTO
@@ -155,7 +165,8 @@ class TaskServiceTest {
             assertThat(result.getDescription()).isEqualTo(testTaskResponseDto.getDescription());
             assertThat(result.getStatus()).isEqualTo(testTaskResponseDto.getStatus());
             assertThat(result.getAppUserId()).isEqualTo(1L);
-            assertThat(result.getProjectId()).isEqualTo(1L);
+            assertThat(result.getProject()).isNotNull();
+            assertThat(result.getProject().getId()).isEqualTo(1L);
 
             verify(appUserRepository).findById(1L);
             verify(projectRepository).findById(1L);
@@ -181,7 +192,7 @@ class TaskServiceTest {
                 .title(createDto.getTitle())
                 .description(createDto.getDescription())
                 .appUserId(1L)
-                .projectId(null)
+                .project(null)
                 .build();
 
             when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
@@ -194,7 +205,7 @@ class TaskServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getProjectId()).isNull();
+            assertThat(result.getProject()).isNull();
 
             verify(appUserRepository).findById(1L);
             verify(projectRepository, never()).findById(anyLong());
@@ -456,7 +467,7 @@ class TaskServiceTest {
                 .status(updateDto.getStatus())
                 .dueDate(updateDto.getDueDate())
                 .appUserId(1L)
-                .projectId(1L)
+                .project(testProjectSummary)
                 .build();
 
             when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
@@ -492,7 +503,7 @@ class TaskServiceTest {
                 .status(updateDto.getStatus())  // Updated status
                 .dueDate(updateDto.getDueDate())
                 .appUserId(1L)
-                .projectId(1L)
+                .project(testProjectSummary)
                 .build();
 
             when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
@@ -534,7 +545,7 @@ class TaskServiceTest {
                 .id(1L)
                 .title(testTask.getTitle())
                 .appUserId(1L)
-                .projectId(1L)
+                .project(testProjectSummary)
                 .build();
 
             when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
@@ -547,7 +558,8 @@ class TaskServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getProjectId()).isEqualTo(1L);
+            assertThat(result.getProject()).isNotNull();
+            assertThat(result.getProject().getId()).isEqualTo(1L);
 
             verify(taskRepository).findById(1L);
             verify(projectRepository).findById(1L);
@@ -601,7 +613,7 @@ class TaskServiceTest {
                 .id(1L)
                 .title(testTask.getTitle())
                 .appUserId(1L)
-                .projectId(null)
+                .project(null)
                 .build();
 
             when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
@@ -613,7 +625,7 @@ class TaskServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            assertThat(result.getProjectId()).isNull();
+            assertThat(result.getProject()).isNull();
 
             verify(taskRepository).findById(1L);
             verify(taskRepository).save(testTask);
@@ -726,7 +738,7 @@ class TaskServiceTest {
                 .id(2L)
                 .title("Task 2")
                 .appUserId(1L)
-                .projectId(1L)
+                .project(testProjectSummary)
                 .build();
 
             List<Task> tasks = List.of(testTask, task2);
@@ -740,7 +752,7 @@ class TaskServiceTest {
 
             // Assert
             assertThat(results).hasSize(2);
-            assertThat(results).extracting(TaskResponseDto::getProjectId)
+            assertThat(results).extracting(dto -> dto.getProject().getId())
                 .containsOnly(1L);
 
             verify(taskRepository).findByProjectId(1L);
@@ -805,7 +817,8 @@ class TaskServiceTest {
 
             // Assert
             assertThat(results).hasSize(1);
-            assertThat(results.getFirst().getProjectId()).isEqualTo(1L);
+            assertThat(results.getFirst().getProject()).isNotNull();
+            assertThat(results.getFirst().getProject().getId()).isEqualTo(1L);
             assertThat(results.getFirst().getStatus()).isEqualTo(TaskStatus.TODO);
 
             verify(taskRepository).findByProjectIdAndStatus(1L, TaskStatus.TODO);

@@ -1,5 +1,6 @@
 package com.tutorial.taskmanager.dto.task;
 
+import com.tutorial.taskmanager.dto.project.ProjectSummaryDto;
 import com.tutorial.taskmanager.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,9 +16,10 @@ import java.time.LocalDateTime;
  * by {@link com.tutorial.taskmanager.mapper.TaskMapper}.
  *
  * <p><strong>Relationship Handling:</strong>
- * Instead of including nested AppUser/Project objects (which would cause
- * circular references), we include only their IDs. Clients can fetch
- * full details separately if needed.
+ * <ul>
+ *   <li>appUserId - ID only (to avoid circular references with user's tasks)</li>
+ *   <li>project - Embedded summary (lightweight, no circular reference risk)</li>
+ * </ul>
  *
  * <p><strong>Fields:</strong>
  * <ul>
@@ -27,7 +29,7 @@ import java.time.LocalDateTime;
  *   <li>status - Current task status</li>
  *   <li>dueDate - Due date/time</li>
  *   <li>appUserId - ID of assigned user</li>
- *   <li>projectId - ID of project (null if not assigned to a project)</li>
+ *   <li>project - Project summary (null if not assigned to a project)</li>
  * </ul>
  */
 @Data
@@ -41,5 +43,10 @@ public class TaskResponseDto {
     private TaskStatus status;
     private LocalDateTime dueDate;
     private Long appUserId;
-    private Long projectId;
+
+    /**
+     * Embedded project summary with id, name, and status.
+     * Null if the task is not assigned to any project.
+     */
+    private ProjectSummaryDto project;
 }

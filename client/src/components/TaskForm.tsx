@@ -106,7 +106,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
   const isEditing = !!task;
 
   // Track original projectId to detect changes in edit mode
-  const originalProjectId = task?.projectId ?? null;
+  const originalProjectId = task?.project?.id ?? null;
 
   // ---------------------------------------------------------------------------
   // REACT HOOK FORM SETUP
@@ -143,7 +143,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       title: task?.title ?? '',
       description: task?.description ?? '',
       status: task?.status ?? 'TODO',
-      projectId: task?.projectId ?? null,
+      projectId: task?.project?.id ?? null,
       dueDate: task?.dueDate ? task.dueDate.split('T')[0] : '',
       dueTime: task?.dueDate
         ? (task.dueDate.split('T')[1]?.slice(0, 5) ?? '')
@@ -434,7 +434,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
           {...register('projectId', {
             setValueAs: (v) => (v === '' ? null : parseInt(v, 10))
           })}
-          defaultValue={task?.projectId ?? ''}
+          defaultValue={task?.project?.id ?? ''}
           className="w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2"
         >
           <option value="">No project</option>
