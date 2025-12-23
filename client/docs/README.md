@@ -9,13 +9,13 @@ This folder contains learning documentation for the React frontend, organized by
 |---|-------|--------|-------------|
 | 01 | [Getting Started](./01-getting-started.md) | Complete | Project structure, Vite, React 19 basics |
 | 02 | [TanStack Router](./02-tanstack-router.md) | Complete | File-based routing, navigation, params |
-| 03 | [TanStack Query](./03-tanstack-query.md) | Pending | Data fetching, caching, loaders |
-| 04 | [TypeScript with React](./04-typescript-react.md) | Pending | Props typing, generics, type inference |
+| 03 | [TanStack Query](./03-tanstack-query.md) | Complete | Data fetching, caching, loaders |
+| 04 | [TypeScript with React](./04-typescript-react.md) | Complete | Props typing, generics, type inference |
 
 ### Phase 2: Data Integration
 | # | Topic | Status | Description |
 |---|-------|--------|-------------|
-| 05 | [API Client Setup](./05-api-client.md) | Pending | Fetch wrapper, error handling, types |
+| 05 | [API Client Setup](./05-api-client.md) | Complete | Fetch wrapper, error handling, types |
 | 06 | [Route Loaders](./06-route-loaders.md) | Pending | Prefetching data, loading states |
 | 07 | [Displaying Data](./07-displaying-data.md) | Pending | Lists, cards, conditional rendering |
 | 08 | [Error Handling](./08-error-handling.md) | Pending | Error boundaries, error states |
@@ -23,10 +23,10 @@ This folder contains learning documentation for the React frontend, organized by
 ### Phase 3: Interactivity
 | # | Topic | Status | Description |
 |---|-------|--------|-------------|
-| 09 | [Forms in React](./09-forms.md) | Pending | Controlled inputs, form state |
-| 10 | [Mutations](./10-mutations.md) | Pending | Create, update, delete operations |
+| 09 | [Forms in React](./09-forms.md) | Complete | Controlled inputs, form state |
+| 10 | [Mutations](./10-mutations.md) | Complete | Create, update, delete operations |
 | 11 | [Optimistic Updates](./11-optimistic-updates.md) | Pending | Instant UI feedback |
-| 12 | [Form Validation](./12-form-validation.md) | Pending | Client-side validation patterns |
+| 12 | [Form Validation](./12-form-validation.md) | Complete | Client-side validation patterns |
 
 ### Phase 4: Polish
 | # | Topic | Status | Description |
@@ -48,7 +48,11 @@ This folder contains learning documentation for the React frontend, organized by
 
 | Session | Focus | Status |
 |---------|-------|--------|
-| 01 | Project Setup & Scaffolding | Complete |
-| 02 | TanStack Router Basics | Complete |
-| 03 | TanStack Query + API Client | Next |
-| 04+ | TBD | Pending |
+| FE-01 | Project Setup & Scaffolding | Complete |
+| FE-02 | TanStack Router Basics | Complete |
+| FE-03,04 | TanStack Query, API Client, TypeScript | Complete |
+| FE-05 | Documentation & CORS Refactor | Complete |
+| FE-06 | Forms & Mutations | Complete |
+| FE-07 | Form Validation (RHF + Zod) | Complete |
+| FE-08 | taskCount & Delete Warning | Complete |
+| FE-09 | Optimistic Updates | Next |

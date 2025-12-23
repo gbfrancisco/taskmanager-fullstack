@@ -197,7 +197,7 @@ This gives faster perceived loading without blocking navigation.
 - **Queries** (`useQuery`): READ operations - fetching data
 - **Mutations** (`useMutation`): WRITE operations - creating, updating, deleting data
 
-This session covers queries. Mutations are covered in Session 05.
+This doc covers queries. Mutations are covered in [10-mutations.md](./10-mutations.md).
 
 ### Query Client
 
