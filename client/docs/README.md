@@ -36,6 +36,14 @@ This folder contains learning documentation for the React frontend, organized by
 | 15 | [Performance](./15-performance.md) | Pending | React Compiler, code splitting |
 | 16 | [Production Build](./16-production-build.md) | Pending | Building, deploying, optimization |
 
+### Phase 5: Authentication
+| # | Topic | Status | Description |
+|---|-------|--------|-------------|
+| 17 | [Auth Overview](./17-auth-overview.md) | Pending | JWT, sessions, auth strategies |
+| 18 | [Login & Registration](./18-login-registration.md) | Pending | Auth forms, token storage |
+| 19 | [Protected Routes](./19-protected-routes.md) | Pending | Route guards, redirects |
+| 20 | [Auth State Management](./20-auth-state.md) | Pending | Context, persisting auth |
+
 ## Quick Links
 
 - [Backend API Documentation](../../server/docs/README.md)
