@@ -13,6 +13,7 @@ import com.tutorial.taskmanager.repository.AppUserRepository;
 import com.tutorial.taskmanager.repository.ProjectRepository;
 import com.tutorial.taskmanager.repository.TaskRepository;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -238,10 +239,13 @@ public class ProjectService {
         Project projectToUpdate = projectRepository.findById(projectId)
             .orElseThrow(() -> new ResourceNotFoundException("project", projectId));
 
-        boolean hasDuplicateName = projectRepository.existsByAppUserIdAndName(
-            projectToUpdate.getAppUser().getId(),
-            projectUpdateDto.getName()
-        );
+        boolean hasDuplicateName = false;
+        if (!Strings.CI.equals(projectToUpdate.getName(), projectUpdateDto.getName())) {
+            hasDuplicateName = projectRepository.existsByAppUserIdAndName(
+                projectToUpdate.getAppUser().getId(),
+                projectUpdateDto.getName()
+            );
+        }
 
         if (hasDuplicateName) {
             throw new ValidationException("name already exists");

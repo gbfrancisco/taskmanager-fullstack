@@ -542,6 +542,7 @@ class ProjectServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
+            verify(projectRepository, never()).existsByAppUserIdAndName(anyLong(), anyString());
             verify(projectRepository).save(testProject);
         }
 
