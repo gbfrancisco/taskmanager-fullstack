@@ -474,7 +474,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
               id="dueTime"
               {...register('dueTime')}
               disabled={!watchIncludeTime}
-              className="w-36 px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 disabled:bg-paper-dark disabled:text-ink-light"
+              className="w-38 px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 disabled:bg-paper-dark disabled:text-ink-light"
             />
           )}
         </div>
