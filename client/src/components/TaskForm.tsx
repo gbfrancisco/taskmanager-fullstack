@@ -143,7 +143,9 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       title: task?.title ?? '',
       description: task?.description ?? '',
       status: task?.status ?? 'TODO',
-      projectId: task?.project?.id ?? null,
+      // Use empty string to match <option value="">No project</option>
+      // setValueAs will convert '' to null on form read
+      projectId: task?.project?.id ?? ('' as unknown as null),
       dueDate: task?.dueDate ? task.dueDate.split('T')[0] : '',
       dueTime: task?.dueDate
         ? (task.dueDate.split('T')[1]?.slice(0, 5) ?? '')
@@ -434,7 +436,6 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
           {...register('projectId', {
             setValueAs: (v) => (v === '' ? null : parseInt(v, 10))
           })}
-          defaultValue={task?.project?.id ?? ''}
           className="w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2"
         >
           <option value="">No project</option>
