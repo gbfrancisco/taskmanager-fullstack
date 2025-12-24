@@ -279,7 +279,7 @@ class ProjectServiceTest {
         @DisplayName("Should find project by ID (returns Optional)")
         void shouldFindProjectById() {
             // Arrange
-            when(projectRepository.findWithOwnerById(1L)).thenReturn(Optional.of(testProject));
+            when(projectRepository.findWithAppUserById(1L)).thenReturn(Optional.of(testProject));
             when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
 
             // Act
@@ -290,7 +290,7 @@ class ProjectServiceTest {
             assertThat(result.get().getId()).isEqualTo(1L);
             assertThat(result.get().getName()).isEqualTo(testProjectResponseDto.getName());
 
-            verify(projectRepository).findWithOwnerById(1L);
+            verify(projectRepository).findWithAppUserById(1L);
             verify(projectMapper).toResponseDto(testProject);
         }
 
@@ -298,14 +298,14 @@ class ProjectServiceTest {
         @DisplayName("Should return empty Optional when project not found")
         void shouldReturnEmptyWhenProjectNotFound() {
             // Arrange
-            when(projectRepository.findWithOwnerById(99L)).thenReturn(Optional.empty());
+            when(projectRepository.findWithAppUserById(99L)).thenReturn(Optional.empty());
 
             // Act
             Optional<ProjectResponseDto> result = projectService.findById(99L);
 
             // Assert
             assertThat(result).isEmpty();
-            verify(projectRepository).findWithOwnerById(99L);
+            verify(projectRepository).findWithAppUserById(99L);
             verify(projectMapper, never()).toResponseDto(any());
         }
 
@@ -324,7 +324,7 @@ class ProjectServiceTest {
         @DisplayName("Should get project by ID (throws exception if not found)")
         void shouldGetProjectById() {
             // Arrange
-            when(projectRepository.findWithOwnerById(1L)).thenReturn(Optional.of(testProject));
+            when(projectRepository.findWithAppUserById(1L)).thenReturn(Optional.of(testProject));
             when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
 
             // Act
@@ -333,7 +333,7 @@ class ProjectServiceTest {
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo(1L);
-            verify(projectRepository).findWithOwnerById(1L);
+            verify(projectRepository).findWithAppUserById(1L);
             verify(projectMapper).toResponseDto(testProject);
         }
 
@@ -341,7 +341,7 @@ class ProjectServiceTest {
         @DisplayName("Should throw exception when getting non-existent project")
         void shouldThrowExceptionWhenGettingNonExistentProject() {
             // Arrange
-            when(projectRepository.findWithOwnerById(99L)).thenReturn(Optional.empty());
+            when(projectRepository.findWithAppUserById(99L)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> projectService.getById(99L))
@@ -349,7 +349,7 @@ class ProjectServiceTest {
                     .hasMessageContaining("project")
                     .hasMessageContaining("99");
 
-            verify(projectRepository).findWithOwnerById(99L);
+            verify(projectRepository).findWithAppUserById(99L);
         }
 
         @Test
@@ -381,7 +381,7 @@ class ProjectServiceTest {
             List<Project> projects = List.of(testProject, project2);
             List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto, project2ResponseDto);
 
-            when(projectRepository.findAllWithOwner()).thenReturn(projects);
+            when(projectRepository.findAllWithAppUser()).thenReturn(projects);
             when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
 
             // Act
@@ -392,7 +392,7 @@ class ProjectServiceTest {
             assertThat(results).extracting(ProjectResponseDto::getId)
                     .containsExactly(1L, 2L);
 
-            verify(projectRepository).findAllWithOwner();
+            verify(projectRepository).findAllWithAppUser();
             verify(projectMapper).toResponseDtoList(projects);
         }
 
@@ -401,7 +401,7 @@ class ProjectServiceTest {
         void shouldReturnEmptyListWhenNoProjects() {
             // Arrange
             List<Project> emptyList = List.of();
-            when(projectRepository.findAllWithOwner()).thenReturn(emptyList);
+            when(projectRepository.findAllWithAppUser()).thenReturn(emptyList);
             when(projectMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
 
             // Act
@@ -409,7 +409,7 @@ class ProjectServiceTest {
 
             // Assert
             assertThat(results).isEmpty();
-            verify(projectRepository).findAllWithOwner();
+            verify(projectRepository).findAllWithAppUser();
             verify(projectMapper).toResponseDtoList(emptyList);
         }
     }
@@ -642,7 +642,7 @@ class ProjectServiceTest {
             List<Project> projects = List.of(testProject, project2);
             List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto, project2ResponseDto);
 
-            when(projectRepository.findWithOwnerByAppUserId(1L)).thenReturn(projects);
+            when(projectRepository.findWithAppUserByAppUserId(1L)).thenReturn(projects);
             when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
 
             // Act
@@ -653,7 +653,7 @@ class ProjectServiceTest {
             assertThat(results).extracting(dto -> dto.getAppUser().getId())
                     .containsOnly(1L);
 
-            verify(projectRepository).findWithOwnerByAppUserId(1L);
+            verify(projectRepository).findWithAppUserByAppUserId(1L);
             verify(projectMapper).toResponseDtoList(projects);
         }
 
@@ -664,7 +664,7 @@ class ProjectServiceTest {
             List<Project> projects = List.of(testProject);
             List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto);
 
-            when(projectRepository.findWithOwnerByStatus(ProjectStatus.PLANNING)).thenReturn(projects);
+            when(projectRepository.findWithAppUserByStatus(ProjectStatus.PLANNING)).thenReturn(projects);
             when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
 
             // Act
@@ -674,7 +674,7 @@ class ProjectServiceTest {
             assertThat(results).hasSize(1);
             assertThat(results.getFirst().getStatus()).isEqualTo(ProjectStatus.PLANNING);
 
-            verify(projectRepository).findWithOwnerByStatus(ProjectStatus.PLANNING);
+            verify(projectRepository).findWithAppUserByStatus(ProjectStatus.PLANNING);
             verify(projectMapper).toResponseDtoList(projects);
         }
 
@@ -685,7 +685,7 @@ class ProjectServiceTest {
             List<Project> projects = List.of(testProject);
             List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto);
 
-            when(projectRepository.findWithOwnerByAppUserIdAndStatus(1L, ProjectStatus.PLANNING)).thenReturn(projects);
+            when(projectRepository.findWithAppUserByAppUserIdAndStatus(1L, ProjectStatus.PLANNING)).thenReturn(projects);
             when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
 
             // Act
@@ -696,7 +696,7 @@ class ProjectServiceTest {
             assertThat(results.getFirst().getAppUser().getId()).isEqualTo(1L);
             assertThat(results.getFirst().getStatus()).isEqualTo(ProjectStatus.PLANNING);
 
-            verify(projectRepository).findWithOwnerByAppUserIdAndStatus(1L, ProjectStatus.PLANNING);
+            verify(projectRepository).findWithAppUserByAppUserIdAndStatus(1L, ProjectStatus.PLANNING);
             verify(projectMapper).toResponseDtoList(projects);
         }
 
@@ -705,7 +705,7 @@ class ProjectServiceTest {
         void shouldReturnEmptyListWhenNoProjectsMatchFilters() {
             // Arrange
             List<Project> emptyList = List.of();
-            when(projectRepository.findWithOwnerByStatus(ProjectStatus.COMPLETED)).thenReturn(emptyList);
+            when(projectRepository.findWithAppUserByStatus(ProjectStatus.COMPLETED)).thenReturn(emptyList);
             when(projectMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
 
             // Act
@@ -713,7 +713,7 @@ class ProjectServiceTest {
 
             // Assert
             assertThat(results).isEmpty();
-            verify(projectRepository).findWithOwnerByStatus(ProjectStatus.COMPLETED);
+            verify(projectRepository).findWithAppUserByStatus(ProjectStatus.COMPLETED);
             verify(projectMapper).toResponseDtoList(emptyList);
         }
     }
@@ -731,7 +731,7 @@ class ProjectServiceTest {
             List<Project> projects = List.of(testProject);
             List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto);
 
-            when(projectRepository.findWithOwnerByNameContainingIgnoreCase("test")).thenReturn(projects);
+            when(projectRepository.findWithAppUserByNameContainingIgnoreCase("test")).thenReturn(projects);
             when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
 
             // Act
@@ -741,7 +741,7 @@ class ProjectServiceTest {
             assertThat(results).hasSize(1);
             assertThat(results.getFirst().getName()).containsIgnoringCase("test");
 
-            verify(projectRepository).findWithOwnerByNameContainingIgnoreCase("test");
+            verify(projectRepository).findWithAppUserByNameContainingIgnoreCase("test");
             verify(projectMapper).toResponseDtoList(projects);
         }
 
@@ -752,7 +752,7 @@ class ProjectServiceTest {
             List<Project> projects = List.of(testProject);
             List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto);
 
-            when(projectRepository.findWithOwnerByAppUserIdAndNameContainingIgnoreCase(1L, "test")).thenReturn(projects);
+            when(projectRepository.findWithAppUserByAppUserIdAndNameContainingIgnoreCase(1L, "test")).thenReturn(projects);
             when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
 
             // Act
@@ -763,7 +763,7 @@ class ProjectServiceTest {
             assertThat(results.getFirst().getAppUser().getId()).isEqualTo(1L);
             assertThat(results.getFirst().getName()).containsIgnoringCase("test");
 
-            verify(projectRepository).findWithOwnerByAppUserIdAndNameContainingIgnoreCase(1L, "test");
+            verify(projectRepository).findWithAppUserByAppUserIdAndNameContainingIgnoreCase(1L, "test");
             verify(projectMapper).toResponseDtoList(projects);
         }
 
@@ -805,7 +805,7 @@ class ProjectServiceTest {
         void shouldReturnEmptyListWhenSearchFindsNothing() {
             // Arrange
             List<Project> emptyList = List.of();
-            when(projectRepository.findWithOwnerByNameContainingIgnoreCase("xyz")).thenReturn(emptyList);
+            when(projectRepository.findWithAppUserByNameContainingIgnoreCase("xyz")).thenReturn(emptyList);
             when(projectMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
 
             // Act
@@ -813,7 +813,7 @@ class ProjectServiceTest {
 
             // Assert
             assertThat(results).isEmpty();
-            verify(projectRepository).findWithOwnerByNameContainingIgnoreCase("xyz");
+            verify(projectRepository).findWithAppUserByNameContainingIgnoreCase("xyz");
         }
     }
 

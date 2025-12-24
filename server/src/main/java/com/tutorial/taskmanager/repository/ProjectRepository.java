@@ -5,6 +5,7 @@ import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.model.Project;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -69,50 +70,56 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     // These methods fetch the appUser relationship in a single query
     // to avoid N+1 problems when mapping to DTOs with embedded user info.
     // See docs/10-jpa-entity-graph.md for details.
+    //
+    // NOTE: Methods without query criteria (like findAll) need @Query because
+    // Spring Data can't derive a query from names like "findAllWithAppUser".
+    // Methods WITH criteria (like findByStatus) work because Spring Data
+    // understands "ByStatus" as a WHERE clause.
 
     /**
      * Find all projects with appUser eagerly fetched.
      * Use this for list views that display owner info.
      */
     @EntityGraph(attributePaths = {"appUser"})
-    List<Project> findAllWithOwner();
+    @Query("SELECT p FROM Project p")
+    List<Project> findAllWithAppUser();
 
     /**
      * Find project by ID with appUser eagerly fetched.
      * Use this for detail views.
      */
     @EntityGraph(attributePaths = {"appUser"})
-    Optional<Project> findWithOwnerById(Long id);
+    Optional<Project> findWithAppUserById(Long id);
 
     /**
-     * Find projects by user ID with owner eagerly fetched.
+     * Find projects by user ID with appUser eagerly fetched.
      */
     @EntityGraph(attributePaths = {"appUser"})
-    List<Project> findWithOwnerByAppUserId(Long appUserId);
+    List<Project> findWithAppUserByAppUserId(Long appUserId);
 
     /**
-     * Find projects by status with owner eagerly fetched.
+     * Find projects by status with appUser eagerly fetched.
      */
     @EntityGraph(attributePaths = {"appUser"})
-    List<Project> findWithOwnerByStatus(ProjectStatus status);
+    List<Project> findWithAppUserByStatus(ProjectStatus status);
 
     /**
-     * Find projects by user ID and status with owner eagerly fetched.
+     * Find projects by user ID and status with appUser eagerly fetched.
      */
     @EntityGraph(attributePaths = {"appUser"})
-    List<Project> findWithOwnerByAppUserIdAndStatus(Long appUserId, ProjectStatus status);
+    List<Project> findWithAppUserByAppUserIdAndStatus(Long appUserId, ProjectStatus status);
 
     /**
-     * Search projects by name with owner eagerly fetched.
+     * Search projects by name with appUser eagerly fetched.
      */
     @EntityGraph(attributePaths = {"appUser"})
-    List<Project> findWithOwnerByNameContainingIgnoreCase(String name);
+    List<Project> findWithAppUserByNameContainingIgnoreCase(String name);
 
     /**
-     * Search projects by user ID and name with owner eagerly fetched.
+     * Search projects by user ID and name with appUser eagerly fetched.
      */
     @EntityGraph(attributePaths = {"appUser"})
-    List<Project> findWithOwnerByAppUserIdAndNameContainingIgnoreCase(Long appUserId, String name);
+    List<Project> findWithAppUserByAppUserIdAndNameContainingIgnoreCase(Long appUserId, String name);
 
     // ==================== NOTES FOR LATER ====================
 

@@ -132,6 +132,64 @@ List<Task> findByAppUserAndStatus(AppUser appUser, TaskStatus status);
 SELECT * FROM TASK WHERE APP_USER_ID = ? AND STATUS = ?
 ```
 
+### The Critical Role of `By`
+
+The `By` keyword is the **separator** between the prefix (ignored) and the query criteria (parsed):
+
+```
+find[Anything]By[QueryCriteria]
+     ↑           ↑
+     IGNORED     WHERE clause
+```
+
+**Text BEFORE `By`** - Ignored by query derivation, use for readability:
+```java
+// All equivalent - Spring ignores the text between "find" and "By"
+findBy(...)
+findTasksBy(...)
+findAllBy(...)
+findWithAppUserBy(...)     // "WithAppUser" is ignored!
+findForReportBy(...)       // "ForReport" is ignored!
+```
+
+**Text AFTER `By`** - Parsed as field names and operators:
+```java
+findByStatus(...)          // WHERE status = ?
+findByAppUserIdAndStatus(...)  // WHERE app_user_id = ? AND status = ?
+```
+
+### What Happens Without `By`?
+
+If there's **no `By` keyword**, Spring tries to parse the ENTIRE suffix as a property path:
+
+```java
+// ❌ FAILS - No "By" keyword
+List<Task> findAllWithAppUser();
+// Spring parses: "find" + "AllWithAppUser"
+// Tries to find property "allWithAppUser" on Task entity
+// Error: No property 'allWithAppUser' found!
+
+// ✅ WORKS - Has "By" keyword (even with no criteria)
+List<Task> findWithAppUserById(Long id);
+// Spring parses: "find" + "WithAppUser" (ignored) + "By" + "Id"
+// Generates: SELECT * FROM task WHERE id = ?
+
+// ✅ WORKAROUND - Use @Query for "findAll" variants
+@Query("SELECT t FROM Task t")
+List<Task> findAllWithAppUser();
+// @Query tells Spring exactly what to do
+```
+
+### Quick Reference
+
+| Method Name | Works? | Why |
+|-------------|--------|-----|
+| `findByStatus(...)` | ✅ | `By` + valid field |
+| `findWithAppUserByStatus(...)` | ✅ | "WithAppUser" ignored, `By` + valid field |
+| `findWithAppUserById(...)` | ✅ | "WithAppUser" ignored, `By` + valid field |
+| `findAllWithAppUser()` | ❌ | No `By`, Spring can't parse "AllWithAppUser" |
+| `findAll()` | ✅ | Inherited from JpaRepository |
+
 ### Basic Examples
 
 ```java
@@ -649,5 +707,5 @@ Need to query data?
 
 ---
 
-**Last Updated:** 2025-11-16
-**Current Focus:** Spring Data JPA query method derivation, performance optimization with ID-based queries
+**Last Updated:** 2025-12-23
+**Current Focus:** Spring Data JPA query method derivation, the critical role of the `By` keyword

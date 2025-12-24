@@ -325,7 +325,7 @@ class TaskServiceTest {
         @DisplayName("Should find task by ID (returns Optional)")
         void shouldFindTaskById() {
             // Arrange
-            when(taskRepository.findWithRelationsById(1L)).thenReturn(Optional.of(testTask));
+            when(taskRepository.findWithAppUserAndProjectById(1L)).thenReturn(Optional.of(testTask));
             when(taskMapper.toResponseDto(testTask)).thenReturn(testTaskResponseDto);
 
             // Act
@@ -336,7 +336,7 @@ class TaskServiceTest {
             assertThat(result.get().getId()).isEqualTo(1L);
             assertThat(result.get().getTitle()).isEqualTo(testTaskResponseDto.getTitle());
 
-            verify(taskRepository).findWithRelationsById(1L);
+            verify(taskRepository).findWithAppUserAndProjectById(1L);
             verify(taskMapper).toResponseDto(testTask);
         }
 
@@ -344,14 +344,14 @@ class TaskServiceTest {
         @DisplayName("Should return empty Optional when task not found by ID")
         void shouldReturnEmptyWhenTaskNotFound() {
             // Arrange
-            when(taskRepository.findWithRelationsById(99L)).thenReturn(Optional.empty());
+            when(taskRepository.findWithAppUserAndProjectById(99L)).thenReturn(Optional.empty());
 
             // Act
             Optional<TaskResponseDto> result = taskService.findById(99L);
 
             // Assert
             assertThat(result).isEmpty();
-            verify(taskRepository).findWithRelationsById(99L);
+            verify(taskRepository).findWithAppUserAndProjectById(99L);
         }
 
         @Test
@@ -369,7 +369,7 @@ class TaskServiceTest {
         @DisplayName("Should get task by ID (throws exception)")
         void shouldGetTaskById() {
             // Arrange
-            when(taskRepository.findWithRelationsById(1L)).thenReturn(Optional.of(testTask));
+            when(taskRepository.findWithAppUserAndProjectById(1L)).thenReturn(Optional.of(testTask));
             when(taskMapper.toResponseDto(testTask)).thenReturn(testTaskResponseDto);
 
             // Act
@@ -378,7 +378,7 @@ class TaskServiceTest {
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo(1L);
-            verify(taskRepository).findWithRelationsById(1L);
+            verify(taskRepository).findWithAppUserAndProjectById(1L);
             verify(taskMapper).toResponseDto(testTask);
         }
 
@@ -386,14 +386,14 @@ class TaskServiceTest {
         @DisplayName("Should throw exception when getting non-existent task")
         void shouldThrowExceptionWhenGettingNonExistentTask() {
             // Arrange
-            when(taskRepository.findWithRelationsById(99L)).thenReturn(Optional.empty());
+            when(taskRepository.findWithAppUserAndProjectById(99L)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> taskService.getById(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("task with id '99' not found");
 
-            verify(taskRepository).findWithRelationsById(99L);
+            verify(taskRepository).findWithAppUserAndProjectById(99L);
         }
 
         @Test
@@ -425,7 +425,7 @@ class TaskServiceTest {
             List<Task> tasks = List.of(testTask, task2);
             List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto, task2ResponseDto);
 
-            when(taskRepository.findAllWithRelations()).thenReturn(tasks);
+            when(taskRepository.findAllWithAppUserAndProject()).thenReturn(tasks);
             when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
 
             // Act
@@ -436,7 +436,7 @@ class TaskServiceTest {
             assertThat(results).extracting(TaskResponseDto::getId)
                 .containsExactly(1L, 2L);
 
-            verify(taskRepository).findAllWithRelations();
+            verify(taskRepository).findAllWithAppUserAndProject();
             verify(taskMapper).toResponseDtoList(tasks);
         }
 
@@ -445,7 +445,7 @@ class TaskServiceTest {
         void shouldReturnEmptyListWhenNoTasks() {
             // Arrange
             List<Task> emptyList = List.of();
-            when(taskRepository.findAllWithRelations()).thenReturn(emptyList);
+            when(taskRepository.findAllWithAppUserAndProject()).thenReturn(emptyList);
             when(taskMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
 
             // Act
@@ -453,7 +453,7 @@ class TaskServiceTest {
 
             // Assert
             assertThat(results).isEmpty();
-            verify(taskRepository).findAllWithRelations();
+            verify(taskRepository).findAllWithAppUserAndProject();
             verify(taskMapper).toResponseDtoList(emptyList);
         }
     }
@@ -717,7 +717,7 @@ class TaskServiceTest {
             List<Task> tasks = List.of(testTask, task2);
             List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto, task2ResponseDto);
 
-            when(taskRepository.findWithRelationsByAppUserId(1L)).thenReturn(tasks);
+            when(taskRepository.findWithAppUserAndProjectByAppUserId(1L)).thenReturn(tasks);
             when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
 
             // Act
@@ -728,7 +728,7 @@ class TaskServiceTest {
             assertThat(results).extracting(dto -> dto.getAppUser().getId())
                 .containsOnly(1L);
 
-            verify(taskRepository).findWithRelationsByAppUserId(1L);
+            verify(taskRepository).findWithAppUserAndProjectByAppUserId(1L);
             verify(taskMapper).toResponseDtoList(tasks);
         }
 
@@ -752,7 +752,7 @@ class TaskServiceTest {
             List<Task> tasks = List.of(testTask, task2);
             List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto, task2ResponseDto);
 
-            when(taskRepository.findWithRelationsByProjectId(1L)).thenReturn(tasks);
+            when(taskRepository.findWithAppUserAndProjectByProjectId(1L)).thenReturn(tasks);
             when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
 
             // Act
@@ -763,7 +763,7 @@ class TaskServiceTest {
             assertThat(results).extracting(dto -> dto.getProject().getId())
                 .containsOnly(1L);
 
-            verify(taskRepository).findWithRelationsByProjectId(1L);
+            verify(taskRepository).findWithAppUserAndProjectByProjectId(1L);
             verify(taskMapper).toResponseDtoList(tasks);
         }
 
@@ -774,7 +774,7 @@ class TaskServiceTest {
             List<Task> tasks = List.of(testTask);
             List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto);
 
-            when(taskRepository.findWithRelationsByStatus(TaskStatus.TODO)).thenReturn(tasks);
+            when(taskRepository.findWithAppUserAndProjectByStatus(TaskStatus.TODO)).thenReturn(tasks);
             when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
 
             // Act
@@ -784,7 +784,7 @@ class TaskServiceTest {
             assertThat(results).hasSize(1);
             assertThat(results.getFirst().getStatus()).isEqualTo(TaskStatus.TODO);
 
-            verify(taskRepository).findWithRelationsByStatus(TaskStatus.TODO);
+            verify(taskRepository).findWithAppUserAndProjectByStatus(TaskStatus.TODO);
             verify(taskMapper).toResponseDtoList(tasks);
         }
 
@@ -838,7 +838,7 @@ class TaskServiceTest {
         void shouldReturnEmptyListWhenNoTasksMatchFilters() {
             // Arrange
             List<Task> emptyList = List.of();
-            when(taskRepository.findWithRelationsByStatus(TaskStatus.COMPLETED)).thenReturn(emptyList);
+            when(taskRepository.findWithAppUserAndProjectByStatus(TaskStatus.COMPLETED)).thenReturn(emptyList);
             when(taskMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
 
             // Act
@@ -846,7 +846,7 @@ class TaskServiceTest {
 
             // Assert
             assertThat(results).isEmpty();
-            verify(taskRepository).findWithRelationsByStatus(TaskStatus.COMPLETED);
+            verify(taskRepository).findWithAppUserAndProjectByStatus(TaskStatus.COMPLETED);
             verify(taskMapper).toResponseDtoList(emptyList);
         }
     }
@@ -878,7 +878,7 @@ class TaskServiceTest {
             List<Task> overdueTasks = List.of(overdueTask);
             List<TaskResponseDto> responseDtos = List.of(overdueTaskResponseDto);
 
-            when(taskRepository.findWithRelationsByDueDateBeforeAndStatusNotIn(
+            when(taskRepository.findWithAppUserAndProjectByDueDateBeforeAndStatusNotIn(
                 any(LocalDateTime.class),
                 eq(List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED))
             )).thenReturn(overdueTasks);
@@ -891,7 +891,7 @@ class TaskServiceTest {
             assertThat(results).hasSize(1);
             assertThat(results.getFirst().getId()).isEqualTo(2L);
 
-            verify(taskRepository).findWithRelationsByDueDateBeforeAndStatusNotIn(
+            verify(taskRepository).findWithAppUserAndProjectByDueDateBeforeAndStatusNotIn(
                 any(LocalDateTime.class),
                 eq(List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED))
             );
@@ -968,7 +968,7 @@ class TaskServiceTest {
         void shouldReturnEmptyListWhenNoOverdueTasks() {
             // Arrange
             List<Task> emptyList = List.of();
-            when(taskRepository.findWithRelationsByDueDateBeforeAndStatusNotIn(
+            when(taskRepository.findWithAppUserAndProjectByDueDateBeforeAndStatusNotIn(
                 any(LocalDateTime.class),
                 eq(List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED))
             )).thenReturn(emptyList);

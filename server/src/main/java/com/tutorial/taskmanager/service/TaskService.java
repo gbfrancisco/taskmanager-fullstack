@@ -79,7 +79,7 @@ public class TaskService {
         }
 
         // Use EntityGraph method to eagerly fetch appUser and project
-        return taskRepository.findWithRelationsById(taskId).map(taskMapper::toResponseDto);
+        return taskRepository.findWithAppUserAndProjectById(taskId).map(taskMapper::toResponseDto);
     }
 
     @Transactional(readOnly = true)
@@ -89,7 +89,7 @@ public class TaskService {
         }
 
         // Use EntityGraph method to eagerly fetch appUser and project
-        return taskRepository.findWithRelationsById(taskId)
+        return taskRepository.findWithAppUserAndProjectById(taskId)
             .map(taskMapper::toResponseDto)
             .orElseThrow(() -> new ResourceNotFoundException("task", taskId));
     }
@@ -97,7 +97,7 @@ public class TaskService {
     @Transactional(readOnly = true)
     public List<TaskResponseDto> findAll() {
         // Use EntityGraph method to eagerly fetch appUser and project for all tasks
-        return taskMapper.toResponseDtoList(taskRepository.findAllWithRelations());
+        return taskMapper.toResponseDtoList(taskRepository.findAllWithAppUserAndProject());
     }
 
     @Transactional(readOnly = true)
@@ -107,7 +107,7 @@ public class TaskService {
         }
 
         // Use EntityGraph method to eagerly fetch relationships
-        List<Task> tasks = taskRepository.findWithRelationsByAppUserId(appUserId);
+        List<Task> tasks = taskRepository.findWithAppUserAndProjectByAppUserId(appUserId);
         return taskMapper.toResponseDtoList(tasks);
     }
 
@@ -118,7 +118,7 @@ public class TaskService {
         }
 
         // Use EntityGraph method to eagerly fetch relationships
-        List<Task> tasks = taskRepository.findWithRelationsByProjectId(projectId);
+        List<Task> tasks = taskRepository.findWithAppUserAndProjectByProjectId(projectId);
         return taskMapper.toResponseDtoList(tasks);
     }
 
@@ -129,7 +129,7 @@ public class TaskService {
         }
 
         // Use EntityGraph method to eagerly fetch relationships
-        List<Task> tasks = taskRepository.findWithRelationsByStatus(status);
+        List<Task> tasks = taskRepository.findWithAppUserAndProjectByStatus(status);
         return taskMapper.toResponseDtoList(tasks);
     }
 
@@ -164,7 +164,7 @@ public class TaskService {
     @Transactional(readOnly = true)
     public List<TaskResponseDto> findOverdueTasks() {
         // Use EntityGraph method to eagerly fetch relationships
-        List<Task> overdueTasks = taskRepository.findWithRelationsByDueDateBeforeAndStatusNotIn(
+        List<Task> overdueTasks = taskRepository.findWithAppUserAndProjectByDueDateBeforeAndStatusNotIn(
             LocalDateTime.now(),
             List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED)
         );

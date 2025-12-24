@@ -116,7 +116,7 @@ public class ProjectService {
         }
 
         // Use EntityGraph method to eagerly fetch appUser
-        return projectRepository.findWithOwnerById(projectId)
+        return projectRepository.findWithAppUserById(projectId)
             .map(projectMapper::toResponseDto)
             .map(this::enrichWithTaskCount);
     }
@@ -128,7 +128,7 @@ public class ProjectService {
         }
 
         // Use EntityGraph method to eagerly fetch appUser
-        return projectRepository.findWithOwnerById(projectId)
+        return projectRepository.findWithAppUserById(projectId)
             .map(projectMapper::toResponseDto)
             .map(this::enrichWithTaskCount)
             .orElseThrow(() -> new ResourceNotFoundException("project", projectId));
@@ -137,7 +137,7 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public List<ProjectResponseDto> findAll() {
         // Use EntityGraph method to eagerly fetch appUser for all projects
-        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findAllWithOwner());
+        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findAllWithAppUser());
         return enrichWithTaskCounts(dtos);
     }
 
@@ -149,7 +149,7 @@ public class ProjectService {
 
         // Use EntityGraph method to eagerly fetch appUser
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findWithOwnerByAppUserId(appUserId)
+            projectRepository.findWithAppUserByAppUserId(appUserId)
         );
         return enrichWithTaskCounts(dtos);
     }
@@ -162,7 +162,7 @@ public class ProjectService {
 
         // Use EntityGraph method to eagerly fetch appUser
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findWithOwnerByStatus(projectStatus)
+            projectRepository.findWithAppUserByStatus(projectStatus)
         );
         return enrichWithTaskCounts(dtos);
     }
@@ -179,7 +179,7 @@ public class ProjectService {
 
         // Use EntityGraph method to eagerly fetch appUser
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findWithOwnerByAppUserIdAndStatus(appUserId, projectStatus)
+            projectRepository.findWithAppUserByAppUserIdAndStatus(appUserId, projectStatus)
         );
         return enrichWithTaskCounts(dtos);
     }
@@ -192,7 +192,7 @@ public class ProjectService {
 
         // Use EntityGraph method to eagerly fetch appUser
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findWithOwnerByNameContainingIgnoreCase(nameQuery)
+            projectRepository.findWithAppUserByNameContainingIgnoreCase(nameQuery)
         );
         return enrichWithTaskCounts(dtos);
     }
@@ -208,7 +208,7 @@ public class ProjectService {
         }
 
         // Use EntityGraph method to eagerly fetch appUser
-        List<Project> projects = projectRepository.findWithOwnerByAppUserIdAndNameContainingIgnoreCase(
+        List<Project> projects = projectRepository.findWithAppUserByAppUserIdAndNameContainingIgnoreCase(
             appUserId, nameQuery
         );
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projects);

@@ -400,16 +400,28 @@ List<Task> findAllForDetail();    // with appUser and project
 List<Task> findAllForExport();    // with everything
 ```
 
-### 3. Consider Creating a Suffix Convention
+### 3. Use Descriptive Method Names Matching Fields
+
+Name your methods to clearly indicate which relationships are fetched:
 
 ```java
-// Convention: *WithRelations for graph-enhanced methods
-@EntityGraph(attributePaths = {"appUser", "project"})
-List<Task> findAllWithRelations();
+// IMPORTANT: For methods WITHOUT query criteria (like findAll variants),
+// you must add @Query because Spring Data can't derive a query from
+// names like "findAllWithAppUser".
 
 @EntityGraph(attributePaths = {"appUser", "project"})
-Optional<Task> findByIdWithRelations(Long id);
+@Query("SELECT t FROM Task t")  // Required! Spring Data can't parse "WithAppUserAndProject"
+List<Task> findAllWithAppUserAndProject();
+
+// Methods WITH criteria work because Spring Data understands "ByStatus"
+@EntityGraph(attributePaths = {"appUser", "project"})
+List<Task> findWithAppUserAndProjectByStatus(TaskStatus status);
+
+@EntityGraph(attributePaths = {"appUser", "project"})
+Optional<Task> findWithAppUserAndProjectById(Long id);
 ```
+
+**Why the @Query is needed:** Spring Data JPA derives queries from method names. For `findAllWithAppUser`, it tries to parse "WithAppUser" as a property path on the entity. Since there's no such property, it fails. The `@Query` annotation tells Spring Data exactly what query to run.
 
 ### 4. Document Complex Graphs
 
@@ -565,24 +577,23 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     // Standard findAll - no relationships
     // (inherited from JpaRepository)
 
-    // List view - with assignee
-    @EntityGraph(attributePaths = {"appUser"})
-    List<Task> findAllWithUser();
+    // For "findAll" variants, @Query is REQUIRED because Spring Data
+    // can't derive a query from method names like "findAllWithAppUser"
+    @EntityGraph(attributePaths = {"appUser", "project"})
+    @Query("SELECT t FROM Task t")
+    List<Task> findAllWithAppUserAndProject();
 
     // Detail view - with assignee and project
+    // No @Query needed - "ById" is a valid Spring Data derived query
     @EntityGraph(attributePaths = {"appUser", "project"})
-    Optional<Task> findWithRelationsById(Long id);
+    Optional<Task> findWithAppUserAndProjectById(Long id);
 
-    // Full context - including project owner
-    @EntityGraph(attributePaths = {"appUser", "project", "project.appUser"})
-    Optional<Task> findWithFullContextById(Long id);
-
-    // Filter queries with graphs
+    // Filter queries with graphs - work without @Query
     @EntityGraph(attributePaths = {"appUser", "project"})
-    List<Task> findByStatus(TaskStatus status);
+    List<Task> findWithAppUserAndProjectByStatus(TaskStatus status);
 
     @EntityGraph(attributePaths = {"appUser", "project"})
-    List<Task> findByAppUserId(Long userId);
+    List<Task> findWithAppUserAndProjectByAppUserId(Long userId);
 }
 ```
 
@@ -596,19 +607,25 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
 
-    // List - minimal fetch
+    // List - fetches all with relationships
     public List<TaskResponseDto> getAllTasks() {
-        return taskRepository.findAllWithUser()  // Fetches appUser
-            .stream()
-            .map(taskMapper::toResponseDto)
-            .toList();
+        return taskMapper.toResponseDtoList(
+            taskRepository.findAllWithAppUserAndProject()  // Single query with JOINs
+        );
     }
 
     // Detail - full fetch
     public TaskResponseDto getTaskById(Long id) {
-        Task task = taskRepository.findWithRelationsById(id)  // Fetches all
+        return taskRepository.findWithAppUserAndProjectById(id)  // Single query
+            .map(taskMapper::toResponseDto)
             .orElseThrow(() -> new ResourceNotFoundException("Task", id));
-        return taskMapper.toResponseDto(task);
+    }
+
+    // Filter by status - with relationships
+    public List<TaskResponseDto> getTasksByStatus(TaskStatus status) {
+        return taskMapper.toResponseDtoList(
+            taskRepository.findWithAppUserAndProjectByStatus(status)
+        );
     }
 }
 ```
