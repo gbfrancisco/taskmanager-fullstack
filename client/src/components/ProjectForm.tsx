@@ -20,9 +20,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createProject, updateProject, projectKeys } from '../api/projects';
-import { projectSchema, type ProjectFormData } from '../schemas/project';
-import type { Project, ProjectCreateInput } from '../types/api';
+import { createProject, updateProject, projectKeys } from '@/api/projects';
+import { projectSchema, type ProjectFormData } from '@/schemas/project';
+import type { Project, ProjectCreateInput } from '@/types/api';
 
 // =============================================================================
 // COMPONENT PROPS
@@ -183,6 +183,7 @@ export function ProjectForm({
         <input
           type="text"
           id="name"
+          autoComplete="off"
           {...register('name')}
           className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
             errors.name ? 'border-danger' : ''

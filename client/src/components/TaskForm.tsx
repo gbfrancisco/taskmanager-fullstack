@@ -43,14 +43,14 @@ import {
   assignTaskToProject,
   removeTaskFromProject,
   taskKeys
-} from '../api/tasks';
-import { fetchProjectsByUserId, projectKeys } from '../api/projects';
+} from '@/api/tasks';
+import { fetchProjectsByUserId, projectKeys } from '@/api/projects';
 import {
   taskCreateSchema,
   taskEditSchema,
   type TaskFormData
-} from '../schemas/task';
-import type { Task, TaskCreateInput } from '../types/api';
+} from '@/schemas/task';
+import type { Task, TaskCreateInput } from '@/types/api';
 
 // =============================================================================
 // COMPONENT PROPS

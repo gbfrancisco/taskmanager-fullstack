@@ -6,7 +6,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { RouteErrorComponent } from '../../components/RouteErrorComponent';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 
 export const Route = createFileRoute('/test/route-error')({
   loader: async () => {

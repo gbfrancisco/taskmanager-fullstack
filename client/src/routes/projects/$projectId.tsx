@@ -20,12 +20,13 @@ import {
   fetchProjectById,
   deleteProject,
   projectKeys
-} from '../../api/projects';
-import { fetchTasksByProjectId, taskKeys } from '../../api/tasks';
-import { ProjectForm } from '../../components/ProjectForm';
-import type { ProjectStatus, Task, TaskStatus } from '../../types/api';
-import { MetadataList, MetadataItem } from '../../components/Metadata';
-import { formatDate } from '../../utils/dateUtils';
+} from '@/api/projects';
+import { fetchTasksByProjectId, taskKeys } from '@/api/tasks';
+import { ProjectForm } from '@/components/ProjectForm';
+import type { Task, TaskStatus } from '@/types/api';
+import { MetadataList, MetadataItem } from '@/components/Metadata';
+import { formatDate } from '@/utils/dateUtils';
+import { ProjectStatusBadge } from '@/components/ProjectStatusBadge';
 
 export const Route = createFileRoute('/projects/$projectId')({
   component: ProjectDetailPage
@@ -308,32 +309,6 @@ function BackLink() {
       <span>←</span>
       <span>Back to projects</span>
     </Link>
-  );
-}
-
-function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
-  const styles: Record<ProjectStatus, string> = {
-    PLANNING: 'bg-status-planning',
-    ACTIVE: 'bg-status-active',
-    ON_HOLD: 'bg-status-on-hold',
-    COMPLETED: 'bg-status-completed',
-    CANCELLED: 'bg-status-cancelled'
-  };
-
-  const labels: Record<ProjectStatus, string> = {
-    PLANNING: 'Planning',
-    ACTIVE: 'Active',
-    ON_HOLD: 'On Hold',
-    COMPLETED: 'Completed',
-    CANCELLED: 'Cancelled'
-  };
-
-  return (
-    <span
-      className={`px-2 py-1 text-xs text-ink border-2 border-ink shadow-comic-sm ${styles[status]}`}
-    >
-      {labels[status]}
-    </span>
   );
 }
 

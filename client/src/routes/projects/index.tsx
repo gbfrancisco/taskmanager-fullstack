@@ -11,9 +11,10 @@
 import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { fetchProjects, projectKeys } from '../../api/projects';
-import { ProjectForm } from '../../components/ProjectForm';
-import type { Project, ProjectStatus } from '../../types/api';
+import { fetchProjects, projectKeys } from '@/api/projects';
+import { ProjectForm } from '@/components/ProjectForm';
+import type { Project } from '@/types/api';
+import { ProjectStatusBadge } from '@/components/ProjectStatusBadge';
 
 export const Route = createFileRoute('/projects/')({
   loader: ({ context: { queryClient } }) =>
@@ -142,38 +143,8 @@ function ProjectCard({ project }: { project: Project }) {
             ? `${project.taskCount} task${project.taskCount !== 1 ? 's' : ''}`
             : 'No tasks'}
         </span>
-        <StatusBadge status={project.status} />
+        <ProjectStatusBadge status={project.status} />
       </div>
     </Link>
-  );
-}
-
-// =============================================================================
-// STATUS BADGE COMPONENT
-// =============================================================================
-
-function StatusBadge({ status }: { status: ProjectStatus }) {
-  const styles: Record<ProjectStatus, string> = {
-    PLANNING: 'bg-status-planning',
-    ACTIVE: 'bg-status-active',
-    ON_HOLD: 'bg-status-on-hold',
-    COMPLETED: 'bg-status-completed',
-    CANCELLED: 'bg-status-cancelled'
-  };
-
-  const labels: Record<ProjectStatus, string> = {
-    PLANNING: 'Planning',
-    ACTIVE: 'Active',
-    ON_HOLD: 'On Hold',
-    COMPLETED: 'Completed',
-    CANCELLED: 'Cancelled'
-  };
-
-  return (
-    <span
-      className={`px-2 py-1 text-xs text-ink border-2 border-ink shadow-comic-sm ${styles[status]}`}
-    >
-      {labels[status]}
-    </span>
   );
 }
