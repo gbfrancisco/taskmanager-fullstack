@@ -8,12 +8,14 @@
  */
 
 export function Footer() {
+  const currYear = new Date().getFullYear();
+
   return (
     <footer className="bg-amber-vivid border-t-4 border-ink">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-center items-center h-12">
           <span className="text-display text-sm text-ink">
-            © 2025 Task Manager. All rights reserved.
+            © {currYear} Task Manager. All rights reserved.
           </span>
         </div>
       </div>
