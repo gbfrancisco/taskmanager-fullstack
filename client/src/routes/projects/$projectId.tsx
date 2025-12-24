@@ -88,13 +88,15 @@ function ProjectDetailPage() {
   // Invalid ID
   if (isNaN(id)) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <BackLink />
-        <div className="bg-danger-bg border-comic p-4 mt-4">
-          <p className="text-danger font-medium">Invalid project ID</p>
-          <p className="text-danger text-sm mt-1">
-            "{projectId}" is not a valid project ID
-          </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-3xl mx-auto">
+          <BackLink />
+          <div className="bg-danger-bg border-comic p-4 mt-4">
+            <p className="text-danger font-medium">Invalid project ID</p>
+            <p className="text-danger text-sm mt-1">
+              "{projectId}" is not a valid project ID
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -103,12 +105,14 @@ function ProjectDetailPage() {
   // Loading state
   if (isProjectPending) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <BackLink />
-        <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4 animate-pulse">
-          <div className="h-7 bg-paper-dark w-1/2 mb-4"></div>
-          <div className="h-4 bg-paper-dark w-3/4 mb-2"></div>
-          <div className="h-4 bg-paper-dark w-1/2"></div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-3xl mx-auto">
+          <BackLink />
+          <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4 animate-pulse">
+            <div className="h-7 bg-paper-dark w-1/2 mb-4"></div>
+            <div className="h-4 bg-paper-dark w-3/4 mb-2"></div>
+            <div className="h-4 bg-paper-dark w-1/2"></div>
+          </div>
         </div>
       </div>
     );
@@ -117,15 +121,17 @@ function ProjectDetailPage() {
   // Error state
   if (isProjectError) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <BackLink />
-        <div className="bg-danger-bg border-comic p-4 mt-4">
-          <p className="text-danger font-medium">Failed to load project</p>
-          <p className="text-danger text-sm mt-1">
-            {projectError instanceof Error
-              ? projectError.message
-              : 'Unknown error occurred'}
-          </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-3xl mx-auto">
+          <BackLink />
+          <div className="bg-danger-bg border-comic p-4 mt-4">
+            <p className="text-danger font-medium">Failed to load project</p>
+            <p className="text-danger text-sm mt-1">
+              {projectError instanceof Error
+                ? projectError.message
+                : 'Unknown error occurred'}
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -133,11 +139,12 @@ function ProjectDetailPage() {
 
   // Success state
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <BackLink />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-3xl mx-auto">
+        <BackLink />
 
-      {/* Project details card */}
-      <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4 mb-6">
+        {/* Project details card */}
+        <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4 mb-6">
         {isEditing ? (
           // Edit mode
           <>
@@ -267,6 +274,7 @@ function ProjectDetailPage() {
             </p>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

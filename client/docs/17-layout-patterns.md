@@ -14,6 +14,8 @@ This document covers fundamental CSS layout patterns for app shells, with a focu
 6. [Navigation Buttons](#navigation-buttons)
 7. [Alternative Approaches](#alternative-approaches)
 8. [Implementation Reference](#implementation-reference)
+9. [Centering](#centering)
+10. [Containers](#containers)
 
 ---
 
@@ -446,6 +448,247 @@ main {
 
 ---
 
+## Centering
+
+Centering is one of the most common CSS tasks. Here are the standard approaches.
+
+### Horizontal Centering
+
+**1. Auto Margins (block elements)**
+
+The classic approach for centering block elements with a fixed/max width:
+
+```css
+.centered {
+  max-width: 768px;
+  margin-left: auto;
+  margin-right: auto;
+}
+```
+
+```html
+<!-- Tailwind -->
+<div class="max-w-3xl mx-auto">Centered content</div>
+```
+
+Best for: Containers, cards, content sections.
+
+**2. Flexbox**
+
+```css
+.parent {
+  display: flex;
+  justify-content: center;
+}
+```
+
+```html
+<!-- Tailwind -->
+<div class="flex justify-center">
+  <div>Centered child</div>
+</div>
+```
+
+Best for: Centering within a flex container, single items.
+
+**3. Text Align (inline/text content)**
+
+```css
+.parent {
+  text-align: center;
+}
+```
+
+```html
+<!-- Tailwind -->
+<div class="text-center">Centered text</div>
+```
+
+Best for: Text, inline elements, inline-block elements.
+
+### Vertical Centering
+
+**1. Flexbox (recommended)**
+
+```css
+.parent {
+  display: flex;
+  align-items: center;
+  min-height: 100vh; /* or fixed height */
+}
+```
+
+```html
+<!-- Tailwind -->
+<div class="flex items-center min-h-screen">
+  <div>Vertically centered</div>
+</div>
+```
+
+**2. Grid**
+
+```css
+.parent {
+  display: grid;
+  align-items: center;
+  min-height: 100vh;
+}
+```
+
+```html
+<!-- Tailwind -->
+<div class="grid items-center min-h-screen">
+  <div>Vertically centered</div>
+</div>
+```
+
+### Both Horizontal & Vertical (Dead Center)
+
+**1. Flexbox (most common)**
+
+```css
+.parent {
+  display: flex;
+  justify-content: center;  /* horizontal */
+  align-items: center;      /* vertical */
+  min-height: 100vh;
+}
+```
+
+```html
+<!-- Tailwind -->
+<div class="flex justify-center items-center min-h-screen">
+  <div>Dead center</div>
+</div>
+```
+
+**2. Grid (cleanest)**
+
+```css
+.parent {
+  display: grid;
+  place-items: center;  /* shorthand for both */
+  min-height: 100vh;
+}
+```
+
+```html
+<!-- Tailwind -->
+<div class="grid place-items-center min-h-screen">
+  <div>Dead center</div>
+</div>
+```
+
+**3. Absolute Positioning + Transform (legacy)**
+
+```css
+.parent {
+  position: relative;
+}
+.child {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+```
+
+```html
+<!-- Tailwind -->
+<div class="relative h-screen">
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+    Dead center
+  </div>
+</div>
+```
+
+Best for: Overlays, modals, legacy browser support.
+
+### Quick Reference
+
+| Goal | Tailwind Classes |
+|------|-----------------|
+| Center block horizontally | `mx-auto` (needs max-width) |
+| Center text | `text-center` |
+| Center flex children horizontally | `flex justify-center` |
+| Center flex children vertically | `flex items-center` |
+| Dead center (flex) | `flex justify-center items-center` |
+| Dead center (grid) | `grid place-items-center` |
+| Center single grid child | `place-self-center` |
+
+### Common Patterns
+
+**Centered container with max-width:**
+```html
+<div class="max-w-3xl mx-auto">
+  <!-- Content stays at 768px and centers -->
+</div>
+```
+
+**Centered content within full-width section:**
+```html
+<section class="bg-blue-500 py-12">
+  <div class="max-w-7xl mx-auto px-4">
+    <!-- Content is constrained and centered, background is full-width -->
+  </div>
+</section>
+```
+
+**Vertically centered page content:**
+```html
+<main class="min-h-screen flex items-center">
+  <div class="max-w-md mx-auto">
+    <!-- Login form, error page, etc. -->
+  </div>
+</main>
+```
+
+**Centered button group:**
+```html
+<div class="flex justify-center gap-4">
+  <button>Cancel</button>
+  <button>Save</button>
+</div>
+```
+
+### Avoid These Anti-Patterns
+
+```html
+<!-- ❌ Don't use fixed widths with margin auto -->
+<div class="w-[500px] mx-auto">...</div>
+
+<!-- ✅ Use max-width instead (responsive) -->
+<div class="max-w-lg mx-auto">...</div>
+```
+
+```html
+<!-- ❌ Don't use absolute positioning for simple centering -->
+<div class="relative">
+  <div class="absolute left-1/2 -translate-x-1/2">...</div>
+</div>
+
+<!-- ✅ Use flexbox (simpler, more robust) -->
+<div class="flex justify-center">
+  <div>...</div>
+</div>
+```
+
+```html
+<!-- ❌ Don't nest unnecessary flex containers -->
+<div class="flex justify-center">
+  <div class="flex justify-center">
+    <div>...</div>
+  </div>
+</div>
+
+<!-- ✅ One flex parent is enough -->
+<div class="flex justify-center">
+  <div>...</div>
+</div>
+```
+
+---
+
 ## Containers
 
 Containers limit content width for readability and visual alignment.
@@ -556,6 +799,9 @@ For content that needs narrower width than the app container:
 | Nav Buttons | Clear active state, hover feedback, consistent size |
 | Containers | `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8` for app shell |
 | Responsive Padding | `px-4 sm:px-6 lg:px-8` scales with screen size |
+| Horizontal Center | `mx-auto` (block) or `flex justify-center` |
+| Vertical Center | `flex items-center` (needs height) |
+| Dead Center | `grid place-items-center` or `flex justify-center items-center` |
 
 The flexbox approach is the modern industry standard because it's:
 - **Simple**: Just 3 CSS properties

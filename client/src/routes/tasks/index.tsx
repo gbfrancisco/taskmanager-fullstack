@@ -71,7 +71,7 @@ function TasksPage() {
   // Loading state - show skeleton or spinner
   if (isPending) {
     return (
-      <div className="p-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h1 className="text-display text-4xl text-ink mb-6">Tasks</h1>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Skeleton loading cards */}
@@ -93,7 +93,7 @@ function TasksPage() {
   // Error state - show error message
   if (isError) {
     return (
-      <div className="p-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h1 className="text-display text-4xl text-ink mb-6">Tasks</h1>
         <div className="bg-danger-bg border-comic p-4">
           <p className="text-danger font-medium">Failed to load tasks</p>
@@ -107,7 +107,7 @@ function TasksPage() {
 
   // Success state - render the task list
   return (
-    <div className="p-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header with title and create button */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-display text-4xl text-ink">Tasks</h1>

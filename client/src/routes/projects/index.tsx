@@ -35,7 +35,7 @@ function ProjectsPage() {
   // Loading state
   if (isPending) {
     return (
-      <div className="p-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h1 className="text-display text-4xl text-ink mb-6">Projects</h1>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -56,7 +56,7 @@ function ProjectsPage() {
   // Error state
   if (isError) {
     return (
-      <div className="p-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h1 className="text-display text-4xl text-ink mb-6">Projects</h1>
         <div className="bg-danger-bg border-comic p-4">
           <p className="text-danger font-medium">Failed to load projects</p>
@@ -70,7 +70,7 @@ function ProjectsPage() {
 
   // Success state
   return (
-    <div className="p-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header with title and create button */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-display text-4xl text-ink">Projects</h1>

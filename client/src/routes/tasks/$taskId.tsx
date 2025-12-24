@@ -90,13 +90,15 @@ function TaskDetailPage() {
   // Invalid ID handling
   if (isNaN(id)) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <BackLink />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-3xl mx-auto">
+          <BackLink />
         <div className="bg-danger-bg border-comic p-4 mt-4">
           <p className="text-danger font-medium">Invalid task ID</p>
           <p className="text-danger text-sm mt-1">
             "{taskId}" is not a valid task ID
           </p>
+        </div>
         </div>
       </div>
     );
@@ -105,12 +107,14 @@ function TaskDetailPage() {
   // Loading state
   if (isPending) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <BackLink />
-        <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4 animate-pulse">
-          <div className="h-7 bg-paper-dark w-1/2 mb-4"></div>
-          <div className="h-4 bg-paper-dark w-3/4 mb-2"></div>
-          <div className="h-4 bg-paper-dark w-1/2"></div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-3xl mx-auto">
+          <BackLink />
+          <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4 animate-pulse">
+            <div className="h-7 bg-paper-dark w-1/2 mb-4"></div>
+            <div className="h-4 bg-paper-dark w-3/4 mb-2"></div>
+            <div className="h-4 bg-paper-dark w-1/2"></div>
+          </div>
         </div>
       </div>
     );
@@ -119,13 +123,15 @@ function TaskDetailPage() {
   // Error state
   if (isError) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <BackLink />
-        <div className="bg-danger-bg border-comic p-4 mt-4">
-          <p className="text-danger font-medium">Failed to load task</p>
-          <p className="text-danger text-sm mt-1">
-            {error instanceof Error ? error.message : 'Unknown error occurred'}
-          </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-3xl mx-auto">
+          <BackLink />
+          <div className="bg-danger-bg border-comic p-4 mt-4">
+            <p className="text-danger font-medium">Failed to load task</p>
+            <p className="text-danger text-sm mt-1">
+              {error instanceof Error ? error.message : 'Unknown error occurred'}
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -133,10 +139,11 @@ function TaskDetailPage() {
 
   // Success state - render task details or edit form
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <BackLink />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-3xl mx-auto">
+        <BackLink />
 
-      <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4">
+        <div className="bg-paper p-6 border-comic shadow-comic-soft-lg mt-4">
         {isEditing ? (
           // Edit mode - show the form
           <>
@@ -241,6 +248,7 @@ function TaskDetailPage() {
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );
