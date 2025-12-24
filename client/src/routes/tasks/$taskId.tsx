@@ -17,6 +17,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchTaskById, deleteTask, taskKeys } from '../../api/tasks';
 import { TaskForm } from '../../components/TaskForm';
+import { MetadataList, MetadataItem } from '../../components/Metadata';
 import type { TaskStatus } from '../../types/api';
 
 export const Route = createFileRoute('/tasks/$taskId')({
@@ -172,13 +173,18 @@ function TaskDetailPage() {
               <p className="text-ink-light italic mb-6">No description</p>
             )}
 
-            {/* Metadata */}
-            <div className="border-t-2 border-ink pt-4 space-y-2">
-              <MetadataRow label="Task ID" value={String(task.id)} />
-              <MetadataRow label="Owner" value={task.appUser.username} />
+            {/* Metadata - using MetadataList component */}
+            <MetadataList className="border-t-2 border-ink pt-4 gap-x-8">
+              <MetadataItem label="Task ID">
+                <span className="font-mono">{task.id}</span>
+              </MetadataItem>
+
+              <MetadataItem label="Owner">
+                <span className="font-mono">{task.appUser.username}</span>
+              </MetadataItem>
+
               {task.project && (
-                <div className="flex items-center text-sm">
-                  <span className="text-ink-light w-24">Project:</span>
+                <MetadataItem label="Project">
                   <Link
                     to="/projects/$projectId"
                     params={{ projectId: String(task.project.id) }}
@@ -186,15 +192,15 @@ function TaskDetailPage() {
                   >
                     {task.project.name}
                   </Link>
-                </div>
+                </MetadataItem>
               )}
+
               {task.dueDate && (
-                <MetadataRow
-                  label="Due Date"
-                  value={formatDate(task.dueDate)}
-                />
+                <MetadataItem label="Due Date">
+                  <span className="font-mono">{formatDate(task.dueDate)}</span>
+                </MetadataItem>
               )}
-            </div>
+            </MetadataList>
 
             {/* Action Buttons */}
             <div className="border-t-2 border-ink pt-4 mt-4 flex gap-3">
@@ -300,18 +306,6 @@ function StatusBadge({ status }: { status: TaskStatus }) {
     >
       {labels[status]}
     </span>
-  );
-}
-
-/**
- * MetadataRow - Displays a label/value pair
- */
-function MetadataRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center text-sm">
-      <span className="text-ink-light w-24">{label}:</span>
-      <span className="text-ink font-mono">{value}</span>
-    </div>
   );
 }
 
