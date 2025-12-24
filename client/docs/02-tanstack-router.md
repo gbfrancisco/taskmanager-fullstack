@@ -321,19 +321,84 @@ function Navigation() {
 </Link>
 ```
 
-The `activeOptions` prop controls what counts as "active":
+### Active Options: Prefix vs Exact Matching
+
+The `activeOptions` prop controls what counts as "active".
+
+**Prefix Matching (default, `exact: false`):**
+
+"Is the current URL **starting with** this path?"
+
+```
+Link to="/tasks"
+
+Current URL     Active?
+/tasks          ✅ Yes (starts with /tasks)
+/tasks/123      ✅ Yes (starts with /tasks)
+/tasks/123/edit ✅ Yes (starts with /tasks)
+/projects       ❌ No
+```
+
+**Exact Matching (`exact: true`):**
+
+"Is the current URL **exactly** this path?"
+
+```
+Link to="/tasks" with exact: true
+
+Current URL     Active?
+/tasks          ✅ Yes (exactly /tasks)
+/tasks/123      ❌ No (not exactly /tasks)
+/projects       ❌ No
+```
+
+**Why the root path `/` needs exact matching:**
+
+The `/` path is a prefix of **every** URL:
+
+```
+/           → starts with /  ✅
+/tasks      → starts with /  ✅
+/projects   → starts with /  ✅
+/anything   → starts with /  ✅
+```
+
+Without `exact: true`, the Home link would **always** be active!
 
 ```tsx
+// Home link - needs exact matching
 <Link
   to="/"
-  activeOptions={{ exact: true }}  // Only active on exact "/" match
+  activeOptions={{ exact: true }}
   activeProps={{ className: 'active' }}
 >
   Home
 </Link>
+
+// Tasks link - prefix matching is fine
+<Link
+  to="/tasks"
+  activeProps={{ className: 'active' }}
+>
+  Tasks
+</Link>
 ```
 
-Without `exact: true`, the "/" link would be active on every page since all paths start with "/".
+**Dynamic exact based on route:**
+
+```tsx
+function NavLink({ to, label }: { to: string; label: string }) {
+  return (
+    <Link
+      to={to}
+      activeOptions={{ exact: to === '/' }}  // Only Home needs exact
+      activeProps={{ className: 'active' }}
+    >
+      {label}
+    </Link>
+  );
+}
+```
 
 ### Programmatic Navigation
 
