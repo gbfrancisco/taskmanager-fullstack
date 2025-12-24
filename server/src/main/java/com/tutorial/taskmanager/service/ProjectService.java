@@ -98,7 +98,10 @@ public class ProjectService {
         AppUser appUser = appUserRepository.findById(appUserId)
             .orElseThrow(() -> new ResourceNotFoundException("appUser", appUserId));
 
-        boolean existsByUserAndName = projectRepository.existsByAppUserIdAndName(appUserId, projectCreateDto.getName());
+        boolean existsByUserAndName = projectRepository.existsByAppUserIdAndNameIgnoreCase(
+            appUserId,
+            projectCreateDto.getName()
+        );
         if (existsByUserAndName) {
             throw new ValidationException("user with project name already exists");
         }
@@ -241,7 +244,7 @@ public class ProjectService {
 
         boolean hasDuplicateName = false;
         if (!Strings.CI.equals(projectToUpdate.getName(), projectUpdateDto.getName())) {
-            hasDuplicateName = projectRepository.existsByAppUserIdAndName(
+            hasDuplicateName = projectRepository.existsByAppUserIdAndNameIgnoreCase(
                 projectToUpdate.getAppUser().getId(),
                 projectUpdateDto.getName()
             );
@@ -268,6 +271,14 @@ public class ProjectService {
         projectRepository.deleteById(projectId);
     }
 
+    /**
+     * Checks if a project with the given name exists for a user.
+     * Comparison is case-insensitive (e.g., "My Project" matches "my project").
+     *
+     * @param appUserId the user's ID
+     * @param name the project name to check
+     * @return true if a project with that name exists for the user
+     */
     @Transactional(readOnly = true)
     public boolean existsByAppUserIdAndName(Long appUserId, String name) {
         if (appUserId == null) {
@@ -277,6 +288,6 @@ public class ProjectService {
             throw new IllegalArgumentException("name is empty");
         }
 
-        return projectRepository.existsByAppUserIdAndName(appUserId, name);
+        return projectRepository.existsByAppUserIdAndNameIgnoreCase(appUserId, name);
     }
 }

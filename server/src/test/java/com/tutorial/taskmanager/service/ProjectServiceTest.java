@@ -140,7 +140,7 @@ class ProjectServiceTest {
         void shouldCreateProjectSuccessfully() {
             // Arrange
             when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(projectRepository.existsByAppUserIdAndName(1L, createDto.getName())).thenReturn(false);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName())).thenReturn(false);
             when(projectMapper.toEntity(createDto)).thenReturn(testProject);
             when(projectRepository.save(any(Project.class))).thenReturn(testProject);
             when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
@@ -156,7 +156,7 @@ class ProjectServiceTest {
             assertThat(result.getAppUser().getId()).isEqualTo(1L);
 
             verify(appUserRepository).findById(1L);
-            verify(projectRepository).existsByAppUserIdAndName(1L, createDto.getName());
+            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName());
             verify(projectMapper).toEntity(createDto);
             verify(projectRepository).save(any(Project.class));
             verify(projectMapper).toResponseDto(testProject);
@@ -168,7 +168,7 @@ class ProjectServiceTest {
             // Arrange
             createDto.setStatus(null);
             when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(projectRepository.existsByAppUserIdAndName(1L, createDto.getName())).thenReturn(false);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName())).thenReturn(false);
             when(projectMapper.toEntity(createDto)).thenReturn(testProject);
             when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> {
                 Project saved = invocation.getArgument(0);
@@ -206,7 +206,7 @@ class ProjectServiceTest {
         void shouldThrowExceptionWhenProjectNameExistsForUser() {
             // Arrange
             when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(projectRepository.existsByAppUserIdAndName(1L, createDto.getName())).thenReturn(true);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName())).thenReturn(true);
 
             // Act & Assert
             assertThatThrownBy(() -> projectService.createProject(createDto))
@@ -215,7 +215,7 @@ class ProjectServiceTest {
                     .hasMessageContaining("exists");
 
             verify(appUserRepository).findById(1L);
-            verify(projectRepository).existsByAppUserIdAndName(1L, createDto.getName());
+            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName());
             verify(projectRepository, never()).save(any(Project.class));
         }
 
@@ -255,7 +255,7 @@ class ProjectServiceTest {
             createDto.setAppUserId(2L);
 
             when(appUserRepository.findById(2L)).thenReturn(Optional.of(differentUser));
-            when(projectRepository.existsByAppUserIdAndName(2L, createDto.getName())).thenReturn(false);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(2L, createDto.getName())).thenReturn(false);
             when(projectMapper.toEntity(createDto)).thenReturn(testProject);
             when(projectRepository.save(any(Project.class))).thenReturn(testProject);
             when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
@@ -265,7 +265,7 @@ class ProjectServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            verify(projectRepository).existsByAppUserIdAndName(2L, createDto.getName());
+            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(2L, createDto.getName());
         }
     }
 
@@ -433,7 +433,7 @@ class ProjectServiceTest {
                     .build();
 
             when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
-            when(projectRepository.existsByAppUserIdAndName(1L, updateDto.getName())).thenReturn(false);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, updateDto.getName())).thenReturn(false);
             when(projectRepository.save(any(Project.class))).thenReturn(testProject);
             when(projectMapper.toResponseDto(testProject)).thenReturn(updatedResponseDto);
 
@@ -482,7 +482,7 @@ class ProjectServiceTest {
             verify(projectMapper).patchEntityFromDto(updateDto, testProject);
             verify(projectRepository).save(testProject);
             // Should NOT check uniqueness when name is null (not being updated)
-            verify(projectRepository, never()).existsByAppUserIdAndName(anyLong(), anyString());
+            verify(projectRepository, never()).existsByAppUserIdAndNameIgnoreCase(anyLong(), anyString());
         }
 
         @Test
@@ -506,7 +506,7 @@ class ProjectServiceTest {
         void shouldThrowExceptionWhenUpdatingToDuplicateName() {
             // Arrange
             when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
-            when(projectRepository.existsByAppUserIdAndName(1L, updateDto.getName())).thenReturn(true);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, updateDto.getName())).thenReturn(true);
 
             // Act & Assert
             assertThatThrownBy(() -> projectService.updateProject(1L, updateDto))
@@ -515,7 +515,7 @@ class ProjectServiceTest {
                     .hasMessageContaining("exists");
 
             verify(projectRepository).findById(1L);
-            verify(projectRepository).existsByAppUserIdAndName(1L, updateDto.getName());
+            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, updateDto.getName());
             verify(projectRepository, never()).save(any(Project.class));
         }
 
@@ -542,7 +542,7 @@ class ProjectServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            verify(projectRepository, never()).existsByAppUserIdAndName(anyLong(), anyString());
+            verify(projectRepository, never()).existsByAppUserIdAndNameIgnoreCase(anyLong(), anyString());
             verify(projectRepository).save(testProject);
         }
 
@@ -828,28 +828,28 @@ class ProjectServiceTest {
         @DisplayName("Should return true when project name exists for user")
         void shouldReturnTrueWhenProjectNameExistsForUser() {
             // Arrange
-            when(projectRepository.existsByAppUserIdAndName(1L, "Test Project")).thenReturn(true);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, "Test Project")).thenReturn(true);
 
             // Act
             boolean result = projectService.existsByAppUserIdAndName(1L, "Test Project");
 
             // Assert
             assertThat(result).isTrue();
-            verify(projectRepository).existsByAppUserIdAndName(1L, "Test Project");
+            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, "Test Project");
         }
 
         @Test
         @DisplayName("Should return false when project name does not exist for user")
         void shouldReturnFalseWhenProjectNameDoesNotExistForUser() {
             // Arrange
-            when(projectRepository.existsByAppUserIdAndName(1L, "Nonexistent")).thenReturn(false);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, "Nonexistent")).thenReturn(false);
 
             // Act
             boolean result = projectService.existsByAppUserIdAndName(1L, "Nonexistent");
 
             // Assert
             assertThat(result).isFalse();
-            verify(projectRepository).existsByAppUserIdAndName(1L, "Nonexistent");
+            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, "Nonexistent");
         }
 
         @Test
@@ -860,7 +860,7 @@ class ProjectServiceTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("appUserId");
 
-            verify(projectRepository, never()).existsByAppUserIdAndName(anyLong(), anyString());
+            verify(projectRepository, never()).existsByAppUserIdAndNameIgnoreCase(anyLong(), anyString());
         }
 
         @Test
@@ -871,7 +871,7 @@ class ProjectServiceTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("name");
 
-            verify(projectRepository, never()).existsByAppUserIdAndName(anyLong(), anyString());
+            verify(projectRepository, never()).existsByAppUserIdAndNameIgnoreCase(anyLong(), anyString());
         }
     }
 }

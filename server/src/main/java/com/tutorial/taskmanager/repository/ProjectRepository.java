@@ -62,9 +62,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     // ==================== EXISTENCE CHECKS ====================
 
-    boolean existsByAppUserAndName(AppUser appUser, String name);
+    boolean existsByAppUserAndNameIgnoreCase(AppUser appUser, String name);
 
-    boolean existsByAppUserIdAndName(Long appUserId, String name);
+    boolean existsByAppUserIdAndNameIgnoreCase(Long appUserId, String name);
 
     // ==================== ENTITY GRAPH METHODS ====================
     // These methods fetch the appUser relationship in a single query
