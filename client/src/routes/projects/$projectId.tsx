@@ -24,6 +24,7 @@ import {
 import { fetchTasksByProjectId, taskKeys } from '../../api/tasks';
 import { ProjectForm } from '../../components/ProjectForm';
 import type { ProjectStatus, Task, TaskStatus } from '../../types/api';
+import { MetadataList, MetadataItem } from '../../components/Metadata';
 
 export const Route = createFileRoute('/projects/$projectId')({
   component: ProjectDetailPage
@@ -173,10 +174,15 @@ function ProjectDetailPage() {
               <p className="text-ink-light italic mb-6">No description</p>
             )}
 
-            <div className="border-t-2 border-ink pt-4 space-y-2">
-              <MetadataRow label="Project ID" value={String(project.id)} />
-              <MetadataRow label="Owner" value={project.appUser.username} />
-            </div>
+            <MetadataList className="border-t-2 border-ink pt-4 gap-x-8">
+              <MetadataItem label="Project ID">
+                <span className="font-mono">{String(project.id)}</span>
+              </MetadataItem>
+
+              <MetadataItem label="Owner">
+                <span className="font-mono">{project.appUser.username}</span>
+              </MetadataItem>
+            </MetadataList>
 
             {/* Action Buttons */}
             <div className="border-t-2 border-ink pt-4 mt-4 flex gap-3">
@@ -351,14 +357,5 @@ function TaskRow({ task }: { task: Task }) {
         <TaskStatusBadge status={task.status} />
       </div>
     </Link>
-  );
-}
-
-function MetadataRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center text-sm">
-      <span className="text-ink-light w-24">{label}:</span>
-      <span className="text-ink font-mono">{value}</span>
-    </div>
   );
 }
