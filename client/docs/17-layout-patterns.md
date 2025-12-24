@@ -15,7 +15,8 @@ This document covers fundamental CSS layout patterns for app shells, with a focu
 7. [Alternative Approaches](#alternative-approaches)
 8. [Implementation Reference](#implementation-reference)
 9. [Centering](#centering)
-10. [Containers](#containers)
+10. [Label-Value Pairs](#label-value-pairs-aligned-colons)
+11. [Containers](#containers)
 
 ---
 
@@ -689,6 +690,115 @@ Best for: Overlays, modals, legacy browser support.
 
 ---
 
+## Label-Value Pairs (Aligned Colons)
+
+A common pattern for displaying metadata, settings, or form-like data:
+
+```
+         field1: value 1
+     some field: value 2
+          short: value 3
+very long field: value 4
+              ↑
+        colons align
+```
+
+### Approach 1: CSS Grid (Recommended)
+
+The proper solution - grid auto-sizes to the widest label:
+
+```html
+<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+  <dt class="text-right text-gray-500">Task ID:</dt>
+  <dd>123</dd>
+
+  <dt class="text-right text-gray-500">Owner:</dt>
+  <dd>john_doe</dd>
+
+  <dt class="text-right text-gray-500">Due Date:</dt>
+  <dd>Dec 25, 2025</dd>
+</dl>
+```
+
+**How it works:**
+- `grid-cols-[auto_1fr]` = first column sizes to widest content, second takes rest
+- `text-right` on labels = right-aligns text within the auto-sized column
+- All colons align automatically
+
+```
+  Task ID: 123
+    Owner: john_doe
+ Due Date: Dec 25, 2025
+        ↑
+  Grid auto-sizes this column to "Due Date" (widest)
+```
+
+**Tailwind arbitrary value syntax:**
+- `grid-cols-[auto_1fr]` uses brackets for custom grid template
+- Equivalent CSS: `grid-template-columns: auto 1fr`
+
+### Approach 2: Fixed-Width Label (Quick & Dirty)
+
+```html
+<div class="flex">
+  <span class="w-24 text-right shrink-0">Task ID:</span>
+  <span class="ml-2">123</span>
+</div>
+```
+
+**Pros:** Simple, works for known short labels
+**Cons:** Breaks if label exceeds width, magic number
+
+### Approach 3: Table (Semantic)
+
+```html
+<table class="text-sm">
+  <tbody>
+    <tr>
+      <th class="text-right pr-3 font-normal text-gray-500">Task ID:</th>
+      <td>123</td>
+    </tr>
+    <tr>
+      <th class="text-right pr-3 font-normal text-gray-500">Owner:</th>
+      <td>john_doe</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+**Pros:** Semantically correct for tabular data, auto-sizes
+**Cons:** Table styling can be tricky, some consider it old-fashioned
+
+### Comparison
+
+| Approach | Auto-sizes | Complexity | When to Use |
+|----------|-----------|------------|-------------|
+| CSS Grid | ✅ Yes | Medium | **Default choice** - robust and flexible |
+| Fixed width | ❌ No | Simple | Quick prototypes, known short labels |
+| Table | ✅ Yes | Simple | Truly tabular data, accessibility priority |
+
+### Semantic HTML Note
+
+For label-value pairs, consider using definition lists (`<dl>`, `<dt>`, `<dd>`):
+
+```html
+<dl>
+  <dt>Term/Label</dt>
+  <dd>Definition/Value</dd>
+</dl>
+```
+
+This is semantically meaningful and works well with CSS Grid:
+
+```html
+<dl class="grid grid-cols-[auto_1fr] gap-x-3">
+  <dt class="text-right">Label:</dt>
+  <dd>Value</dd>
+</dl>
+```
+
+---
+
 ## Containers
 
 Containers limit content width for readability and visual alignment.
@@ -802,6 +912,7 @@ For content that needs narrower width than the app container:
 | Horizontal Center | `mx-auto` (block) or `flex justify-center` |
 | Vertical Center | `flex items-center` (needs height) |
 | Dead Center | `grid place-items-center` or `flex justify-center items-center` |
+| Label-Value Pairs | `grid grid-cols-[auto_1fr]` + `text-right` on labels |
 
 The flexbox approach is the modern industry standard because it's:
 - **Simple**: Just 3 CSS properties
