@@ -27,6 +27,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools';
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
 import { Header } from '../components/Header';
+import { Footer } from '../components/Footer';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { RouteErrorComponent } from '../components/RouteErrorComponent';
 
@@ -71,12 +72,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
  */
 function RootLayout() {
   return (
-    <div className="min-h-screen bg-halftone">
+    <div className="min-h-screen flex flex-col bg-halftone">
       {/* Header is OUTSIDE the Outlet - it never changes */}
       <Header />
 
       {/* Main content area */}
-      <main>
+      <main className="flex-1">
         {/*
          * ErrorBoundary wraps the Outlet to catch rendering errors.
          * If any child route component throws during render,
@@ -95,6 +96,9 @@ function RootLayout() {
           <Outlet />
         </ErrorBoundary>
       </main>
+
+      {/* Footer is OUTSIDE the Outlet - it never changes */}
+      <Footer />
 
       {/* Development tools - only visible in dev mode */}
       <TanStackDevtools
