@@ -93,6 +93,9 @@ const taskBaseSchema = {
    *
    * .nullable() allows null (no project selected)
    * .optional() allows undefined (field not included)
+   *
+   * Note: HTML selects return strings, so we use setValueAs in the
+   * form's register() to convert '' to null and "5" to 5.
    */
   projectId: z.number().nullable().optional(),
 

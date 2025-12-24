@@ -34,7 +34,7 @@
  */
 
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -132,6 +132,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting }
   } = useForm<TaskFormData>({
     // Use different schema for create vs edit (future date validation differs)
@@ -143,9 +144,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       title: task?.title ?? '',
       description: task?.description ?? '',
       status: task?.status ?? 'TODO',
-      // Use empty string to match <option value="">No project</option>
-      // setValueAs will convert '' to null on form read
-      projectId: task?.project?.id ?? ('' as unknown as null),
+      projectId: task?.project?.id ?? null,
       dueDate: task?.dueDate ? task.dueDate.split('T')[0] : '',
       dueTime: task?.dueDate
         ? (task.dueDate.split('T')[1]?.slice(0, 5) ?? '')
@@ -431,20 +430,29 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
         >
           Project
         </label>
-        <select
-          id="projectId"
-          {...register('projectId', {
-            setValueAs: (v) => (v === '' ? null : parseInt(v, 10))
-          })}
-          className="w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2"
-        >
-          <option value="">No project</option>
-          {projects?.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        <Controller
+          name="projectId"
+          control={control}
+          render={({ field }) => (
+            <select
+              id="projectId"
+              value={field.value ?? ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                field.onChange(val === '' ? null : parseInt(val, 10));
+              }}
+              onBlur={field.onBlur}
+              className="w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2"
+            >
+              <option value="">No project</option>
+              {projects?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          )}
+        />
         <p className="text-xs text-ink-light mt-1">
           {isEditing
             ? 'Move task to a different project'
