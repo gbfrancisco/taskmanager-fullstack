@@ -25,6 +25,7 @@ import { fetchTasksByProjectId, taskKeys } from '../../api/tasks';
 import { ProjectForm } from '../../components/ProjectForm';
 import type { ProjectStatus, Task, TaskStatus } from '../../types/api';
 import { MetadataList, MetadataItem } from '../../components/Metadata';
+import { formatDate } from '../../utils/dateUtils';
 
 export const Route = createFileRoute('/projects/$projectId')({
   component: ProjectDetailPage
@@ -181,6 +182,14 @@ function ProjectDetailPage() {
 
               <MetadataItem label="Owner">
                 <span className="font-mono">{project.appUser.username}</span>
+              </MetadataItem>
+
+              <MetadataItem label="Created on">
+                <span className="font-mono">{formatDate(project.createdTimestamp)}</span>
+              </MetadataItem>
+
+              <MetadataItem label="Updated on">
+                <span className="font-mono">{formatDate(project.updatedTimestamp)}</span>
               </MetadataItem>
             </MetadataList>
 

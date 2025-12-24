@@ -41,6 +41,8 @@ public class TaskResponseDto {
     private String description;
     private TaskStatus status;
     private LocalDateTime dueDate;
+    private LocalDateTime createdTimestamp;
+    private LocalDateTime updatedTimestamp;
 
     /**
      * Embedded user summary with id and username.

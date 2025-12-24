@@ -105,6 +105,8 @@ export interface Task {
   description: string | null;
   status: TaskStatus;
   dueDate: string | null; // ISO date string (e.g., "2024-12-31T23:59:59")
+  createdTimestamp: string;
+  updatedTimestamp: string;
   appUser: UserSummary; // Embedded user summary (always present)
   project: ProjectSummary | null; // Embedded project summary (null if not assigned)
 }
@@ -164,6 +166,8 @@ export interface Project {
   name: string;
   description: string | null;
   status: ProjectStatus;
+  createdTimestamp: string;
+  updatedTimestamp: string;
   appUser: UserSummary; // Embedded user summary (project owner)
   taskCount: number; // Computed field: number of tasks in this project
 }
