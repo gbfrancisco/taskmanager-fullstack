@@ -16,6 +16,11 @@ import { ProjectForm } from '../../components/ProjectForm';
 import type { Project, ProjectStatus } from '../../types/api';
 
 export const Route = createFileRoute('/projects/')({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData({
+      queryKey: projectKeys.list(),
+      queryFn: fetchProjects
+    }),
   component: ProjectsPage
 });
 

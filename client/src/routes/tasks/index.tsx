@@ -23,6 +23,11 @@ import { TaskForm } from '../../components/TaskForm';
 import type { Task, TaskStatus } from '../../types/api';
 
 export const Route = createFileRoute('/tasks/')({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData({
+      queryKey: taskKeys.list(),
+      queryFn: fetchTasks
+    }),
   component: TasksPage
 });
 
