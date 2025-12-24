@@ -77,6 +77,11 @@ code {
   font-family: var(--font-mono);
 }
 
+/* Buttons should show pointer cursor */
+button {
+  cursor: pointer;
+}
+
 /* ============================================================
    HALFTONE PATTERN - Ben-Day Dots (subtle)
    ============================================================ */
