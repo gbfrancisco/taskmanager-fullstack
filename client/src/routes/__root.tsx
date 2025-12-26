@@ -28,7 +28,6 @@ import { TanStackDevtools } from '@tanstack/react-devtools';
 import TanStackQueryDevtools from '@/integrations/tanstack-query/devtools';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 
 import type { QueryClient } from '@tanstack/react-query';
@@ -79,10 +78,6 @@ function RootLayout() {
       {/* Main content area */}
       <main className="flex-1">
         {/*
-         * ErrorBoundary wraps the Outlet to catch rendering errors.
-         * If any child route component throws during render,
-         * the ErrorBoundary catches it and shows a fallback UI.
-         *
          * <Outlet /> - The magic component
          *
          * This is where child routes render their content:
@@ -91,10 +86,12 @@ function RootLayout() {
          * - Navigate to "/tasks/123" → TaskDetailPage renders here
          *
          * The Header stays in place, only this Outlet swaps content.
+         *
+         * Error handling is provided by TanStack Router's errorComponent
+         * (RouteErrorComponent) which catches both loader and render errors
+         * and properly resets on navigation.
          */}
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
+        <Outlet />
       </main>
 
       {/* Footer is OUTSIDE the Outlet - it never changes */}

@@ -1,8 +1,9 @@
 /**
  * Test Routes - /test
  *
- * Test page for error handling components.
- * Useful for verifying ErrorBoundary and RouteErrorComponent work correctly.
+ * Test page for error handling.
+ * Useful for verifying TanStack Router's RouteErrorComponent works correctly
+ * for both loader errors and render errors.
  */
 
 import { useState } from 'react';
@@ -15,9 +16,9 @@ export const Route = createFileRoute('/test/')({
 function TestPage() {
   const [shouldBreak, setShouldBreak] = useState(false);
 
-  // Throw during render - ErrorBoundary catches this
+  // Throw during render - TanStack Router's errorComponent catches this
   if (shouldBreak) {
-    throw new Error('Test rendering error! ErrorBoundary should catch this.');
+    throw new Error('Test rendering error! RouteErrorComponent should catch this.');
   }
 
   return (
@@ -30,13 +31,13 @@ function TestPage() {
       </p>
 
       <div className="space-y-6">
-        {/* Test ErrorBoundary */}
+        {/* Test Render Error */}
         <div className="p-4 bg-paper border-comic shadow-comic">
           <h2 className="text-display text-lg text-ink mb-2">
-            1. ErrorBoundary Test
+            1. Render Error Test
           </h2>
           <p className="text-sm text-ink-soft mb-3">
-            Throws during render. ErrorBoundary catches it.
+            Throws during render. RouteErrorComponent catches it.
           </p>
           <button
             onClick={() => setShouldBreak(true)}
