@@ -20,6 +20,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTasks, taskKeys } from '@/api/tasks';
 import { TaskForm } from '@/components/TaskForm';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 import type { Task, TaskStatus } from '@/types/api';
 
 export const Route = createFileRoute('/tasks/')({
@@ -28,7 +29,8 @@ export const Route = createFileRoute('/tasks/')({
       queryKey: taskKeys.list(),
       queryFn: fetchTasks
     }),
-  component: TasksPage
+  component: TasksPage,
+  errorComponent: RouteErrorComponent
 });
 
 /**

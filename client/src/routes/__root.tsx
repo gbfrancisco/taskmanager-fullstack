@@ -28,7 +28,6 @@ import { TanStackDevtools } from '@tanstack/react-devtools';
 import TanStackQueryDevtools from '@/integrations/tanstack-query/devtools';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 
 import type { QueryClient } from '@tanstack/react-query';
 
@@ -53,14 +52,11 @@ interface MyRouterContext {
  * 2. Makes that context available to all child routes
  * 3. Renders the root layout component
  *
- * errorComponent:
- * - Displayed when any child route fails to load
- * - Can be overridden per-route if needed
- * - Receives error info and reset function
+ * Note: errorComponent is set on individual child routes (not here)
+ * so the header/footer remain visible during errors.
  */
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  component: RootLayout,
-  errorComponent: RouteErrorComponent
+  component: RootLayout
 });
 
 /**

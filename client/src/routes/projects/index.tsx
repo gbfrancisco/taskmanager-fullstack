@@ -13,6 +13,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { fetchProjects, projectKeys } from '@/api/projects';
 import { ProjectForm } from '@/components/ProjectForm';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 import type { Project } from '@/types/api';
 import { ProjectStatusBadge } from '@/components/ProjectStatusBadge';
 
@@ -22,7 +23,8 @@ export const Route = createFileRoute('/projects/')({
       queryKey: projectKeys.list(),
       queryFn: fetchProjects
     }),
-  component: ProjectsPage
+  component: ProjectsPage,
+  errorComponent: RouteErrorComponent
 });
 
 function ProjectsPage() {

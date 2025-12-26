@@ -23,13 +23,15 @@ import {
 } from '@/api/projects';
 import { fetchTasksByProjectId, taskKeys } from '@/api/tasks';
 import { ProjectForm } from '@/components/ProjectForm';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 import type { Task, TaskStatus } from '@/types/api';
 import { MetadataList, MetadataItem } from '@/components/Metadata';
 import { formatDate } from '@/utils/dateUtils';
 import { ProjectStatusBadge } from '@/components/ProjectStatusBadge';
 
 export const Route = createFileRoute('/projects/$projectId')({
-  component: ProjectDetailPage
+  component: ProjectDetailPage,
+  errorComponent: RouteErrorComponent
 });
 
 function ProjectDetailPage() {
