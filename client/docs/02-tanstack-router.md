@@ -117,6 +117,47 @@ Key concepts:
 - `<Outlet />` - Renders child routes (like Vue's `<router-view>`)
 - Every route is a child of `__root.tsx`
 
+### Root Route Requirements
+
+**`__root.tsx` is required.** Every TanStack Router app using file-based routing must have this file. It's the foundation that wraps all other routes.
+
+**You must use `createRootRoute()` or `createRootRouteWithContext()`.** You can't just export a plain React component. The `Route` export created by these functions contains metadata the router needs (path matching, loader configuration, etc.). Without it:
+- The Vite plugin won't generate valid entries in `routeTree.gen.ts`
+- Route matching won't work
+- Router hooks like `useParams()` won't be available
+
+**`createRootRoute` vs `createRootRouteWithContext`:**
+
+| Function | Use When |
+|----------|----------|
+| `createRootRoute()` | You don't need typed context passed to routes |
+| `createRootRouteWithContext<T>()()` | You need dependency injection (e.g., QueryClient) with TypeScript enforcement |
+
+```tsx
+// Minimal root route (no context)
+import { createRootRoute, Outlet } from '@tanstack/react-router'
+
+export const Route = createRootRoute({
+  component: () => <Outlet />,
+})
+```
+
+```tsx
+// Root route with typed context (our approach)
+import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
+import type { QueryClient } from '@tanstack/react-query'
+
+interface MyRouterContext {
+  queryClient: QueryClient
+}
+
+export const Route = createRootRouteWithContext<MyRouterContext>()({
+  component: () => <Outlet />,
+})
+```
+
+The `WithContext` version makes TypeScript **enforce** that you pass the matching context when calling `createRouter()` in `main.tsx`. This project uses it because we need the `queryClient` available in route loaders.
+
 ### `routeTree.gen.ts` - Auto-Generated
 
 **Never edit this file manually!**
