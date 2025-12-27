@@ -6,6 +6,9 @@ Data fetching, caching, and server state management.
 - [What is TanStack Query?](#what-is-tanstack-query)
 - [Router Loaders vs Query Hooks](#router-loaders-vs-query-hooks)
 - [Core Concepts](#core-concepts)
+  - [Query Client](#query-client)
+  - [Sharing QueryClient with TanStack Router](#sharing-queryclient-with-tanstack-router)
+  - [Stale vs Fresh Data](#stale-vs-fresh-data)
 - [useQuery Hook](#usequery-hook)
 - [Query Keys](#query-keys)
 - [Loading and Error States](#loading-and-error-states)
@@ -215,6 +218,145 @@ const queryClient = new QueryClient()
   <App />
 </QueryClientProvider>
 ```
+
+### Sharing QueryClient with TanStack Router
+
+When using TanStack Query with TanStack Router, both systems need access to the **same** QueryClient instance:
+
+- **React components** need it via `QueryClientProvider` to use `useQuery()` and `useMutation()`
+- **Router loaders/guards** need it via router context to call `prefetchQuery()` or `ensureQueryData()`
+
+This requires a wrapper pattern that creates one QueryClient and shares it with both systems.
+
+#### The Problem
+
+```tsx
+// main.tsx - naive approach (DOESN'T WORK)
+
+// Router needs queryClient at module level
+const router = createRouter({
+  context: { queryClient }  // Where does this come from?
+});
+
+// QueryClient is usually created here
+const queryClient = new QueryClient();  // Too late! Router already created
+```
+
+The router is created at module load time (for TypeScript type generation), but the QueryClient needs to be shared with both the router and React's provider.
+
+#### The Solution: Context Factory Pattern
+
+We use a wrapper module that exports both a factory function and a Provider:
+
+```tsx
+// src/integrations/tanstack-query/root-provider.tsx
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+/**
+ * Creates the QueryClient and returns it in a context object.
+ * Called once at module level, shared with router.
+ */
+export function getContext() {
+  const queryClient = new QueryClient();
+  return { queryClient };
+}
+
+/**
+ * Provider component that wraps children with QueryClientProvider.
+ * Uses the same queryClient from getContext().
+ */
+export function Provider({
+  children,
+  queryClient
+}: {
+  children: React.ReactNode;
+  queryClient: QueryClient;
+}) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+}
+```
+
+#### How It's Used in main.tsx
+
+```tsx
+// main.tsx
+import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider';
+
+// 1. Create context with QueryClient (module level)
+const TanStackQueryProviderContext = TanStackQueryProvider.getContext();
+
+// 2. Pass to router (same queryClient)
+const router = createRouter({
+  routeTree,
+  context: {
+    ...TanStackQueryProviderContext,  // { queryClient: QueryClient }
+    auth: undefined!
+  }
+});
+
+// 3. Wrap app with Provider (same queryClient)
+function App() {
+  return (
+    <TanStackQueryProvider.Provider {...TanStackQueryProviderContext}>
+      <InnerApp />
+    </TanStackQueryProvider.Provider>
+  );
+}
+```
+
+#### Why This Pattern?
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ getContext() called once at module load                         │
+│   └─> Creates { queryClient: new QueryClient() }                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Router Context                    React Context                │
+│  ┌─────────────────┐              ┌─────────────────┐           │
+│  │ context: {      │              │ QueryClient     │           │
+│  │   queryClient ──┼──────────────┼─► Provider      │           │
+│  │ }               │   SAME       │                 │           │
+│  └─────────────────┘   INSTANCE   └─────────────────┘           │
+│         │                                   │                   │
+│         ▼                                   ▼                   │
+│  Route loaders can call            Components can call          │
+│  context.queryClient.              useQuery() and               │
+│  prefetchQuery()                   useMutation()                │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Benefits:**
+1. **Single source of truth** - One QueryClient instance for the entire app
+2. **Router integration** - Loaders can prefetch data into the cache
+3. **Type safety** - Router context is properly typed with `queryClient`
+4. **Cache sharing** - Data prefetched in loaders is available to `useQuery()`
+
+#### Accessing QueryClient in Route Loaders
+
+Once set up, you can use the QueryClient in route configuration:
+
+```tsx
+// routes/tasks/index.tsx
+export const Route = createFileRoute('/tasks/')({
+  loader: async ({ context }) => {
+    // Prefetch data before component renders
+    await context.queryClient.ensureQueryData({
+      queryKey: taskKeys.all,
+      queryFn: fetchTasks
+    });
+  },
+  component: TasksPage
+});
+```
+
+The component's `useQuery` will then find the data already in cache - no loading state needed.
 
 ### Stale vs Fresh Data
 
@@ -494,7 +636,11 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 ## Implementation Reference
 
-Files implemented in this session:
+Files in this project related to TanStack Query:
+
+### Query Setup
+- `src/integrations/tanstack-query/root-provider.tsx` - Context factory pattern for router integration
+- `src/integrations/tanstack-query/devtools.tsx` - Devtools configuration
 
 ### Types
 - `src/types/api.ts` - TypeScript types matching backend DTOs
@@ -504,10 +650,10 @@ Files implemented in this session:
 - `src/api/tasks.ts` - Task API functions and query keys
 - `src/api/projects.ts` - Project API functions and query keys
 
-### Routes
-- `src/routes/tasks.tsx` - Tasks list with useQuery
+### Routes Using Queries
+- `src/routes/tasks/index.tsx` - Tasks list with useQuery
 - `src/routes/tasks/$taskId.tsx` - Task detail with route params
-- `src/routes/projects.tsx` - Projects list with useQuery
+- `src/routes/projects/index.tsx` - Projects list with useQuery
 - `src/routes/projects/$projectId.tsx` - Project detail with parallel queries
 
 ---

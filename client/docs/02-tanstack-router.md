@@ -9,6 +9,8 @@ This document covers TanStack Router fundamentals: file-based routing, navigatio
 - [Navigation](#navigation)
 - [Route Parameters](#route-parameters)
 - [Nested Routes and Layouts](#nested-routes-and-layouts)
+- [Protected Routes](#protected-routes)
+- [Search Parameters](#search-parameters)
 - [Implementation Reference](#implementation-reference)
 
 ---
@@ -639,6 +641,185 @@ When you navigate to `/dashboard/settings`, the `DashboardLayout` stays in place
 
 ---
 
+## Protected Routes
+
+TanStack Router provides `beforeLoad` to run code before a route renders. This is perfect for authentication checks.
+
+### The `beforeLoad` Hook
+
+`beforeLoad` runs **before** the component renders and **before** any data loaders. If it throws a `redirect`, navigation stops and the user is sent elsewhere.
+
+```tsx
+import { createFileRoute, redirect } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/dashboard')({
+  // Runs before component or loader
+  beforeLoad: ({ context }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({ to: '/login' })
+    }
+  },
+  component: DashboardPage,
+})
+```
+
+### Execution Order
+
+```
+Navigate to /dashboard
+        │
+        ▼
+┌─────────────────┐
+│   beforeLoad    │ ← Runs FIRST (auth check here)
+└─────────────────┘
+        │
+   Throws redirect? ──Yes──→ Navigate to /login
+        │
+       No
+        ▼
+┌─────────────────┐
+│     loader      │ ← Runs SECOND (data fetching)
+└─────────────────┘
+        │
+        ▼
+┌─────────────────┐
+│   component     │ ← Runs LAST (render)
+└─────────────────┘
+```
+
+**Why this order matters:** By checking auth in `beforeLoad`, you avoid wasting API calls in the loader for unauthenticated users.
+
+### Redirecting with Context
+
+The redirect can include search parameters to remember where the user was going:
+
+```tsx
+beforeLoad: ({ context, location }) => {
+  if (!context.auth.isAuthenticated) {
+    throw redirect({
+      to: '/login',
+      search: { redirect: location.pathname }  // Save destination
+    })
+  }
+}
+```
+
+This creates URLs like `/login?redirect=/dashboard`. After login, you can navigate back to the saved destination.
+
+### Router Context for Auth
+
+To access auth in `beforeLoad`, you need to pass it through router context. See [Authentication](./18-authentication.md) for the full pattern.
+
+The key points:
+1. Define auth in `MyRouterContext` interface in `__root.tsx`
+2. Pass auth to `RouterProvider` via the `context` prop
+3. Access it in `beforeLoad` via `context.auth`
+
+```tsx
+// __root.tsx
+interface MyRouterContext {
+  queryClient: QueryClient;
+  auth: AuthContextType;  // Available in all routes
+}
+```
+
+---
+
+## Search Parameters
+
+TanStack Router provides type-safe URL search parameters (the `?key=value` part of URLs).
+
+### Validating Search Params
+
+Use Zod to define and validate search params:
+
+```tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { z } from 'zod'
+
+// Define expected search params
+const searchSchema = z.object({
+  page: z.number().optional().default(1),
+  filter: z.enum(['all', 'active', 'completed']).optional(),
+  redirect: z.string().optional(),
+})
+
+export const Route = createFileRoute('/tasks')({
+  validateSearch: searchSchema,
+  component: TasksPage,
+})
+```
+
+### Accessing Search Params
+
+Use `Route.useSearch()` to get typed search params:
+
+```tsx
+function TasksPage() {
+  // Fully typed! { page: number, filter?: 'all' | 'active' | 'completed', redirect?: string }
+  const { page, filter } = Route.useSearch()
+
+  return <div>Page {page}, Filter: {filter || 'none'}</div>
+}
+```
+
+### Setting Search Params
+
+Use `navigate` or `Link` with the `search` option:
+
+```tsx
+// With navigate
+const navigate = useNavigate()
+navigate({
+  to: '/tasks',
+  search: { page: 2, filter: 'active' }
+})
+
+// With Link
+<Link to="/tasks" search={{ page: 2, filter: 'active' }}>
+  Active Tasks (Page 2)
+</Link>
+```
+
+### Using Search Params for Redirects
+
+A common pattern is saving the intended destination during auth redirects:
+
+```tsx
+// In protected route (e.g., /dashboard)
+beforeLoad: ({ context, location }) => {
+  if (!context.auth.isAuthenticated) {
+    throw redirect({
+      to: '/login',
+      search: { redirect: location.pathname }  // /login?redirect=/dashboard
+    })
+  }
+}
+
+// In /login route
+const loginSearchSchema = z.object({
+  redirect: z.string().optional()
+})
+
+export const Route = createFileRoute('/login')({
+  validateSearch: loginSearchSchema,
+  component: LoginPage,
+})
+
+function LoginPage() {
+  const navigate = useNavigate()
+  const { redirect: redirectTo } = Route.useSearch()
+
+  function handleLoginSuccess() {
+    navigate({ to: redirectTo || '/' })  // Go back to /dashboard
+  }
+
+  return <LoginForm onSuccess={handleLoginSuccess} />
+}
+```
+
+---
+
 ## Implementation Reference
 
 This section lists the actual files in our Task Manager app. Refer to the source files for complete implementations.
@@ -647,13 +828,17 @@ This section lists the actual files in our Task Manager app. Refer to the source
 |------|-----|-------------|
 | `src/routes/__root.tsx` | (all) | Root layout with Header and `<Outlet />` |
 | `src/routes/index.tsx` | `/` | Home page |
-| `src/routes/tasks/index.tsx` | `/tasks` | Task list with links to details |
-| `src/routes/tasks/$taskId.tsx` | `/tasks/:taskId` | Task detail using `Route.useParams()` |
-| `src/routes/projects/index.tsx` | `/projects` | Project list with links to details |
-| `src/routes/projects/$projectId.tsx` | `/projects/:projectId` | Project detail using `Route.useParams()` |
-| `src/components/Header.tsx` | — | Navigation with `<Link>` and `activeProps` |
+| `src/routes/login.tsx` | `/login` | Login page with `?redirect` search param |
+| `src/routes/register.tsx` | `/register` | Registration page |
+| `src/routes/tasks/index.tsx` | `/tasks` | Task list (protected with `beforeLoad`) |
+| `src/routes/tasks/$taskId.tsx` | `/tasks/:taskId` | Task detail (protected) |
+| `src/routes/projects/index.tsx` | `/projects` | Project list (protected) |
+| `src/routes/projects/$projectId.tsx` | `/projects/:projectId` | Project detail (protected) |
+| `src/components/Header.tsx` | — | Navigation with conditional auth-based rendering |
 
-Note: We use `tasks/index.tsx` instead of `tasks.tsx` so that the list page and detail page are **sibling routes**, not parent-child. This avoids needing an `<Outlet />` in the list page.
+**Notes:**
+- We use `tasks/index.tsx` instead of `tasks.tsx` so that the list page and detail page are **sibling routes**, not parent-child. This avoids needing an `<Outlet />` in the list page.
+- Protected routes use `beforeLoad` to redirect unauthenticated users to `/login?redirect=...`
 
 ---
 
@@ -666,6 +851,9 @@ Note: We use `tasks/index.tsx` instead of `tasks.tsx` so that the list page and 
 5. **`<Link>`** - Type-safe navigation
 6. **Type safety** - Params and paths are fully typed
 7. **Auto-generation** - Never edit `routeTree.gen.ts`
+8. **`beforeLoad`** - Runs before render, perfect for auth guards
+9. **`throw redirect()`** - Stops execution and navigates elsewhere
+10. **`validateSearch`** - Type-safe URL search parameters with Zod
 
 ---
 

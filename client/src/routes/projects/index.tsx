@@ -9,7 +9,7 @@
  */
 
 import { useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { fetchProjects, projectKeys } from '@/api/projects';
 import { ProjectForm } from '@/components/ProjectForm';
@@ -18,6 +18,15 @@ import type { Project } from '@/types/api';
 import { ProjectStatusBadge } from '@/components/ProjectStatusBadge';
 
 export const Route = createFileRoute('/projects/')({
+  // Route guard: redirect to login if not authenticated
+  beforeLoad: ({ context, location }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({
+        to: '/login',
+        search: { redirect: location.pathname }
+      });
+    }
+  },
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData({
       queryKey: projectKeys.list(),

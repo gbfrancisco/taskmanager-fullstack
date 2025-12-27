@@ -30,18 +30,23 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 
 import type { QueryClient } from '@tanstack/react-query';
+import type { AuthContextType } from '@/contexts/AuthContext';
 
 /**
  * Router Context Type
  *
  * This interface defines what data is available to ALL routes.
- * Currently just QueryClient, but you could add:
- * - Authentication state
- * - User preferences
- * - Feature flags
+ * - queryClient: For data fetching with TanStack Query
+ * - auth: Authentication state and methods (login, logout, etc.)
+ *
+ * Routes can access this context in:
+ * - `beforeLoad`: For route guards (redirect if not authenticated)
+ * - `loader`: For data fetching with user context
+ * - Components: Via route hooks
  */
 interface MyRouterContext {
   queryClient: QueryClient;
+  auth: AuthContextType;
 }
 
 /**

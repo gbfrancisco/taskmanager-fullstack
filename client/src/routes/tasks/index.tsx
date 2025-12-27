@@ -16,7 +16,7 @@
  */
 
 import { useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTasks, taskKeys } from '@/api/tasks';
 import { TaskForm } from '@/components/TaskForm';
@@ -24,6 +24,15 @@ import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 import type { Task, TaskStatus } from '@/types/api';
 
 export const Route = createFileRoute('/tasks/')({
+  // Route guard: redirect to login if not authenticated
+  beforeLoad: ({ context, location }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({
+        to: '/login',
+        search: { redirect: location.pathname }
+      });
+    }
+  },
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData({
       queryKey: taskKeys.list(),

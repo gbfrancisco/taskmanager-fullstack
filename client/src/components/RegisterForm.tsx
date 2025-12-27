@@ -1,15 +1,15 @@
 /**
- * LoginForm Component
+ * RegisterForm Component
  *
- * Handles user authentication with:
+ * Handles user registration with:
  * - Form validation using React Hook Form + Zod
- * - Mock authentication via AuthContext
- * - Error display for invalid credentials
+ * - Mock registration via AuthContext (auto-login after register)
+ * - Error display for duplicate username/email
  * - Loading state during submission
  *
  * Usage:
  * ```tsx
- * <LoginForm onSuccess={() => navigate({ to: '/' })} />
+ * <RegisterForm onSuccess={() => navigate({ to: '/' })} />
  * ```
  */
 
@@ -17,15 +17,15 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, type LoginFormData } from '@/schemas/auth';
+import { registerSchema, type RegisterFormData } from '@/schemas/auth';
 import { useAuth } from '@/contexts/AuthContext';
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
-interface LoginFormProps {
-  /** Called after successful login - typically used for navigation */
+interface RegisterFormProps {
+  /** Called after successful registration - typically used for navigation */
   onSuccess?: () => void;
 }
 
@@ -33,12 +33,12 @@ interface LoginFormProps {
 // COMPONENT
 // =============================================================================
 
-export function LoginForm({ onSuccess }: LoginFormProps) {
-  const { login } = useAuth();
+export function RegisterForm({ onSuccess }: RegisterFormProps) {
+  const { register: registerUser } = useAuth();
 
-  // Track submission state and auth errors
+  // Track submission state and registration errors
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [registerError, setRegisterError] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // REACT HOOK FORM SETUP
@@ -48,12 +48,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     register,
     handleSubmit,
     formState: { errors }
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
     mode: 'onBlur',
     defaultValues: {
       username: '',
-      password: ''
+      email: '',
+      password: '',
+      confirmPassword: ''
     }
   });
 
@@ -61,16 +63,16 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   // FORM SUBMISSION
   // ---------------------------------------------------------------------------
 
-  async function onSubmit(data: LoginFormData) {
+  async function onSubmit(data: RegisterFormData) {
     setIsSubmitting(true);
-    setAuthError(null);
+    setRegisterError(null);
 
     try {
-      await login(data.username, data.password);
+      await registerUser(data.username, data.email, data.password);
       onSuccess?.();
     } catch (err) {
-      // Display auth error (e.g., "Invalid username or password")
-      setAuthError(err instanceof Error ? err.message : 'Login failed');
+      // Display registration error (e.g., "Username already taken")
+      setRegisterError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -82,10 +84,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {/* Auth Error Display */}
-      {authError && (
+      {/* Registration Error Display */}
+      {registerError && (
         <div className="bg-red-50 border-2 border-danger p-3">
-          <p className="text-danger text-sm">{authError}</p>
+          <p className="text-danger text-sm">{registerError}</p>
         </div>
       )}
 
@@ -105,10 +107,33 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
             errors.username ? 'border-danger' : ''
           }`}
-          placeholder="Enter your username"
+          placeholder="Choose a username"
         />
         {errors.username && (
           <p className="text-danger text-sm mt-1">{errors.username.message}</p>
+        )}
+      </div>
+
+      {/* Email Field */}
+      <div>
+        <label
+          htmlFor="email"
+          className="block text-display text-ink mb-1"
+        >
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          {...register('email')}
+          autoComplete="email"
+          className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
+            errors.email ? 'border-danger' : ''
+          }`}
+          placeholder="Enter your email"
+        />
+        {errors.email && (
+          <p className="text-danger text-sm mt-1">{errors.email.message}</p>
         )}
       </div>
 
@@ -124,14 +149,39 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           type="password"
           id="password"
           {...register('password')}
-          autoComplete="current-password"
+          autoComplete="new-password"
           className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
             errors.password ? 'border-danger' : ''
           }`}
-          placeholder="Enter your password"
+          placeholder="Create a password (8+ characters)"
         />
         {errors.password && (
           <p className="text-danger text-sm mt-1">{errors.password.message}</p>
+        )}
+      </div>
+
+      {/* Confirm Password Field */}
+      <div>
+        <label
+          htmlFor="confirmPassword"
+          className="block text-display text-ink mb-1"
+        >
+          Confirm Password
+        </label>
+        <input
+          type="password"
+          id="confirmPassword"
+          {...register('confirmPassword')}
+          autoComplete="new-password"
+          className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
+            errors.confirmPassword ? 'border-danger' : ''
+          }`}
+          placeholder="Confirm your password"
+        />
+        {errors.confirmPassword && (
+          <p className="text-danger text-sm mt-1">
+            {errors.confirmPassword.message}
+          </p>
         )}
       </div>
 
@@ -142,15 +192,15 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           disabled={isSubmitting}
           className="w-full bg-amber-vivid text-ink border-comic shadow-comic py-3 px-6 text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? 'Signing in...' : 'Sign In'}
+          {isSubmitting ? 'Creating account...' : 'Create Account'}
         </button>
       </div>
 
-      {/* Link to register page */}
+      {/* Link to login page */}
       <p className="text-center text-sm text-ink-light mt-4">
-        Don't have an account?{' '}
-        <Link to="/register" className="text-ink underline hover:text-amber-vivid">
-          Register
+        Already have an account?{' '}
+        <Link to="/login" className="text-ink underline hover:text-amber-vivid">
+          Sign in
         </Link>
       </p>
     </form>

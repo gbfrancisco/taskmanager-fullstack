@@ -1,25 +1,32 @@
 /**
  * Header Component - Navigation Bar
  *
+ * Features:
+ * - Conditional navigation based on auth state
+ * - Authenticated: Home, Tasks, Projects, username, Logout button
+ * - Guest: Home, Login, Register
+ *
  * Graphic Novel Theme:
  * - Vivid Amber background with thick black border (bottom only)
  * - Outfit font for logo with ink splash effect
  * - Comic-style nav buttons with press effect
  */
 
-import { Link } from '@tanstack/react-router';
-
-/**
- * Navigation links configuration
- */
-const navLinks = [
-  { to: '/', label: 'Home' },
-  { to: '/tasks', label: 'Tasks' },
-  { to: '/projects', label: 'Projects' },
-  { to: '/login', label: 'Login' }
-] as const;
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Header() {
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  /**
+   * Handle logout - clear auth state and navigate to home
+   */
+  async function handleLogout() {
+    await logout();
+    navigate({ to: '/' });
+  }
+
   return (
     <header className="bg-amber-vivid border-b-4 border-ink sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,11 +40,37 @@ export function Header() {
             </span>
           </Link>
 
-          {/* Navigation Links */}
-          <nav className="flex gap-2">
-            {navLinks.map((link) => (
-              <NavLink key={link.to} to={link.to} label={link.label} />
-            ))}
+          {/* Navigation - changes based on auth state */}
+          <nav className="flex items-center gap-2">
+            {/* Home link - always visible */}
+            <NavLink to="/" label="Home" />
+
+            {isAuthenticated ? (
+              <>
+                {/* Authenticated navigation */}
+                <NavLink to="/tasks" label="Tasks" />
+                <NavLink to="/projects" label="Projects" />
+
+                {/* User info */}
+                <span className="px-3 py-2 text-display text-sm text-ink">
+                  {user?.username}
+                </span>
+
+                {/* Logout button */}
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-display text-sm bg-paper text-ink border-comic shadow-comic-interactive"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Guest navigation */}
+                <NavLink to="/login" label="Login" />
+                <NavLink to="/register" label="Register" />
+              </>
+            )}
           </nav>
         </div>
       </div>

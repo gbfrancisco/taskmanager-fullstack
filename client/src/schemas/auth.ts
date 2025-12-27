@@ -1,8 +1,8 @@
 /**
  * Authentication Validation Schemas
  *
- * Zod schemas for login form validation.
- * Currently a skeleton - will be extended when backend auth is implemented.
+ * Zod schemas for login and registration form validation.
+ * These are client-side validations - the backend will perform its own checks.
  */
 
 import { z } from 'zod';
@@ -14,12 +14,9 @@ import { z } from 'zod';
 /**
  * Schema for login form validation.
  *
- * Basic validation rules:
+ * Validation rules:
  * - username: Required, 3-50 characters
  * - password: Required, 8+ characters
- *
- * Note: These are client-side validations only. The backend will perform
- * its own validation and authentication checks.
  */
 export const loginSchema = z.object({
   username: z
@@ -34,17 +31,48 @@ export const loginSchema = z.object({
     .min(8, 'Password must be at least 8 characters')
 });
 
+export type LoginFormData = z.infer<typeof loginSchema>;
+
 // =============================================================================
-// TYPE INFERENCE
+// REGISTRATION SCHEMA
 // =============================================================================
 
 /**
- * TypeScript type inferred from the login schema.
+ * Schema for registration form validation.
  *
- * Results in:
- * {
- *   username: string
- *   password: string
- * }
+ * Validation rules:
+ * - username: Required, 3-50 chars, alphanumeric + underscore only
+ * - email: Required, valid email format
+ * - password: Required, 8+ characters
+ * - confirmPassword: Must match password
+ *
+ * The .refine() at the end validates that passwords match.
  */
-export type LoginFormData = z.infer<typeof loginSchema>;
+export const registerSchema = z.object({
+    username: z
+      .string()
+      .min(1, 'Username is required')
+      .min(3, 'Username must be at least 3 characters')
+      .max(50, 'Username must be 50 characters or less')
+      .regex(
+        /^[a-zA-Z0-9_]+$/,
+        'Username can only contain letters, numbers, and underscores'
+      ),
+
+    // z.email() is the Zod v4 top-level validator (z.string().email() is deprecated)
+    // It validates both non-empty and valid email format
+    email: z.email({ error: 'Please enter a valid email address' }),
+
+    password: z
+      .string()
+      .min(1, 'Password is required')
+      .min(8, 'Password must be at least 8 characters'),
+
+    confirmPassword: z.string().min(1, 'Please confirm your password')
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'] // Error appears on confirmPassword field
+  });
+
+export type RegisterFormData = z.infer<typeof registerSchema>;

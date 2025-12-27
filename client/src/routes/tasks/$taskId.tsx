@@ -13,7 +13,7 @@
  */
 
 import { useState } from 'react';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchTaskById, deleteTask, taskKeys } from '@/api/tasks';
 import { TaskForm } from '@/components/TaskForm';
@@ -23,6 +23,15 @@ import type { TaskStatus } from '@/types/api';
 import { formatDate } from '@/utils/dateUtils';
 
 export const Route = createFileRoute('/tasks/$taskId')({
+  // Route guard: redirect to login if not authenticated
+  beforeLoad: ({ context, location }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({
+        to: '/login',
+        search: { redirect: location.pathname }
+      });
+    }
+  },
   component: TaskDetailPage,
   errorComponent: RouteErrorComponent
 });

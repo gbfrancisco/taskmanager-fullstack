@@ -39,10 +39,8 @@ This folder contains learning documentation for the React frontend, organized by
 ### Phase 5: Authentication
 | # | Topic | Status | Description |
 |---|-------|--------|-------------|
-| 17 | [Auth Overview](./17-auth-overview.md) | Pending | JWT, sessions, auth strategies |
-| 18 | [Login & Registration](./18-login-registration.md) | Pending | Auth forms, token storage |
-| 19 | [Protected Routes](./19-protected-routes.md) | Pending | Route guards, redirects |
-| 20 | [Auth State Management](./20-auth-state.md) | Pending | Context, persisting auth |
+| 18 | [Authentication](./18-authentication.md) | Complete | Context, protected routes, login/register, session persistence |
+| 19 | [React Context](./19-react-context.md) | Complete | Provider pattern, global state, when to use Context |
 
 ## Quick Links
 
@@ -64,4 +62,5 @@ This folder contains learning documentation for the React frontend, organized by
 | FE-07 | Form Validation (RHF + Zod) | Complete |
 | FE-08 | taskCount & Delete Warning | Complete |
 | FE-09 | Error Handling | Complete |
-| FE-10 | TBD | Next |
+| FE-10,11 | FE Fixes & Auth Init | Complete |
+| FE-12 | Mock Authentication | Complete |
