@@ -28,7 +28,7 @@ function LoginPage() {
         </div>
 
         {/* Login Form Card */}
-        <div className="bg-paper border-comic shadow-comic p-6">
+        <div className="bg-paper border-comic shadow-comic-soft-lg p-6">
           <LoginForm />
         </div>
 
