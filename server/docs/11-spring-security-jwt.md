@@ -38,6 +38,7 @@ A comprehensive guide to understanding and implementing JWT-based authentication
 21. [Security Best Practices](#security-best-practices)
 22. [JWT Logout Strategies](#jwt-logout-strategies)
 23. [HttpOnly Cookie Authentication (Future)](#httponly-cookie-authentication-future)
+24. [CORS Configuration with Spring Security](#cors-configuration-with-spring-security)
 
 ---
 
@@ -2762,6 +2763,263 @@ For learning and development, Authorization header + localStorage is acceptable 
 3. **Phase 3**: Remove header support (optional)
    - Keep for API clients (Postman, curl, mobile apps)
    - Or require all clients to use cookies
+
+---
+
+## CORS Configuration with Spring Security
+
+### What is CORS?
+
+**CORS (Cross-Origin Resource Sharing)** is a browser security feature that blocks web pages from making requests to a different domain than the one that served the page.
+
+**Example:**
+```
+Your frontend: http://localhost:5173  (Vite dev server)
+Your backend:  http://localhost:8080  (Spring Boot)
+```
+
+These are different **origins** (different ports = different origins). When your React app tries to call your Spring Boot API, the browser blocks it by default.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           Browser                                        │
+│                                                                          │
+│  React App (localhost:5173)                                              │
+│       │                                                                  │
+│       │ fetch('/api/tasks')                                              │
+│       ▼                                                                  │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │ BROWSER SECURITY CHECK                                          │    │
+│  │                                                                  │    │
+│  │ "This request is going to localhost:8080, but the page is from │    │
+│  │  localhost:5173. That's a DIFFERENT ORIGIN. I'll block this    │    │
+│  │  unless the server says it's okay."                             │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│       │                                                                  │
+│       ▼                                                                  │
+│  Backend (localhost:8080) must respond with:                             │
+│  Access-Control-Allow-Origin: http://localhost:5173                      │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Why does this exist?**
+
+Without CORS, a malicious website could make requests to your bank's API using your logged-in session. CORS ensures that only explicitly allowed origins can make cross-origin requests.
+
+### The Preflight Request
+
+For "complex" requests (POST with JSON, custom headers, etc.), browsers send a **preflight** OPTIONS request first:
+
+```
+1. Browser → Server: OPTIONS /api/tasks (Can I make this request?)
+2. Server → Browser: Yes, here are my CORS headers
+3. Browser → Server: POST /api/tasks (Actual request)
+4. Server → Browser: 201 Created (Response)
+```
+
+### CORS with Spring Security: The Problem
+
+Spring Security's filter chain runs **before** Spring MVC. If you only configure CORS in `WebMvcConfigurer`:
+
+```java
+// WebConfig.java - This alone is NOT enough!
+@Override
+public void addCorsMappings(CorsRegistry registry) {
+    registry.addMapping("/api/**")
+            .allowedOrigins("http://localhost:5173");
+}
+```
+
+**What happens:**
+1. Request arrives at Spring Security filter chain
+2. Security rejects with 401 (no token)
+3. Response goes back to browser **without CORS headers**
+4. Browser sees: 401 + no CORS headers = **CORS error**
+
+```
+Browser Console:
+❌ Access to fetch at 'http://localhost:8080/api/tasks' from origin
+   'http://localhost:5173' has been blocked by CORS policy
+```
+
+You see a CORS error, but the real problem is 401. The CORS error masks the actual issue.
+
+### The Solution: Configure CORS at Security Level
+
+Configure CORS in `SecurityConfig` so ALL responses (including 401/403 errors) include CORS headers:
+
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    private final CorsProperties corsProperties;
+
+    // Constructor injection...
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+            // Enable CORS at Security level - MUST be first
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+            .csrf(AbstractHttpConfigurer::disable)
+            // ... rest of config
+            .build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // Which origins can make requests
+        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+
+        // Which HTTP methods are allowed
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // Which headers the client can send
+        configuration.setAllowedHeaders(List.of("*"));
+
+        // Allow cookies/credentials (needed for HttpOnly cookie auth)
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
+    }
+}
+```
+
+### CORS Configuration Properties
+
+Store allowed origins in `application.yml`:
+
+```yaml
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000
+```
+
+With a properties class:
+
+```java
+@ConfigurationProperties(prefix = "app.cors")
+public class CorsProperties {
+    private List<String> allowedOrigins = new ArrayList<>();
+
+    public List<String> getAllowedOrigins() {
+        return allowedOrigins;
+    }
+
+    public void setAllowedOrigins(List<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
+    }
+}
+```
+
+### CORS Headers Reference
+
+| Header | Purpose | Example |
+|--------|---------|---------|
+| `Access-Control-Allow-Origin` | Which origins can access | `http://localhost:5173` |
+| `Access-Control-Allow-Methods` | Which HTTP methods allowed | `GET, POST, PUT, DELETE` |
+| `Access-Control-Allow-Headers` | Which request headers allowed | `Authorization, Content-Type` |
+| `Access-Control-Allow-Credentials` | Allow cookies/auth headers | `true` |
+| `Access-Control-Max-Age` | Cache preflight response (seconds) | `3600` |
+
+### Common CORS Mistakes
+
+**1. Using wildcard with credentials:**
+```java
+// ❌ WRONG - Can't use * with credentials
+configuration.setAllowedOrigins(List.of("*"));
+configuration.setAllowCredentials(true);
+
+// ✅ CORRECT - Specify exact origins
+configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+configuration.setAllowCredentials(true);
+```
+
+**2. Only configuring WebMvcConfigurer:**
+```java
+// ❌ INCOMPLETE - 401/403 responses won't have CORS headers
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addCorsMappings(CorsRegistry registry) { ... }
+}
+
+// ✅ COMPLETE - Configure in SecurityConfig
+.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+```
+
+**3. Forgetting OPTIONS in allowed methods:**
+```java
+// ❌ WRONG - Preflight requests will fail
+configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+
+// ✅ CORRECT - Include OPTIONS for preflight
+configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+```
+
+### Debugging CORS Issues
+
+**1. Check browser Network tab:**
+- Look for the actual response status (401, 403, 500)
+- CORS error often masks the real error
+
+**2. Check for preflight:**
+- Look for OPTIONS request before the actual request
+- If OPTIONS fails, the actual request never happens
+
+**3. Check response headers:**
+```bash
+curl -i -X OPTIONS http://localhost:8080/api/tasks \
+  -H "Origin: http://localhost:5173" \
+  -H "Access-Control-Request-Method: GET"
+```
+
+Should return:
+```
+Access-Control-Allow-Origin: http://localhost:5173
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Credentials: true
+```
+
+### Production Considerations
+
+**1. Restrict origins:**
+```yaml
+# Development
+allowed-origins:
+  - http://localhost:5173
+
+# Production
+allowed-origins:
+  - https://myapp.com
+  - https://www.myapp.com
+```
+
+**2. Don't use wildcards in production:**
+```java
+// ❌ Never in production
+configuration.setAllowedOrigins(List.of("*"));
+```
+
+**3. Consider environment-specific config:**
+```yaml
+# application-dev.yml
+app.cors.allowed-origins:
+  - http://localhost:5173
+
+# application-prod.yml
+app.cors.allowed-origins:
+  - https://myapp.com
+```
 
 ---
 

@@ -19,6 +19,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 /**
  * Security configuration for the Task Manager application.
@@ -34,15 +39,18 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final JwtAuthenticationEntryPoint jwtAuthEntryPoint;
     private final UserDetailsService userDetailsService;
+    private final CorsProperties corsProperties;
 
     public SecurityConfig(
         JwtAuthenticationFilter jwtAuthFilter,
         JwtAuthenticationEntryPoint jwtAuthEntryPoint,
-        UserDetailsService userDetailsService
+        UserDetailsService userDetailsService,
+        CorsProperties corsProperties
     ) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
         this.userDetailsService = userDetailsService;
+        this.corsProperties = corsProperties;
     }
 
     /**
@@ -61,6 +69,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+            // Enable CORS at Security level - ensures error responses (401, 403) include CORS headers
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
             // Disable CSRF - not needed for stateless REST API
             .csrf(AbstractHttpConfigurer::disable)
 
@@ -69,11 +80,11 @@ public class SecurityConfig {
 
             // Authorization rules
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/api/auth/**").permitAll()
+                // Public endpoints - only login and register
+                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                // Everything else requires authentication
+                // Everything else requires authentication (including /api/auth/me)
                 .anyRequest().authenticated()
             )
 
@@ -122,5 +133,29 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * CORS configuration for Spring Security.
+     *
+     * <p><strong>Why configure CORS here instead of WebMvcConfigurer?</strong>
+     * Spring Security's filter chain runs BEFORE Spring MVC. If Security rejects
+     * a request (401/403), the MVC CORS handler never runs, so error responses
+     * won't have CORS headers. By configuring CORS at the Security level, ALL
+     * responses (including errors) will include proper CORS headers.
+     *
+     * <p>This uses the same allowed origins from application.yml via CorsProperties.
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
     }
 }
