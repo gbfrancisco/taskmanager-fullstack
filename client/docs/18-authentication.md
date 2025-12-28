@@ -10,6 +10,7 @@ This document covers frontend authentication patterns: React Context for global 
 - [Protected Routes](#protected-routes)
 - [Login Flow with Redirects](#login-flow-with-redirects)
 - [Session Persistence](#session-persistence)
+  - [Blocking Router Until Auth Initializes](#blocking-router-until-auth-initializes-critical-pattern)
 - [Mock Authentication Pattern](#mock-authentication-pattern)
 - [JWT Authentication Integration](#jwt-authentication-integration)
 - [HttpOnly Cookie Authentication (Future)](#httponly-cookie-authentication-future)
@@ -593,6 +594,86 @@ Without it, there's a brief moment where:
 3. Then session loads and user is actually authenticated
 
 The `isLoading` state lets you show a loading spinner or delay rendering until the session check completes.
+
+### Blocking Router Until Auth Initializes (Critical Pattern)
+
+The `isLoading` state must be handled **before** the router renders. This is the industry standard pattern used by Auth0, Clerk, NextAuth, and other auth libraries.
+
+**The Problem:**
+
+```tsx
+// ❌ WRONG - Router renders immediately
+function InnerApp() {
+  const auth = useAuth();
+  // On first render: isLoading=true, isAuthenticated=false
+  // Router evaluates routes with incorrect auth state!
+  return <RouterProvider router={router} context={{ auth }} />;
+}
+```
+
+This causes a race condition:
+1. App starts, `isLoading=true`, `isAuthenticated=false`
+2. Router immediately evaluates `beforeLoad` on routes
+3. `beforeLoad` sees `isAuthenticated=false` → redirects to login (wrong!)
+4. OR loader runs and makes API calls without a token → 401 errors
+
+**The Solution:**
+
+```tsx
+// ✅ CORRECT - Block until auth is known
+function InnerApp() {
+  const auth = useAuth();
+
+  // Don't render router until auth state is known
+  if (auth.isLoading) {
+    return (
+      <div className="loading-screen">
+        <Spinner />
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // Now isLoading=false, isAuthenticated is accurate
+  return <RouterProvider router={router} context={{ auth }} />;
+}
+```
+
+**Why this works:**
+- Router never sees `isLoading=true`
+- `beforeLoad` always has accurate `isAuthenticated` state
+- No race conditions between auth init and route evaluation
+
+**Flow diagram:**
+
+```
+App Starts
+    │
+    ▼
+AuthProvider initializes
+(isLoading=true, user=null)
+    │
+    ▼
+InnerApp checks isLoading ──────► true? Show loading spinner
+    │                                    (Router NOT rendered)
+    │
+    ▼
+Token validation completes
+(isLoading=false, user=data or null)
+    │
+    ▼
+InnerApp re-renders
+    │
+    ▼
+isLoading=false ──────────────► Render RouterProvider
+    │
+    ▼
+Routes evaluate with correct auth state
+    │
+    ├─── isAuthenticated=true ──► beforeLoad passes, loader runs
+    │
+    └─── isAuthenticated=false ─► beforeLoad redirects to /login
+```
 
 ### localStorage vs sessionStorage vs Cookies
 

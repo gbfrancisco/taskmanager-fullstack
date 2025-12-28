@@ -67,10 +67,31 @@ declare module '@tanstack/react-router' {
  * 2. The router needs auth context for route guards (beforeLoad)
  * 3. We pass the live auth state to RouterProvider
  *
- * The router's context is updated on every render with current auth state.
+ * IMPORTANT: We block rendering until auth is initialized.
+ * This prevents a race condition where routes evaluate before we know
+ * if the user is authenticated. Without this:
+ * - isLoading=true, isAuthenticated=false on startup
+ * - beforeLoad sees isAuthenticated=false, redirects to login
+ * - OR loader runs and makes API calls without a token (401 errors)
+ *
+ * This is the industry standard pattern used by Auth0, Clerk, NextAuth,
+ * and other auth libraries - don't render routes until auth state is known.
  */
 function InnerApp() {
   const auth = useAuth();
+
+  // Block rendering until auth state is known
+  // This ensures beforeLoad always has valid auth state to check
+  if (auth.isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-paper">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-ink border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-ink-soft">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <RouterProvider
