@@ -36,6 +36,7 @@ A comprehensive guide to understanding and implementing JWT-based authentication
 19. [Quick Reference](#quick-reference)
 20. [Troubleshooting](#troubleshooting)
 21. [Security Best Practices](#security-best-practices)
+22. [JWT Logout Strategies](#jwt-logout-strategies)
 
 ---
 
@@ -2427,6 +2428,95 @@ class YourControllerTest { }
 3. **Password history** - Prevent password reuse
 4. **Audit logging** - Log all auth events
 5. **Secure headers** - HSTS, X-Content-Type-Options, etc.
+
+---
+
+## JWT Logout Strategies
+
+With stateless JWT authentication, "logout" works differently than session-based auth. Since the server doesn't store session state, there's nothing to invalidate server-side.
+
+### Option 1: Client-Side Only (Simplest)
+
+The client simply deletes the token. The server has no logout endpoint.
+
+```javascript
+// Frontend logout
+localStorage.removeItem('token');
+// or
+authContext.setToken(null);
+```
+
+| Pros | Cons |
+|------|------|
+| Simplest implementation | Token still valid until expiry |
+| Truly stateless | Can't force logout (e.g., stolen token) |
+| No server changes needed | |
+
+**When to use:** Simple applications, short token expiration times, low security requirements.
+
+### Option 2: Token Blacklist (Database/Redis)
+
+Store invalidated tokens until they expire. Check blacklist on every request.
+
+```java
+@PostMapping("/logout")
+public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authHeader) {
+    String token = authHeader.substring(7);
+    Date expiration = jwtService.extractExpiration(token);
+    tokenBlacklistService.blacklist(token, expiration);
+    return ResponseEntity.ok().build();
+}
+```
+
+In JwtAuthenticationFilter:
+```java
+if (tokenBlacklistService.isBlacklisted(jwt)) {
+    filterChain.doFilter(request, response);
+    return;
+}
+```
+
+| Pros | Cons |
+|------|------|
+| Can revoke tokens immediately | Adds statefulness |
+| Force logout compromised tokens | Requires storage (Redis/DB) |
+| Audit trail possible | Check on every request |
+
+**When to use:** Higher security requirements, need to revoke tokens, admin "logout all users" feature.
+
+### Option 3: Short-Lived Access + Refresh Tokens (Best Practice)
+
+Use very short-lived access tokens (15 min) with long-lived refresh tokens stored in HttpOnly cookies.
+
+```
+Access Token:  15 minutes, stored in memory
+Refresh Token: 7 days, stored in HttpOnly cookie
+```
+
+**Flow:**
+1. Login returns both tokens
+2. Access token used for API calls
+3. When access token expires, use refresh token to get new access token
+4. Logout invalidates refresh token (stored server-side)
+
+| Pros | Cons |
+|------|------|
+| Best security | More complex implementation |
+| Short exposure window | Two token types to manage |
+| Can revoke refresh tokens | Requires server-side refresh token storage |
+
+**When to use:** Production applications, high security requirements, long user sessions.
+
+### Recommendation
+
+| Application Type | Recommended Strategy |
+|------------------|---------------------|
+| Learning/Tutorial | Client-side only |
+| Simple internal app | Client-side only |
+| Production SaaS | Short-lived + refresh tokens |
+| High security (banking) | Blacklist + short expiry |
+
+For this tutorial, **client-side logout is sufficient**. The token expires in 24 hours, and users simply delete it on logout.
 
 ---
 
