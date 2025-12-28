@@ -37,6 +37,7 @@ A comprehensive guide to understanding and implementing JWT-based authentication
 20. [Troubleshooting](#troubleshooting)
 21. [Security Best Practices](#security-best-practices)
 22. [JWT Logout Strategies](#jwt-logout-strategies)
+23. [HttpOnly Cookie Authentication (Future)](#httponly-cookie-authentication-future)
 
 ---
 
@@ -2517,6 +2518,250 @@ Refresh Token: 7 days, stored in HttpOnly cookie
 | High security (banking) | Blacklist + short expiry |
 
 For this tutorial, **client-side logout is sufficient**. The token expires in 24 hours, and users simply delete it on logout.
+
+---
+
+## HttpOnly Cookie Authentication (Future)
+
+> **Status**: Not yet implemented. This section documents the production-recommended approach for future reference.
+
+HttpOnly cookies are the **industry standard for production authentication**. Unlike sending JWT in the Authorization header, cookies with the HttpOnly flag cannot be accessed by JavaScript, making them immune to XSS attacks.
+
+### Why HttpOnly Cookies?
+
+| Aspect | Authorization Header (Current) | HttpOnly Cookie |
+|--------|-------------------------------|-----------------|
+| **XSS vulnerability** | Yes - localStorage can be read by scripts | No - invisible to JavaScript |
+| **CSRF vulnerability** | No - headers not sent automatically | Yes - requires CSRF protection |
+| **Token handling** | Frontend manages token | Browser handles automatically |
+| **Implementation** | Simpler to implement | Requires backend changes |
+| **Debugging** | Easy to inspect in DevTools | Cookie visible but not content |
+
+**The trade-off**: HttpOnly cookies protect against XSS but introduce CSRF risk. However, CSRF is easier to mitigate (SameSite attribute, CSRF tokens) than XSS.
+
+### Current vs Cookie-Based Architecture
+
+**Current (Authorization Header):**
+```
+Login Response Body:
+{ "token": "eyJ...", "tokenType": "Bearer", "user": {...} }
+
+Frontend stores token in localStorage, adds to every request:
+Authorization: Bearer eyJ...
+```
+
+**HttpOnly Cookie:**
+```
+Login Response:
+HTTP/1.1 200 OK
+Set-Cookie: token=eyJ...; HttpOnly; Secure; SameSite=Strict; Path=/
+Content-Type: application/json
+
+{ "user": {...} }
+
+Browser automatically sends cookie with every request.
+Frontend never sees or handles the token.
+```
+
+### Backend Changes Required
+
+#### 1. Update AuthController to Set Cookie
+
+```java
+@PostMapping("/login")
+public ResponseEntity<UserResponseDto> login(
+        @Valid @RequestBody LoginRequestDto request,
+        HttpServletResponse response) {
+
+    // Authenticate and get user
+    AuthResponseDto authResponse = authService.login(request);
+
+    // Set HttpOnly cookie instead of returning token in body
+    Cookie cookie = new Cookie("token", authResponse.getToken());
+    cookie.setHttpOnly(true);           // JavaScript cannot access
+    cookie.setSecure(true);             // HTTPS only (disable for localhost)
+    cookie.setPath("/");                // Sent with all requests
+    cookie.setMaxAge(86400);            // 24 hours (match token expiration)
+    cookie.setAttribute("SameSite", "Strict");  // CSRF protection
+    response.addCookie(cookie);
+
+    // Return only user info (no token in body)
+    return ResponseEntity.ok(authResponse.getUser());
+}
+```
+
+#### 2. Update JwtAuthenticationFilter to Read from Cookie
+
+```java
+@Override
+protected void doFilterInternal(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        FilterChain filterChain
+) throws ServletException, IOException {
+
+    // Try to get token from cookie first, then fall back to header
+    String jwt = extractTokenFromCookie(request);
+
+    if (jwt == null) {
+        // Fall back to Authorization header (for API clients, Postman, etc.)
+        jwt = extractTokenFromHeader(request);
+    }
+
+    if (jwt != null) {
+        // Validate and set SecurityContext...
+    }
+
+    filterChain.doFilter(request, response);
+}
+
+private String extractTokenFromCookie(HttpServletRequest request) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+        for (Cookie cookie : cookies) {
+            if ("token".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+    }
+    return null;
+}
+
+private String extractTokenFromHeader(HttpServletRequest request) {
+    String authHeader = request.getHeader("Authorization");
+    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        return authHeader.substring(7);
+    }
+    return null;
+}
+```
+
+#### 3. Add Logout Endpoint That Clears Cookie
+
+```java
+@PostMapping("/logout")
+public ResponseEntity<Void> logout(HttpServletResponse response) {
+    // Clear the cookie by setting maxAge to 0
+    Cookie cookie = new Cookie("token", "");
+    cookie.setHttpOnly(true);
+    cookie.setSecure(true);
+    cookie.setPath("/");
+    cookie.setMaxAge(0);  // Tells browser to delete cookie
+    response.addCookie(cookie);
+
+    return ResponseEntity.noContent().build();
+}
+```
+
+#### 4. Update CORS Configuration for Credentials
+
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+            .allowedOrigins("http://localhost:5173")  // Specific origin required
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+            .allowedHeaders("*")
+            .allowCredentials(true);  // Required for cookies
+    }
+}
+```
+
+**Important**: When `allowCredentials(true)`, you cannot use `allowedOrigins("*")`. You must specify exact origins.
+
+### Frontend Changes Required
+
+The frontend becomes simpler - no token management needed:
+
+```tsx
+// api/client.ts - No more Authorization header handling
+
+export async function get<T>(endpoint: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+    credentials: 'include'  // Required for cookies to be sent
+  });
+  return handleResponse<T>(response);
+}
+
+export async function post<T>(endpoint: string, data: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    credentials: 'include',  // Required for cookies
+    body: JSON.stringify(data)
+  });
+  return handleResponse<T>(response);
+}
+```
+
+```tsx
+// Remove tokenStorage.ts entirely - no longer needed
+
+// AuthContext.tsx - Simplified
+const login = async (username: string, password: string) => {
+  // Server sets cookie automatically, we just get user back
+  const user = await loginUser({ username, password });
+  setUser(user);
+};
+
+const logout = async () => {
+  // Server clears cookie
+  await logoutUser();
+  setUser(null);
+};
+```
+
+### Cookie Attributes Reference
+
+| Attribute | Value | Purpose |
+|-----------|-------|---------|
+| `HttpOnly` | true | Prevents JavaScript access (XSS protection) |
+| `Secure` | true | Only sent over HTTPS (set false for localhost dev) |
+| `SameSite` | Strict | Only sent with same-site requests (CSRF protection) |
+| `Path` | / | Sent with all requests to the domain |
+| `MaxAge` | seconds | Cookie expiration (should match token expiration) |
+
+### SameSite Values Explained
+
+| Value | Behavior |
+|-------|----------|
+| `Strict` | Cookie only sent in first-party context (safest) |
+| `Lax` | Cookie sent on top-level navigation + GET requests |
+| `None` | Cookie sent in all contexts (requires `Secure=true`) |
+
+For same-origin apps (frontend and backend on same domain), use `Strict`. For cross-origin (different domains), you may need `Lax` or `None` with additional CSRF protection.
+
+### When to Implement
+
+Consider migrating to HttpOnly cookies when:
+- Moving to production deployment
+- Handling sensitive user data
+- Security audit requires XSS protection
+- You need server-controlled session invalidation
+
+For learning and development, Authorization header + localStorage is acceptable and easier to debug (you can see the token in DevTools Network tab and localStorage).
+
+### Migration Path
+
+1. **Phase 1**: Add cookie support alongside header (backward compatible)
+   - Filter checks cookie first, falls back to header
+   - Login sets cookie AND returns token in body
+
+2. **Phase 2**: Update frontend to use cookies
+   - Add `credentials: 'include'` to all fetch calls
+   - Remove token storage and header logic
+
+3. **Phase 3**: Remove header support (optional)
+   - Keep for API clients (Postman, curl, mobile apps)
+   - Or require all clients to use cookies
 
 ---
 
