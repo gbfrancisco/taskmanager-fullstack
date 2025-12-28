@@ -61,12 +61,6 @@ const PROJECT_STATUSES = [
   { value: 'CANCELLED', label: 'Cancelled' }
 ] as const;
 
-/**
- * Temporary hardcoded user ID.
- * TODO: Replace with actual authenticated user when auth is implemented.
- */
-const TEMP_USER_ID = 1;
-
 // =============================================================================
 // COMPONENT
 // =============================================================================
@@ -156,11 +150,11 @@ export function ProjectForm({
         }
       });
     } else {
+      // Note: appUserId is not needed - backend extracts user from JWT token
       const input: ProjectCreateInput = {
         name: data.name,
         description: data.description,
-        status: data.status,
-        appUserId: TEMP_USER_ID
+        status: data.status
       };
       createMutation.mutate(input);
     }

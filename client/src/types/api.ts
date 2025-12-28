@@ -115,13 +115,13 @@ export interface Task {
  * TaskCreateInput - Matches TaskCreateDto
  *
  * Used when creating a new task.
+ * Note: appUserId is NOT included - the backend extracts the user from the JWT token.
  */
 export interface TaskCreateInput {
   title: string;
   description?: string;
   status?: TaskStatus;
   dueDate?: string;
-  appUserId: number;
   projectId?: number;
 }
 
@@ -176,12 +176,12 @@ export interface Project {
  * ProjectCreateInput - Matches ProjectCreateDto
  *
  * Used when creating a new project.
+ * Note: appUserId is NOT included - the backend extracts the user from the JWT token.
  */
 export interface ProjectCreateInput {
   name: string;
   description?: string;
   status?: ProjectStatus;
-  appUserId: number;
 }
 
 /**

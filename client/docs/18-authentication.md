@@ -14,6 +14,7 @@ This document covers frontend authentication patterns: React Context for global 
 - [Mock Authentication Pattern](#mock-authentication-pattern)
 - [JWT Authentication Integration](#jwt-authentication-integration)
 - [HttpOnly Cookie Authentication (Future)](#httponly-cookie-authentication-future)
+- [User-Scoped Data (Resource Authorization)](#user-scoped-data-resource-authorization)
 - [Implementation Reference](#implementation-reference)
 
 ---
@@ -1527,6 +1528,133 @@ This section lists the actual files in our Task Manager app.
 | **TanStack Query** | Great caching | Designed for server state, not auth |
 | **localStorage** | Persists, simple | XSS vulnerable, sync only |
 | **HTTP-only Cookie** | Secure, server-controlled | Requires backend support |
+
+---
+
+## User-Scoped Data (Resource Authorization)
+
+With JWT authentication, the backend automatically scopes all data to the authenticated user. This is a critical security feature that simplifies frontend code significantly.
+
+### How It Works
+
+```
+Frontend Request                      Backend Processing
+─────────────────                     ──────────────────
+
+GET /api/tasks                        1. Extract user from JWT token
+Authorization: Bearer eyJ...   ──────►   (via @AuthenticationPrincipal)
+
+                                      2. Query: SELECT * FROM tasks
+                                         WHERE user_id = <extracted_user_id>
+
+                              ◄────── 3. Return only this user's tasks
+```
+
+**Key Points:**
+
+1. **No userId in requests** - The backend extracts the user from the JWT token
+2. **Automatic filtering** - All queries are scoped to the authenticated user
+3. **Ownership validation** - Users cannot access other users' resources (tasks, projects)
+
+### Before: Manual userId (Insecure)
+
+```tsx
+// ❌ OLD APPROACH - Insecure and error-prone
+const TEMP_USER_ID = 1;  // Hardcoded or passed from somewhere
+
+// Creating a task required userId in the request body
+const input: TaskCreateInput = {
+  title: data.title,
+  description: data.description,
+  appUserId: TEMP_USER_ID  // Could be spoofed!
+};
+
+// Fetching tasks required userId query param
+const tasks = await fetchTasksByUserId(TEMP_USER_ID);
+```
+
+**Problems:**
+- Users could create tasks for other users by changing `appUserId`
+- Users could view other users' tasks by changing the query param
+- Frontend had to track and pass userId everywhere
+
+### After: JWT-Based Scoping (Secure)
+
+```tsx
+// ✅ CURRENT APPROACH - Secure and simple
+// No userId needed - backend extracts from JWT
+
+// Creating a task - no appUserId field
+const input: TaskCreateInput = {
+  title: data.title,
+  description: data.description
+  // No appUserId - backend gets user from token
+};
+
+// Fetching tasks - no userId param
+const tasks = await fetchTasks();
+// Backend automatically returns only this user's tasks
+```
+
+**Benefits:**
+- **Secure** - Users can only access their own data
+- **Simpler** - No need to track or pass userId
+- **Automatic** - Every request is scoped by the JWT token
+
+### Frontend Code Simplification
+
+| Before (Manual userId) | After (JWT-Scoped) |
+|------------------------|---------------------|
+| `fetchTasksByUserId(userId)` | `fetchTasks()` |
+| `fetchProjectsByUserId(userId)` | `fetchProjects()` |
+| `createTask({ ...data, appUserId })` | `createTask({ ...data })` |
+| `createProject({ ...data, appUserId })` | `createProject({ ...data })` |
+
+### Type Changes
+
+```tsx
+// types/api.ts
+
+// Before
+interface TaskCreateInput {
+  title: string;
+  description?: string;
+  appUserId: number;  // Required - frontend had to provide
+}
+
+// After
+interface TaskCreateInput {
+  title: string;
+  description?: string;
+  // No appUserId - backend gets user from JWT token
+}
+```
+
+### What the Backend Does
+
+For every authenticated endpoint, the backend:
+
+1. **Extracts user from token** via `@AuthenticationPrincipal`
+2. **Creates** - Assigns new resources to the authenticated user
+3. **Reads** - Filters queries to only return user's resources
+4. **Updates/Deletes** - Validates ownership before allowing changes
+
+```java
+// Backend controller example
+@GetMapping("/api/tasks")
+public List<Task> getTasks(@AuthenticationPrincipal AppUserDetails user) {
+    Long userId = user.getAppUser().getId();
+    return taskService.findAll(userId);  // Only this user's tasks
+}
+```
+
+### Security Guarantee
+
+With this architecture:
+- Users **cannot** see other users' tasks or projects
+- Users **cannot** create resources for other users
+- Users **cannot** modify or delete other users' resources
+- All authorization happens on the backend (cannot be bypassed)
 
 ---
 

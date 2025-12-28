@@ -44,7 +44,7 @@ import {
   removeTaskFromProject,
   taskKeys
 } from '@/api/tasks';
-import { fetchProjectsByUserId, projectKeys } from '@/api/projects';
+import { fetchProjects, projectKeys } from '@/api/projects';
 import {
   taskCreateSchema,
   taskEditSchema,
@@ -89,13 +89,6 @@ const TASK_STATUSES = [
   { value: 'COMPLETED', label: 'Completed' },
   { value: 'CANCELLED', label: 'Cancelled' }
 ] as const;
-
-/**
- * Temporary hardcoded user ID.
- * In a real app, this would come from authentication context.
- * TODO: Replace with actual authenticated user when auth is implemented.
- */
-const TEMP_USER_ID = 1;
 
 // =============================================================================
 // COMPONENT
@@ -169,14 +162,14 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
   // ---------------------------------------------------------------------------
 
   /**
-   * Fetch projects belonging to the current user for the dropdown.
+   * Fetch projects for the dropdown.
    *
-   * We filter by userId to only show projects the user owns.
-   * This is more scalable and secure than fetching all projects.
+   * The backend automatically returns only projects belonging to the
+   * authenticated user (extracted from JWT token).
    */
   const { data: projects } = useQuery({
-    queryKey: projectKeys.listByUser(TEMP_USER_ID),
-    queryFn: () => fetchProjectsByUserId(TEMP_USER_ID)
+    queryKey: projectKeys.list(),
+    queryFn: fetchProjects
   });
 
   // ---------------------------------------------------------------------------
@@ -322,12 +315,12 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       }
     } else {
       // Create new task - projectId is included in the create payload
+      // Note: appUserId is not needed - backend extracts user from JWT token
       const input: TaskCreateInput = {
         title: data.title,
         description: data.description,
         status: data.status,
         dueDate: formattedDueDate,
-        appUserId: TEMP_USER_ID,
         projectId: data.projectId ?? undefined
       };
       createMutation.mutate(input);

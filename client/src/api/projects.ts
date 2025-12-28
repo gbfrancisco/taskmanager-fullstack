@@ -46,13 +46,12 @@ export function fetchProjectById(id: number): Promise<Project> {
 /**
  * Fetch projects by user ID
  *
- * GET /api/projects?userId=:userId
- *
- * @param userId - The user ID to filter by
- * @returns Array of projects owned by the user
+ * @deprecated No longer needed - backend automatically returns authenticated user's projects.
+ * Use fetchProjects() instead.
  */
-export function fetchProjectsByUserId(userId: number): Promise<Project[]> {
-  return get<Project[]>(`/api/projects?userId=${userId}`);
+export function fetchProjectsByUserId(_userId: number): Promise<Project[]> {
+  // Backend now filters by authenticated user from JWT token
+  return get<Project[]>('/api/projects');
 }
 
 /**

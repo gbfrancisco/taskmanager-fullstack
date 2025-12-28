@@ -64,13 +64,12 @@ export function fetchTaskById(id: number): Promise<Task> {
 /**
  * Fetch tasks by user ID
  *
- * GET /api/tasks?userId=:userId
- *
- * @param userId - The user ID to filter by
- * @returns Array of tasks belonging to the user
+ * @deprecated No longer needed - backend automatically returns authenticated user's tasks.
+ * Use fetchTasks() instead.
  */
-export function fetchTasksByUserId(userId: number): Promise<Task[]> {
-  return get<Task[]>(`/api/tasks?userId=${userId}`);
+export function fetchTasksByUserId(_userId: number): Promise<Task[]> {
+  // Backend now filters by authenticated user from JWT token
+  return get<Task[]>('/api/tasks');
 }
 
 /**
@@ -98,15 +97,15 @@ export function fetchTasksByStatus(status: TaskStatus): Promise<Task[]> {
 }
 
 /**
- * Fetch overdue tasks for a user
+ * Fetch overdue tasks for the authenticated user
  *
- * GET /api/tasks?userId=:userId&overdue=true
+ * GET /api/tasks?overdue=true
  *
- * @param userId - The user ID to filter by
- * @returns Array of overdue tasks
+ * @returns Array of overdue tasks for the authenticated user
  */
-export function fetchOverdueTasks(userId: number): Promise<Task[]> {
-  return get<Task[]>(`/api/tasks?userId=${userId}&overdue=true`);
+export function fetchOverdueTasks(): Promise<Task[]> {
+  // Backend filters by authenticated user from JWT token
+  return get<Task[]>('/api/tasks?overdue=true');
 }
 
 // =============================================================================
