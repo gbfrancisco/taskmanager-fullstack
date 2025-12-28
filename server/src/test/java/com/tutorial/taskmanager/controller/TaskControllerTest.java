@@ -16,13 +16,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.tutorial.taskmanager.config.SecurityConfig;
+import com.tutorial.taskmanager.security.JwtService;
+import com.tutorial.taskmanager.security.AppUserDetailsService;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -49,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * </ul>
  */
 @WebMvcTest(TaskController.class)
-@Import(SecurityConfig.class)
+@AutoConfigureMockMvc(addFilters = false)  // Disable security filters for unit testing
 @DisplayName("TaskController Tests")
 class TaskControllerTest {
 
@@ -61,6 +62,13 @@ class TaskControllerTest {
 
     @MockitoBean
     private TaskService taskService;
+
+    // Security beans required for component scanning (filters disabled via addFilters=false)
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private AppUserDetailsService appUserDetailsService;
 
     private TaskCreateDto createDto;
     private TaskUpdateDto updateDto;

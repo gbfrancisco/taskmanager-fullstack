@@ -52,8 +52,10 @@ public class SecurityConfig {
      * <ul>
      *   <li>CSRF disabled (stateless API)</li>
      *   <li>Stateless session management</li>
-     *   <li>All requests permitted (temporary)</li>
-     *   <li>H2 console frame options configured</li>
+     *   <li>Public endpoints: /api/auth/**, /swagger-ui/**, /h2-console/**</li>
+     *   <li>All other requests require authentication</li>
+     *   <li>JWT filter for token validation</li>
+     *   <li>Custom 401 handler for unauthenticated requests</li>
      * </ul>
      */
     @Bean
@@ -65,11 +67,11 @@ public class SecurityConfig {
             // Stateless session - no server-side session storage
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            // TODO: Add proper authorization rules in Checkpoint 4
+            // Authorization rules
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/pi/auth/**").permitAll()
-                .requestMatchers("/swegger-ui/**").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 // Everything else requires authentication
                 .anyRequest().authenticated()
@@ -78,11 +80,8 @@ public class SecurityConfig {
             // Custom 401 handler
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthEntryPoint))
 
-            // Ad JWT filter before UsernamePasswordAuthenticationFilter
+            // Add JWT filter before UsernamePasswordAuthenticationFilter
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-
-            // Authorization rules - permit all for now
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
 
             // Allow H2 console frames (development only)
             .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))

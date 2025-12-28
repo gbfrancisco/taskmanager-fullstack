@@ -7,6 +7,7 @@ import com.tutorial.taskmanager.exception.ResourceNotFoundException;
 import com.tutorial.taskmanager.mapper.AppUserMapper;
 import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.repository.AppUserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Unit tests for AppUserService
@@ -56,6 +58,9 @@ class AppUserServiceTest {
     @Mock
     private AppUserMapper appUserMapper;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private AppUserService appUserService;
 
@@ -70,6 +75,10 @@ class AppUserServiceTest {
      */
     @BeforeEach
     void setUp() {
+        // Stub password encoder to return encoded password (lenient - not all tests use it)
+        lenient().when(passwordEncoder.encode(anyString())).thenAnswer(invocation ->
+            "encoded_" + invocation.getArgument(0));
+
         // Create a test user entity
         testUser = AppUser.builder()
             .username("testuser")
