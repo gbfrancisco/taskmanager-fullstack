@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -75,6 +77,46 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    // ========================================================================
+    // 401 UNAUTHORIZED - Authentication failures
+    // ========================================================================
+
+    /**
+     * Handles BadCredentialsException.
+     *
+     * <p>Thrown when authentication fails due to incorrect password.
+     * Returns HTTP 401 Unauthorized.
+     *
+     * <p><strong>Security Note:</strong> Always return a generic message like
+     * "Invalid username or password" - never reveal whether the username
+     * or password was incorrect (prevents user enumeration attacks).
+     *
+     * @param ex the BadCredentialsException
+     * @return ResponseEntity with error details and 401 status
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+    }
+
+    /**
+     * Handles UsernameNotFoundException.
+     *
+     * <p>Thrown when authentication fails because the user doesn't exist.
+     * Returns HTTP 401 Unauthorized.
+     *
+     * <p><strong>Security Note:</strong> Returns the same generic message as
+     * {@link #handleBadCredentials} to prevent user enumeration attacks.
+     * An attacker shouldn't be able to determine if a username exists.
+     *
+     * @param ex the UsernameNotFoundException
+     * @return ResponseEntity with error details and 401 status
+     */
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFound(UsernameNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid username or password");
     }
 
     // ========================================================================
