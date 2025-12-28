@@ -42,8 +42,10 @@ export function Header() {
 
           {/* Navigation - changes based on auth state */}
           <nav className="flex items-center gap-2">
-            {/* Home link - always visible */}
-            <NavLink to="/" label="Home" />
+            {/* Home link - hidden on mobile (logo serves same purpose) */}
+            <span className="hidden sm:block">
+              <NavLink to="/" label="Home" />
+            </span>
 
             {isAuthenticated ? (
               <>
@@ -51,8 +53,8 @@ export function Header() {
                 <NavLink to="/tasks" label="Tasks" />
                 <NavLink to="/projects" label="Projects" />
 
-                {/* User info */}
-                <span className="px-3 py-2 text-display text-sm text-ink">
+                {/* User info - hidden on mobile */}
+                <span className="hidden sm:block px-3 py-2 text-display text-sm text-ink">
                   {user?.username}
                 </span>
 

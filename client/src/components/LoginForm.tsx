@@ -101,7 +101,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           type="text"
           id="username"
           {...register('username')}
-          autoComplete="username"
+          autoComplete="off"
           className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
             errors.username ? 'border-danger' : ''
           }`}
