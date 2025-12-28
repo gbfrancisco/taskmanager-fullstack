@@ -3023,6 +3023,206 @@ app.cors.allowed-origins:
 
 ---
 
+## Resource Authorization (User-Scoped Data)
+
+After implementing authentication (who are you?), you need **resource authorization** (what can you access?). In multi-user applications, users should only access their own data.
+
+### The Problem: Data Leakage
+
+Without proper authorization, a logged-in user could:
+
+```bash
+# User #1 is logged in, but can see User #2's tasks!
+GET /api/tasks?userId=2
+
+# Or modify someone else's project!
+PUT /api/projects/99  # (belongs to User #2)
+```
+
+**Bad Design - User ID in Request Body:**
+```java
+// ❌ INSECURE - User can create tasks for any user
+@PostMapping("/api/tasks")
+public TaskResponseDto createTask(@RequestBody TaskCreateDto dto) {
+    // dto.getAppUserId() comes from untrusted request body
+    // User can spoof any ID!
+}
+```
+
+### The Solution: Extract User from JWT
+
+**Good Design - User ID from Authentication:**
+```java
+// ✅ SECURE - User extracted from validated JWT token
+@PostMapping("/api/tasks")
+public TaskResponseDto createTask(
+        @AuthenticationPrincipal AppUserDetails userDetails,
+        @RequestBody TaskCreateDto dto) {
+    Long userId = userDetails.getAppUser().getId();  // From trusted JWT
+    return taskService.createTask(dto, userId);
+}
+```
+
+### Implementation Pattern
+
+**1. Controllers: Inject @AuthenticationPrincipal**
+
+```java
+@RestController
+@RequestMapping("/api/tasks")
+public class TaskController {
+
+    @GetMapping
+    public List<TaskResponseDto> getAllTasks(
+            @AuthenticationPrincipal AppUserDetails userDetails) {
+        Long userId = userDetails.getAppUser().getId();
+        return taskService.findAll(userId);  // Only user's tasks
+    }
+
+    @PostMapping
+    public TaskResponseDto createTask(
+            @AuthenticationPrincipal AppUserDetails userDetails,
+            @RequestBody TaskCreateDto dto) {
+        Long userId = userDetails.getAppUser().getId();
+        return taskService.createTask(dto, userId);  // Assign to user
+    }
+
+    @GetMapping("/{id}")
+    public TaskResponseDto getTask(
+            @AuthenticationPrincipal AppUserDetails userDetails,
+            @PathVariable Long id) {
+        Long userId = userDetails.getAppUser().getId();
+        return taskService.getById(id, userId);  // Ownership check
+    }
+}
+```
+
+**2. Services: Accept userId Parameter, Validate Ownership**
+
+```java
+@Service
+@Transactional
+public class TaskService {
+
+    /**
+     * Create task for authenticated user.
+     * No appUserId in DTO - user is extracted from JWT.
+     */
+    public TaskResponseDto createTask(TaskCreateDto dto, Long userId) {
+        AppUser user = appUserRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("user", userId));
+
+        // If task references a project, verify project ownership
+        if (dto.getProjectId() != null) {
+            Project project = projectRepository.findById(dto.getProjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("project", dto.getProjectId()));
+
+            if (!Objects.equals(project.getAppUser().getId(), userId)) {
+                throw new ValidationException("Project does not belong to authenticated user");
+            }
+        }
+
+        Task task = taskMapper.toEntity(dto);
+        task.setAppUser(user);  // Always assign to authenticated user
+        return taskMapper.toResponseDto(taskRepository.save(task));
+    }
+
+    /**
+     * Get task with ownership check.
+     */
+    public TaskResponseDto getById(Long taskId, Long userId) {
+        Task task = taskRepository.findById(taskId)
+            .orElseThrow(() -> new ResourceNotFoundException("task", taskId));
+
+        validateOwnership(task, userId);  // Throws if not owner
+        return taskMapper.toResponseDto(task);
+    }
+
+    /**
+     * Get ALL user's tasks - no global findAll() anymore.
+     */
+    public List<TaskResponseDto> findAll(Long userId) {
+        return taskMapper.toResponseDtoList(
+            taskRepository.findByAppUserId(userId)  // Always scoped to user
+        );
+    }
+
+    private void validateOwnership(Task task, Long userId) {
+        if (!Objects.equals(task.getAppUser().getId(), userId)) {
+            throw new ValidationException("Task does not belong to authenticated user");
+        }
+    }
+}
+```
+
+**3. DTOs: Remove appUserId Field**
+
+```java
+// ❌ BEFORE - appUserId in DTO (security risk)
+public class TaskCreateDto {
+    private String title;
+    private Long appUserId;  // User can spoof this!
+}
+
+// ✅ AFTER - No appUserId (extracted from JWT)
+public class TaskCreateDto {
+    private String title;
+    // appUserId removed - user comes from JWT token
+}
+```
+
+### Authorization Rules Summary
+
+| Operation | Authorization Rule |
+|-----------|-------------------|
+| **Create** | Resource assigned to authenticated user (from JWT) |
+| **Read (single)** | Verify resource belongs to authenticated user |
+| **Read (list)** | Only return resources belonging to authenticated user |
+| **Update** | Verify resource belongs to authenticated user |
+| **Delete** | Verify resource belongs to authenticated user |
+
+### Error Responses
+
+| Scenario | HTTP Status | Message |
+|----------|-------------|---------|
+| Resource not found | 404 | "Task with id 99 not found" |
+| Not owner | 400 | "Task does not belong to authenticated user" |
+| Referenced resource not owned | 400 | "Project does not belong to authenticated user" |
+
+> **Note:** We use 400 (Bad Request) for authorization failures because `ValidationException` maps to 400. For stricter REST semantics, you could create an `AccessDeniedException` that maps to 403 (Forbidden).
+
+### Frontend Changes
+
+Remove `appUserId` from create/update forms:
+
+```typescript
+// ❌ BEFORE - Frontend sends userId
+const createTask = (task: TaskCreateInput) => {
+  return post('/api/tasks', {
+    title: task.title,
+    appUserId: getCurrentUserId()  // Remove this!
+  });
+};
+
+// ✅ AFTER - Backend extracts user from JWT
+const createTask = (task: TaskCreateInput) => {
+  return post('/api/tasks', {
+    title: task.title
+    // No appUserId - JWT token identifies user
+  });
+};
+```
+
+### Key Takeaways
+
+1. **Never trust user-provided IDs** for ownership - extract from JWT
+2. **Validate ownership on every operation** - not just reads
+3. **Scope all queries to authenticated user** - no "get all" without user filter
+4. **Remove userId from DTOs** - it's a security vulnerability
+5. **Validate cross-references** - if task references a project, verify user owns project too
+
+---
+
 ## What's Next?
 
 This guide covers authentication. Future topics include:

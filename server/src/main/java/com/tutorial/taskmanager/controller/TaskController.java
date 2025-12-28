@@ -4,9 +4,11 @@ import com.tutorial.taskmanager.dto.task.TaskCreateDto;
 import com.tutorial.taskmanager.dto.task.TaskResponseDto;
 import com.tutorial.taskmanager.dto.task.TaskUpdateDto;
 import com.tutorial.taskmanager.enums.TaskStatus;
+import com.tutorial.taskmanager.security.AppUserDetails;
 import com.tutorial.taskmanager.service.TaskService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +18,10 @@ import java.util.List;
  *
  * <p>Provides CRUD endpoints and filtering for tasks in the Task Manager application.
  * All endpoints return JSON and follow RESTful conventions.
+ *
+ * <p><strong>Authorization:</strong>
+ * All endpoints require authentication. Data is automatically scoped to the
+ * authenticated user - users can only access their own tasks.
  *
  * <h2>Endpoints Summary:</h2>
  * <table border="1">
@@ -31,15 +37,15 @@ import java.util.List;
  *
  * <h2>Query Parameters for GET /api/tasks:</h2>
  * <ul>
- *   <li>userId - Filter by user ID</li>
- *   <li>projectId - Filter by project ID</li>
+ *   <li>projectId - Filter by project ID (must be user's project)</li>
  *   <li>status - Filter by task status (TODO, IN_PROGRESS, COMPLETED, CANCELLED)</li>
  *   <li>overdue - If true, return only overdue tasks</li>
  * </ul>
  *
  * <h2>Error Responses:</h2>
  * <ul>
- *   <li>404 Not Found - Task/User/Project not found</li>
+ *   <li>401 Unauthorized - Not authenticated</li>
+ *   <li>404 Not Found - Task/Project not found</li>
  *   <li>400 Bad Request - Validation failed (e.g., project doesn't belong to user)</li>
  * </ul>
  *
@@ -61,7 +67,7 @@ public class TaskController {
     // ========================================================================
 
     /**
-     * Create a new task.
+     * Create a new task for the authenticated user.
      *
      * <p><strong>HTTP Method:</strong> POST
      * <p><strong>Path:</strong> /api/tasks
@@ -72,27 +78,34 @@ public class TaskController {
      *   "description": "Add JWT authentication",
      *   "status": "TODO",
      *   "dueDate": "2024-12-31T23:59:59",
-     *   "appUserId": 1,
      *   "projectId": 1
      * }
      * </pre>
      *
-     * <p><strong>Required Fields:</strong> title, appUserId
+     * <p><strong>Required Fields:</strong> title
      * <p><strong>Optional Fields:</strong> description, status (defaults to TODO), dueDate, projectId
+     *
+     * <p><strong>Note:</strong> The task is automatically assigned to the authenticated user.
+     * No userId field is required in the request body.
      *
      * <p><strong>Status Codes:</strong>
      * <ul>
      *   <li>201 Created - Task created successfully</li>
      *   <li>400 Bad Request - Validation failed or project doesn't belong to user</li>
-     *   <li>404 Not Found - User or project not found</li>
+     *   <li>404 Not Found - Project not found</li>
      * </ul>
      *
+     * @param userDetails the authenticated user (injected by Spring Security)
      * @param createDto the task data to create
      * @return ResponseEntity with created task and 201 status
      */
     @PostMapping
-    public ResponseEntity<TaskResponseDto> createTask(@RequestBody TaskCreateDto createDto) {
-        TaskResponseDto createdTask = taskService.createTask(createDto);
+    public ResponseEntity<TaskResponseDto> createTask(
+        @AuthenticationPrincipal AppUserDetails userDetails,
+        @RequestBody TaskCreateDto createDto
+    ) {
+        Long userId = userDetails.getAppUser().getId();
+        TaskResponseDto createdTask = taskService.createTask(createDto, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
@@ -101,50 +114,56 @@ public class TaskController {
     // ========================================================================
 
     /**
-     * Get a task by ID.
+     * Get a task by ID, with ownership check.
      *
      * <p><strong>HTTP Method:</strong> GET
      * <p><strong>Path:</strong> /api/tasks/{id}
      *
+     * <p><strong>Note:</strong> Only returns the task if it belongs to the authenticated user.
+     *
      * <p><strong>Status Codes:</strong>
      * <ul>
      *   <li>200 OK - Task found and returned</li>
+     *   <li>400 Bad Request - Task doesn't belong to authenticated user</li>
      *   <li>404 Not Found - Task with given ID doesn't exist</li>
      * </ul>
      *
+     * @param userDetails the authenticated user (injected by Spring Security)
      * @param id the task ID to look up
      * @return ResponseEntity with task data and 200 status
      */
     @GetMapping("/{id}")
-    public ResponseEntity<TaskResponseDto> getTaskById(@PathVariable Long id) {
-        TaskResponseDto task = taskService.getById(id);
+    public ResponseEntity<TaskResponseDto> getTaskById(
+        @AuthenticationPrincipal AppUserDetails userDetails,
+        @PathVariable Long id
+    ) {
+        Long userId = userDetails.getAppUser().getId();
+        TaskResponseDto task = taskService.getById(id, userId);
         return ResponseEntity.ok(task);
     }
 
     /**
-     * Get all tasks with optional filters.
+     * Get all tasks for the authenticated user with optional filters.
      *
      * <p><strong>HTTP Method:</strong> GET
      * <p><strong>Path:</strong> /api/tasks
      *
+     * <p><strong>Note:</strong> Always returns only tasks belonging to the authenticated user.
+     *
      * <p><strong>Query Parameters (all optional):</strong>
      * <ul>
-     *   <li>userId - Filter by user ID</li>
-     *   <li>projectId - Filter by project ID</li>
+     *   <li>projectId - Filter by project ID (must be user's project)</li>
      *   <li>status - Filter by status (TODO, IN_PROGRESS, COMPLETED, CANCELLED)</li>
      *   <li>overdue - If true, return only overdue tasks</li>
      * </ul>
      *
      * <p><strong>Filter Combinations:</strong>
      * <ul>
-     *   <li>No params: Returns all tasks</li>
-     *   <li>userId only: Tasks for specific user</li>
-     *   <li>projectId only: Tasks for specific project</li>
-     *   <li>status only: Tasks with specific status</li>
-     *   <li>userId + status: User's tasks with specific status</li>
-     *   <li>projectId + status: Project's tasks with specific status</li>
-     *   <li>overdue=true: All overdue tasks</li>
-     *   <li>userId + overdue=true: User's overdue tasks</li>
+     *   <li>No params: Returns all user's tasks</li>
+     *   <li>projectId only: User's tasks for specific project</li>
+     *   <li>status only: User's tasks with specific status</li>
+     *   <li>projectId + status: User's tasks in project with specific status</li>
+     *   <li>overdue=true: User's overdue tasks</li>
      * </ul>
      *
      * <p><strong>Status Codes:</strong>
@@ -152,7 +171,7 @@ public class TaskController {
      *   <li>200 OK - Returns list (empty list if no matching tasks)</li>
      * </ul>
      *
-     * @param userId filter by user ID (optional)
+     * @param userDetails the authenticated user (injected by Spring Security)
      * @param projectId filter by project ID (optional)
      * @param status filter by task status (optional)
      * @param overdue if true, return only overdue tasks (optional)
@@ -160,41 +179,40 @@ public class TaskController {
      */
     @GetMapping
     public ResponseEntity<List<TaskResponseDto>> getAllTasks(
-        @RequestParam(required = false) Long userId,
+        @AuthenticationPrincipal AppUserDetails userDetails,
         @RequestParam(required = false) Long projectId,
         @RequestParam(required = false) TaskStatus status,
         @RequestParam(required = false) Boolean overdue
     ) {
+        Long userId = userDetails.getAppUser().getId();
         List<TaskResponseDto> tasks;
-        if (Boolean.TRUE.equals(overdue) && userId != null) {
-            tasks = taskService.findOverdueTasksByAppUserId(userId);
-            return ResponseEntity.ok(tasks);
-        }
+
+        // Overdue tasks filter
         if (Boolean.TRUE.equals(overdue)) {
-            tasks = taskService.findOverdueTasks();
+            tasks = taskService.findOverdueTasks(userId);
             return ResponseEntity.ok(tasks);
         }
-        if (userId != null && status != null) {
-            tasks = taskService.findByAppUserIdAndStatus(userId, status);
-            return ResponseEntity.ok(tasks);
-        }
+
+        // Combined project + status filter
         if (projectId != null && status != null) {
-            tasks = taskService.findByProjectIdAndStatus(projectId, status);
+            tasks = taskService.findByProjectIdAndStatus(projectId, status, userId);
             return ResponseEntity.ok(tasks);
         }
-        if (userId != null) {
-            tasks = taskService.findByAppUserId(userId);
-            return ResponseEntity.ok(tasks);
-        }
+
+        // Project filter only
         if (projectId != null) {
-            tasks = taskService.findByProjectId(projectId);
+            tasks = taskService.findByProjectId(projectId, userId);
             return ResponseEntity.ok(tasks);
         }
+
+        // Status filter only
         if (status != null) {
-            tasks = taskService.findByStatus(status);
+            tasks = taskService.findByStatus(status, userId);
             return ResponseEntity.ok(tasks);
         }
-        tasks = taskService.findAll();
+
+        // No filters - return all user's tasks
+        tasks = taskService.findAll(userId);
         return ResponseEntity.ok(tasks);
     }
 
@@ -203,7 +221,7 @@ public class TaskController {
     // ========================================================================
 
     /**
-     * Update an existing task.
+     * Update an existing task, with ownership check.
      *
      * <p><strong>HTTP Method:</strong> PUT
      * <p><strong>Path:</strong> /api/tasks/{id}
@@ -218,52 +236,64 @@ public class TaskController {
      * </pre>
      *
      * <p><strong>Note:</strong> All fields are optional. Only provided fields will be updated.
-     * User assignment cannot be changed (use reassign endpoint if needed in future).
      * Project assignment uses separate endpoints (assignToProject/removeFromProject).
      *
      * <p><strong>Status Codes:</strong>
      * <ul>
      *   <li>200 OK - Task updated successfully</li>
+     *   <li>400 Bad Request - Task doesn't belong to authenticated user</li>
      *   <li>404 Not Found - Task with given ID doesn't exist</li>
      * </ul>
      *
+     * @param userDetails the authenticated user (injected by Spring Security)
      * @param id the ID of the task to update
      * @param updateDto the updated task data
      * @return ResponseEntity with updated task and 200 status
      */
     @PutMapping("/{id}")
-    public ResponseEntity<TaskResponseDto> updateTask(@PathVariable Long id, @RequestBody TaskUpdateDto updateDto) {
-        TaskResponseDto updatedTask = taskService.updateTask(id, updateDto);
+    public ResponseEntity<TaskResponseDto> updateTask(
+        @AuthenticationPrincipal AppUserDetails userDetails,
+        @PathVariable Long id,
+        @RequestBody TaskUpdateDto updateDto
+    ) {
+        Long userId = userDetails.getAppUser().getId();
+        TaskResponseDto updatedTask = taskService.updateTask(id, updateDto, userId);
         return ResponseEntity.ok(updatedTask);
     }
 
     /**
-     * Assign a task to a project.
+     * Assign a task to a project, with ownership checks for both.
      *
      * <p><strong>HTTP Method:</strong> PUT
      * <p><strong>Path:</strong> /api/tasks/{id}/project/{projectId}
      *
-     * <p><strong>Validation:</strong> The project must belong to the same user as the task.
+     * <p><strong>Validation:</strong> Both the task and project must belong to the authenticated user.
      *
      * <p><strong>Status Codes:</strong>
      * <ul>
      *   <li>200 OK - Task assigned to project successfully</li>
+     *   <li>400 Bad Request - Task or project doesn't belong to authenticated user</li>
      *   <li>404 Not Found - Task or project not found</li>
-     *   <li>400 Bad Request - Project doesn't belong to task's user</li>
      * </ul>
      *
+     * @param userDetails the authenticated user (injected by Spring Security)
      * @param id the task ID
      * @param projectId the project ID to assign to
      * @return ResponseEntity with updated task and 200 status
      */
     @PutMapping("/{id}/project/{projectId}")
-    public ResponseEntity<TaskResponseDto> assignToProject(@PathVariable Long id, @PathVariable Long projectId) {
-        TaskResponseDto updatedTask = taskService.assignToProject(id, projectId);
+    public ResponseEntity<TaskResponseDto> assignToProject(
+        @AuthenticationPrincipal AppUserDetails userDetails,
+        @PathVariable Long id,
+        @PathVariable Long projectId
+    ) {
+        Long userId = userDetails.getAppUser().getId();
+        TaskResponseDto updatedTask = taskService.assignToProject(id, projectId, userId);
         return ResponseEntity.ok(updatedTask);
     }
 
     /**
-     * Remove a task from its project.
+     * Remove a task from its project, with ownership check.
      *
      * <p><strong>HTTP Method:</strong> DELETE
      * <p><strong>Path:</strong> /api/tasks/{id}/project
@@ -274,15 +304,21 @@ public class TaskController {
      * <p><strong>Status Codes:</strong>
      * <ul>
      *   <li>200 OK - Task removed from project successfully</li>
+     *   <li>400 Bad Request - Task doesn't belong to authenticated user</li>
      *   <li>404 Not Found - Task not found</li>
      * </ul>
      *
+     * @param userDetails the authenticated user (injected by Spring Security)
      * @param id the task ID
      * @return ResponseEntity with updated task and 200 status
      */
     @DeleteMapping("/{id}/project")
-    public ResponseEntity<TaskResponseDto> removeFromProject(@PathVariable Long id) {
-        TaskResponseDto updatedTask = taskService.removeFromProject(id);
+    public ResponseEntity<TaskResponseDto> removeFromProject(
+        @AuthenticationPrincipal AppUserDetails userDetails,
+        @PathVariable Long id
+    ) {
+        Long userId = userDetails.getAppUser().getId();
+        TaskResponseDto updatedTask = taskService.removeFromProject(id, userId);
         return ResponseEntity.ok(updatedTask);
     }
 
@@ -291,7 +327,7 @@ public class TaskController {
     // ========================================================================
 
     /**
-     * Delete a task by ID.
+     * Delete a task by ID, with ownership check.
      *
      * <p><strong>HTTP Method:</strong> DELETE
      * <p><strong>Path:</strong> /api/tasks/{id}
@@ -299,15 +335,21 @@ public class TaskController {
      * <p><strong>Status Codes:</strong>
      * <ul>
      *   <li>204 No Content - Task deleted successfully</li>
+     *   <li>400 Bad Request - Task doesn't belong to authenticated user</li>
      *   <li>404 Not Found - Task with given ID doesn't exist</li>
      * </ul>
      *
+     * @param userDetails the authenticated user (injected by Spring Security)
      * @param id the ID of the task to delete
      * @return ResponseEntity with 204 status and no body
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
-        taskService.deleteTask(id);
+    public ResponseEntity<Void> deleteTask(
+        @AuthenticationPrincipal AppUserDetails userDetails,
+        @PathVariable Long id
+    ) {
+        Long userId = userDetails.getAppUser().getId();
+        taskService.deleteTask(id, userId);
         return ResponseEntity.noContent().build();
     }
 }

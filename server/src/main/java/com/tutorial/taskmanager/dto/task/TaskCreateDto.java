@@ -14,12 +14,10 @@ import java.time.LocalDateTime;
  * <p>Used as input to the service layer. Conversion to entity is handled
  * by {@link com.tutorial.taskmanager.mapper.TaskMapper}.
  *
- * <p><strong>Relationship Handling:</strong>
- * <ul>
- *   <li>appUserId - ID of the user to assign the task to (required)</li>
- *   <li>projectId - ID of the project this task belongs to (optional)</li>
- * </ul>
- * The service layer will fetch the actual entities and set the relationships.
+ * <p><strong>User Assignment:</strong>
+ * The task is automatically assigned to the authenticated user. The user ID
+ * is extracted from the JWT token by the controller, not from the request body.
+ * This ensures users can only create tasks for themselves.
  *
  * <p><strong>Fields:</strong>
  * <ul>
@@ -27,6 +25,7 @@ import java.time.LocalDateTime;
  *   <li>description - Task description (optional)</li>
  *   <li>status - Task status (optional, defaults to TODO if not provided)</li>
  *   <li>dueDate - Due date/time (optional)</li>
+ *   <li>projectId - ID of the project this task belongs to (optional)</li>
  * </ul>
  */
 @Data
@@ -38,6 +37,5 @@ public class TaskCreateDto {
     private String description;
     private TaskStatus status;
     private LocalDateTime dueDate;
-    private Long appUserId;
     private Long projectId;
 }

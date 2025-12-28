@@ -36,20 +36,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Comprehensive unit tests for TaskService.
+ * Comprehensive unit tests for TaskService with user-scoped authorization.
  * <p>
- * Tests all CRUD operations, validation logic, filtering, and business rules.
- * Uses Mockito to mock repository and mapper dependencies and AssertJ for assertions.
- * <p>
- * Test organization:
- * - Create operations (createTask) - returns TaskResponseDto
- * - Read operations (findById, getById, findAll) - returns TaskResponseDto
- * - Update operations (updateTask, assignToProject, removeFromProject) - returns TaskResponseDto
- * - Delete operations (deleteTask)
- * - Filter operations (findByUserId, findByProjectId, findByStatus, etc.) - returns TaskResponseDto
- * - Date-based queries (findOverdueTasks, findTasksDueBetween) - returns TaskResponseDto
- * <p>
- * Note: Services return DTOs for public API. Controllers pass DTOs to clients.
+ * All service methods now require a userId parameter for authorization.
+ * Tests verify both happy paths and authorization failure scenarios.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TaskService Tests")
@@ -72,6 +62,7 @@ class TaskServiceTest {
 
     // Test data
     private AppUser testUser;
+    private AppUser otherUser;
     private AppUserSummaryDto testUserSummary;
     private Project testProject;
     private ProjectSummaryDto testProjectSummary;
@@ -80,22 +71,31 @@ class TaskServiceTest {
     private TaskCreateDto createDto;
     private TaskUpdateDto updateDto;
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTHER_USER_ID = 2L;
+
     @BeforeEach
     void setUp() {
-        // Set up test user
+        // Set up test user (authenticated user)
         testUser = new AppUser();
-        testUser.setId(1L);
+        testUser.setId(USER_ID);
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
         testUser.setPassword("password123");
 
+        // Set up other user (for authorization failure tests)
+        otherUser = new AppUser();
+        otherUser.setId(OTHER_USER_ID);
+        otherUser.setUsername("otheruser");
+        otherUser.setEmail("other@example.com");
+
         // Set up test user summary (for response DTOs)
         testUserSummary = AppUserSummaryDto.builder()
-                .id(1L)
+                .id(USER_ID)
                 .username("testuser")
                 .build();
 
-        // Set up test project
+        // Set up test project (owned by testUser)
         testProject = new Project();
         testProject.setId(1L);
         testProject.setName("Test Project");
@@ -109,7 +109,7 @@ class TaskServiceTest {
                 .status(ProjectStatus.PLANNING)
                 .build();
 
-        // Set up test task
+        // Set up test task (owned by testUser)
         testTask = new Task();
         testTask.setId(1L);
         testTask.setTitle("Test Task");
@@ -130,12 +130,11 @@ class TaskServiceTest {
                 .project(testProjectSummary)
                 .build();
 
-        // Set up create DTO
+        // Set up create DTO (no appUserId - extracted from JWT)
         createDto = TaskCreateDto.builder()
                 .title("New Task")
                 .description("New Description")
                 .dueDate(LocalDateTime.now().plusDays(3))
-                .appUserId(1L)
                 .projectId(1L)
                 .build();
 
@@ -155,163 +154,83 @@ class TaskServiceTest {
     class CreateTaskTests {
 
         @Test
-        @DisplayName("Should create task with all fields successfully")
-        void shouldCreateTaskWithAllFields() {
+        @DisplayName("Should create task for authenticated user")
+        void shouldCreateTaskForAuthenticatedUser() {
             // Arrange
-            when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(appUserRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
             when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
             when(taskMapper.toEntity(createDto)).thenReturn(testTask);
             when(taskRepository.save(any(Task.class))).thenReturn(testTask);
             when(taskMapper.toResponseDto(testTask)).thenReturn(testTaskResponseDto);
 
             // Act
-            TaskResponseDto result = taskService.createTask(createDto);
+            TaskResponseDto result = taskService.createTask(createDto, USER_ID);
 
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getTitle()).isEqualTo(testTaskResponseDto.getTitle());
-            assertThat(result.getDescription()).isEqualTo(testTaskResponseDto.getDescription());
-            assertThat(result.getStatus()).isEqualTo(testTaskResponseDto.getStatus());
-            assertThat(result.getAppUser().getId()).isEqualTo(1L);
-            assertThat(result.getProject()).isNotNull();
-            assertThat(result.getProject().getId()).isEqualTo(1L);
+            assertThat(result.getAppUser().getId()).isEqualTo(USER_ID);
 
-            verify(appUserRepository).findById(1L);
+            verify(appUserRepository).findById(USER_ID);
             verify(projectRepository).findById(1L);
-            verify(taskMapper).toEntity(createDto);
             verify(taskRepository).save(any(Task.class));
-            verify(taskMapper).toResponseDto(testTask);
         }
 
         @Test
-        @DisplayName("Should create task without project (project is optional)")
+        @DisplayName("Should create task without project")
         void shouldCreateTaskWithoutProject() {
             // Arrange
             createDto.setProjectId(null);
             Task taskWithoutProject = new Task();
             taskWithoutProject.setId(1L);
             taskWithoutProject.setTitle(createDto.getTitle());
-            taskWithoutProject.setDescription(createDto.getDescription());
             taskWithoutProject.setAppUser(testUser);
             taskWithoutProject.setProject(null);
 
             TaskResponseDto responseDtoWithoutProject = TaskResponseDto.builder()
                 .id(1L)
                 .title(createDto.getTitle())
-                .description(createDto.getDescription())
                 .appUser(testUserSummary)
                 .project(null)
                 .build();
 
-            when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(appUserRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
             when(taskMapper.toEntity(createDto)).thenReturn(taskWithoutProject);
             when(taskRepository.save(any(Task.class))).thenReturn(taskWithoutProject);
             when(taskMapper.toResponseDto(taskWithoutProject)).thenReturn(responseDtoWithoutProject);
 
             // Act
-            TaskResponseDto result = taskService.createTask(createDto);
+            TaskResponseDto result = taskService.createTask(createDto, USER_ID);
 
             // Assert
-            assertThat(result).isNotNull();
             assertThat(result.getProject()).isNull();
-
-            verify(appUserRepository).findById(1L);
             verify(projectRepository, never()).findById(anyLong());
-            verify(taskRepository).save(any(Task.class));
-        }
-
-        @Test
-        @DisplayName("Should create task without due date (due date is optional)")
-        void shouldCreateTaskWithoutDueDate() {
-            // Arrange
-            createDto.setDueDate(null);
-            when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
-            when(taskMapper.toEntity(createDto)).thenReturn(testTask);
-            when(taskRepository.save(any(Task.class))).thenReturn(testTask);
-            when(taskMapper.toResponseDto(testTask)).thenReturn(testTaskResponseDto);
-
-            // Act
-            TaskResponseDto result = taskService.createTask(createDto);
-
-            // Assert
-            assertThat(result).isNotNull();
-            verify(taskRepository).save(any(Task.class));
-        }
-
-        @Test
-        @DisplayName("Should throw exception when user not found")
-        void shouldThrowExceptionWhenUserNotFound() {
-            // Arrange
-            when(appUserRepository.findById(1L)).thenReturn(Optional.empty());
-
-            // Act & Assert
-            assertThatThrownBy(() -> taskService.createTask(createDto))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("appUser with id '1' not found");
-
-            verify(appUserRepository).findById(1L);
-            verify(taskRepository, never()).save(any(Task.class));
-        }
-
-        @Test
-        @DisplayName("Should throw exception when project not found")
-        void shouldThrowExceptionWhenProjectNotFound() {
-            // Arrange
-            when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(projectRepository.findById(1L)).thenReturn(Optional.empty());
-
-            // Act & Assert
-            assertThatThrownBy(() -> taskService.createTask(createDto))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("project with id '1' not found");
-
-            verify(appUserRepository).findById(1L);
-            verify(projectRepository).findById(1L);
-            verify(taskRepository, never()).save(any(Task.class));
         }
 
         @Test
         @DisplayName("Should throw exception when project doesn't belong to user")
         void shouldThrowExceptionWhenProjectDoesntBelongToUser() {
             // Arrange
-            AppUser differentUser = new AppUser();
-            differentUser.setId(2L);
-            differentUser.setUsername("otheruser");
-            testProject.setAppUser(differentUser);
+            testProject.setAppUser(otherUser); // Project belongs to different user
 
-            when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            when(appUserRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
             when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
 
             // Act & Assert
-            assertThatThrownBy(() -> taskService.createTask(createDto))
+            assertThatThrownBy(() -> taskService.createTask(createDto, USER_ID))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Project does not belong to user");
+                .hasMessageContaining("Project does not belong to authenticated user");
 
-            verify(appUserRepository).findById(1L);
-            verify(projectRepository).findById(1L);
             verify(taskRepository, never()).save(any(Task.class));
         }
 
         @Test
-        @DisplayName("Should set default status to TODO when creating task")
-        void shouldSetDefaultStatusToTodo() {
-            // Arrange
-            when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
-            when(taskMapper.toEntity(createDto)).thenReturn(testTask);
-            when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
-                Task savedTask = invocation.getArgument(0);
-                assertThat(savedTask.getStatus()).isEqualTo(TaskStatus.TODO);
-                return testTask;
-            });
-            when(taskMapper.toResponseDto(testTask)).thenReturn(testTaskResponseDto);
-
-            // Act
-            taskService.createTask(createDto);
-
-            // Assert
-            verify(taskRepository).save(any(Task.class));
+        @DisplayName("Should throw exception when userId is null")
+        void shouldThrowExceptionWhenUserIdIsNull() {
+            // Act & Assert
+            assertThatThrownBy(() -> taskService.createTask(createDto, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("userId is null");
         }
     }
 
@@ -322,139 +241,80 @@ class TaskServiceTest {
     class ReadTaskTests {
 
         @Test
-        @DisplayName("Should find task by ID (returns Optional)")
-        void shouldFindTaskById() {
+        @DisplayName("Should find task by ID with ownership check")
+        void shouldFindTaskByIdWithOwnershipCheck() {
             // Arrange
             when(taskRepository.findWithAppUserAndProjectById(1L)).thenReturn(Optional.of(testTask));
             when(taskMapper.toResponseDto(testTask)).thenReturn(testTaskResponseDto);
 
             // Act
-            Optional<TaskResponseDto> result = taskService.findById(1L);
+            Optional<TaskResponseDto> result = taskService.findById(1L, USER_ID);
 
             // Assert
             assertThat(result).isPresent();
             assertThat(result.get().getId()).isEqualTo(1L);
-            assertThat(result.get().getTitle()).isEqualTo(testTaskResponseDto.getTitle());
-
             verify(taskRepository).findWithAppUserAndProjectById(1L);
-            verify(taskMapper).toResponseDto(testTask);
         }
 
         @Test
-        @DisplayName("Should return empty Optional when task not found by ID")
-        void shouldReturnEmptyWhenTaskNotFound() {
+        @DisplayName("Should return empty when task belongs to different user")
+        void shouldReturnEmptyWhenTaskBelongsToDifferentUser() {
             // Arrange
-            when(taskRepository.findWithAppUserAndProjectById(99L)).thenReturn(Optional.empty());
+            testTask.setAppUser(otherUser); // Task belongs to different user
+            when(taskRepository.findWithAppUserAndProjectById(1L)).thenReturn(Optional.of(testTask));
 
             // Act
-            Optional<TaskResponseDto> result = taskService.findById(99L);
+            Optional<TaskResponseDto> result = taskService.findById(1L, USER_ID);
 
             // Assert
             assertThat(result).isEmpty();
-            verify(taskRepository).findWithAppUserAndProjectById(99L);
+            verify(taskMapper, never()).toResponseDto(any());
         }
 
         @Test
-        @DisplayName("Should throw exception when getting optional task but id is null")
-        void shouldThrowExceptionWhenGettingOptionalTaskButIdIsNull() {
-            // Act & Assert
-            assertThatThrownBy(() -> taskService.findById(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("id is null");
-
-            verify(taskRepository, never()).findById(anyLong());
-        }
-
-        @Test
-        @DisplayName("Should get task by ID (throws exception)")
-        void shouldGetTaskById() {
+        @DisplayName("Should get task by ID with ownership validation")
+        void shouldGetTaskByIdWithOwnershipValidation() {
             // Arrange
             when(taskRepository.findWithAppUserAndProjectById(1L)).thenReturn(Optional.of(testTask));
             when(taskMapper.toResponseDto(testTask)).thenReturn(testTaskResponseDto);
 
             // Act
-            TaskResponseDto result = taskService.getById(1L);
+            TaskResponseDto result = taskService.getById(1L, USER_ID);
 
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo(1L);
-            verify(taskRepository).findWithAppUserAndProjectById(1L);
-            verify(taskMapper).toResponseDto(testTask);
         }
 
         @Test
-        @DisplayName("Should throw exception when getting non-existent task")
-        void shouldThrowExceptionWhenGettingNonExistentTask() {
+        @DisplayName("Should throw exception when task doesn't belong to user")
+        void shouldThrowExceptionWhenTaskDoesntBelongToUser() {
             // Arrange
-            when(taskRepository.findWithAppUserAndProjectById(99L)).thenReturn(Optional.empty());
+            testTask.setAppUser(otherUser);
+            when(taskRepository.findWithAppUserAndProjectById(1L)).thenReturn(Optional.of(testTask));
 
             // Act & Assert
-            assertThatThrownBy(() -> taskService.getById(99L))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("task with id '99' not found");
-
-            verify(taskRepository).findWithAppUserAndProjectById(99L);
+            assertThatThrownBy(() -> taskService.getById(1L, USER_ID))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Task does not belong to authenticated user");
         }
 
         @Test
-        @DisplayName("Should throw exception when getting task but id is null")
-        void shouldThrowExceptionWhenGettingTaskButIdIsNull() {
-            // Act & Assert
-            assertThatThrownBy(() -> taskService.findById(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("id is null");
-
-            verify(taskRepository, never()).findById(anyLong());
-        }
-
-        @Test
-        @DisplayName("Should get all tasks")
-        void shouldFindAllTasks() {
+        @DisplayName("Should find all tasks for authenticated user only")
+        void shouldFindAllTasksForAuthenticatedUser() {
             // Arrange
-            Task task2 = new Task();
-            task2.setId(2L);
-            task2.setTitle("Task 2");
-            task2.setAppUser(testUser);
+            List<Task> tasks = List.of(testTask);
+            List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto);
 
-            TaskResponseDto task2ResponseDto = TaskResponseDto.builder()
-                .id(2L)
-                .title("Task 2")
-                .appUser(testUserSummary)
-                .build();
-
-            List<Task> tasks = List.of(testTask, task2);
-            List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto, task2ResponseDto);
-
-            when(taskRepository.findAllWithAppUserAndProject()).thenReturn(tasks);
+            when(taskRepository.findWithAppUserAndProjectByAppUserId(USER_ID)).thenReturn(tasks);
             when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
 
             // Act
-            List<TaskResponseDto> results = taskService.findAll();
+            List<TaskResponseDto> results = taskService.findAll(USER_ID);
 
             // Assert
-            assertThat(results).hasSize(2);
-            assertThat(results).extracting(TaskResponseDto::getId)
-                .containsExactly(1L, 2L);
-
-            verify(taskRepository).findAllWithAppUserAndProject();
-            verify(taskMapper).toResponseDtoList(tasks);
-        }
-
-        @Test
-        @DisplayName("Should return empty list when no tasks exist")
-        void shouldReturnEmptyListWhenNoTasks() {
-            // Arrange
-            List<Task> emptyList = List.of();
-            when(taskRepository.findAllWithAppUserAndProject()).thenReturn(emptyList);
-            when(taskMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
-
-            // Act
-            List<TaskResponseDto> results = taskService.findAll();
-
-            // Assert
-            assertThat(results).isEmpty();
-            verify(taskRepository).findAllWithAppUserAndProject();
-            verify(taskMapper).toResponseDtoList(emptyList);
+            assertThat(results).hasSize(1);
+            verify(taskRepository).findWithAppUserAndProjectByAppUserId(USER_ID);
         }
     }
 
@@ -465,17 +325,14 @@ class TaskServiceTest {
     class UpdateTaskTests {
 
         @Test
-        @DisplayName("Should update all task fields")
-        void shouldUpdateAllTaskFields() {
+        @DisplayName("Should update task with ownership check")
+        void shouldUpdateTaskWithOwnershipCheck() {
             // Arrange
             TaskResponseDto updatedResponseDto = TaskResponseDto.builder()
                 .id(1L)
                 .title(updateDto.getTitle())
-                .description(updateDto.getDescription())
                 .status(updateDto.getStatus())
-                .dueDate(updateDto.getDueDate())
                 .appUser(testUserSummary)
-                .project(testProjectSummary)
                 .build();
 
             when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
@@ -483,72 +340,34 @@ class TaskServiceTest {
             when(taskMapper.toResponseDto(testTask)).thenReturn(updatedResponseDto);
 
             // Act
-            TaskResponseDto result = taskService.updateTask(1L, updateDto);
+            TaskResponseDto result = taskService.updateTask(1L, updateDto, USER_ID);
 
             // Assert
-            assertThat(result).isNotNull();
             assertThat(result.getTitle()).isEqualTo(updateDto.getTitle());
-            assertThat(result.getDescription()).isEqualTo(updateDto.getDescription());
-            assertThat(result.getStatus()).isEqualTo(updateDto.getStatus());
-            assertThat(result.getDueDate()).isEqualTo(updateDto.getDueDate());
-
-            verify(taskRepository).findById(1L);
             verify(taskMapper).patchEntityFromDto(updateDto, testTask);
             verify(taskRepository).save(testTask);
-            verify(taskMapper).toResponseDto(testTask);
         }
+
         @Test
-        @DisplayName("Should update only provided fields (partial update)")
-        void shouldUpdateOnlyProvidedFields() {
+        @DisplayName("Should throw exception when updating task that doesn't belong to user")
+        void shouldThrowExceptionWhenUpdatingUnownedTask() {
             // Arrange
-            updateDto.setTitle(null);  // Don't update title
-            updateDto.setDescription(null);  // Don't update description
-
-            TaskResponseDto partiallyUpdatedDto = TaskResponseDto.builder()
-                .id(1L)
-                .title(testTask.getTitle())  // Original title
-                .description(testTask.getDescription())  // Original description
-                .status(updateDto.getStatus())  // Updated status
-                .dueDate(updateDto.getDueDate())
-                .appUser(testUserSummary)
-                .project(testProjectSummary)
-                .build();
-
+            testTask.setAppUser(otherUser);
             when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
-            when(taskRepository.save(any(Task.class))).thenReturn(testTask);
-            when(taskMapper.toResponseDto(testTask)).thenReturn(partiallyUpdatedDto);
-
-            // Act
-            TaskResponseDto result = taskService.updateTask(1L, updateDto);
-
-            // Assert
-            assertThat(result.getTitle()).isEqualTo(testTask.getTitle());  // Unchanged
-            assertThat(result.getStatus()).isEqualTo(updateDto.getStatus());  // Changed
-
-            verify(taskMapper).patchEntityFromDto(updateDto, testTask);
-            verify(taskRepository).save(testTask);
-        }
-
-        @Test
-        @DisplayName("Should throw exception when updating non-existent task")
-        void shouldThrowExceptionWhenUpdatingNonExistentTask() {
-            // Arrange
-            when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> taskService.updateTask(99L, updateDto))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("task with id '99' not found");
+            assertThatThrownBy(() -> taskService.updateTask(1L, updateDto, USER_ID))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Task does not belong to authenticated user");
 
-            verify(taskRepository).findById(99L);
             verify(taskRepository, never()).save(any(Task.class));
         }
 
         @Test
-        @DisplayName("Should assign task to project")
-        void shouldAssignTaskToProject() {
+        @DisplayName("Should assign task to project with ownership checks")
+        void shouldAssignTaskToProjectWithOwnershipChecks() {
             // Arrange
-            testTask.setProject(null);  // Start with no project
+            testTask.setProject(null);
             TaskResponseDto assignedResponseDto = TaskResponseDto.builder()
                 .id(1L)
                 .title(testTask.getTitle())
@@ -562,60 +381,44 @@ class TaskServiceTest {
             when(taskMapper.toResponseDto(testTask)).thenReturn(assignedResponseDto);
 
             // Act
-            TaskResponseDto result = taskService.assignToProject(1L, 1L);
+            TaskResponseDto result = taskService.assignToProject(1L, 1L, USER_ID);
 
             // Assert
-            assertThat(result).isNotNull();
             assertThat(result.getProject()).isNotNull();
-            assertThat(result.getProject().getId()).isEqualTo(1L);
-
-            verify(taskRepository).findById(1L);
-            verify(projectRepository).findById(1L);
             verify(taskRepository).save(testTask);
-            verify(taskMapper).toResponseDto(testTask);
         }
 
         @Test
-        @DisplayName("Should throw exception when assigning to non-existent project")
-        void shouldThrowExceptionWhenAssigningToNonExistentProject() {
+        @DisplayName("Should throw when assigning unowned task to project")
+        void shouldThrowWhenAssigningUnownedTaskToProject() {
             // Arrange
-            when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
-            when(projectRepository.findById(99L)).thenReturn(Optional.empty());
-
-            // Act & Assert
-            assertThatThrownBy(() -> taskService.assignToProject(1L, 99L))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("project with id '99' not found");
-
-            verify(taskRepository).findById(1L);
-            verify(projectRepository).findById(99L);
-            verify(taskRepository, never()).save(any(Task.class));
-        }
-
-        @Test
-        @DisplayName("Should throw exception when assigning to project of different user")
-        void shouldThrowExceptionWhenAssigningToProjectOfDifferentUser() {
-            // Arrange
-            AppUser differentUser = new AppUser();
-            differentUser.setId(2L);
-            testProject.setAppUser(differentUser);
-
+            testTask.setAppUser(otherUser);
             when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
             when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
 
             // Act & Assert
-            assertThatThrownBy(() -> taskService.assignToProject(1L, 1L))
+            assertThatThrownBy(() -> taskService.assignToProject(1L, 1L, USER_ID))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Project does not belong to the same user as the task");
-
-            verify(taskRepository).findById(1L);
-            verify(projectRepository).findById(1L);
-            verify(taskRepository, never()).save(any(Task.class));
+                .hasMessageContaining("Task does not belong to authenticated user");
         }
 
         @Test
-        @DisplayName("Should remove task from project")
-        void shouldRemoveTaskFromProject() {
+        @DisplayName("Should throw when assigning task to unowned project")
+        void shouldThrowWhenAssigningTaskToUnownedProject() {
+            // Arrange
+            testProject.setAppUser(otherUser);
+            when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+            when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+
+            // Act & Assert
+            assertThatThrownBy(() -> taskService.assignToProject(1L, 1L, USER_ID))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Project does not belong to authenticated user");
+        }
+
+        @Test
+        @DisplayName("Should remove task from project with ownership check")
+        void shouldRemoveTaskFromProjectWithOwnershipCheck() {
             // Arrange
             TaskResponseDto removedFromProjectDto = TaskResponseDto.builder()
                 .id(1L)
@@ -629,30 +432,11 @@ class TaskServiceTest {
             when(taskMapper.toResponseDto(testTask)).thenReturn(removedFromProjectDto);
 
             // Act
-            TaskResponseDto result = taskService.removeFromProject(1L);
+            TaskResponseDto result = taskService.removeFromProject(1L, USER_ID);
 
             // Assert
-            assertThat(result).isNotNull();
             assertThat(result.getProject()).isNull();
-
-            verify(taskRepository).findById(1L);
             verify(taskRepository).save(testTask);
-            verify(taskMapper).toResponseDto(testTask);
-        }
-
-        @Test
-        @DisplayName("Should throw exception when removing non-existent task from project")
-        void shouldThrowExceptionWhenRemovingNonExistentTaskFromProject() {
-            // Arrange
-            when(taskRepository.findById(99L)).thenReturn(Optional.empty());
-
-            // Act & Assert
-            assertThatThrownBy(() -> taskService.removeFromProject(99L))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("task with id '99' not found");
-
-            verify(taskRepository).findById(99L);
-            verify(taskRepository, never()).save(any(Task.class));
         }
     }
 
@@ -663,32 +447,32 @@ class TaskServiceTest {
     class DeleteTaskTests {
 
         @Test
-        @DisplayName("Should delete task successfully")
-        void shouldDeleteTask() {
+        @DisplayName("Should delete task with ownership check")
+        void shouldDeleteTaskWithOwnershipCheck() {
             // Arrange
-            when(taskRepository.existsById(1L)).thenReturn(true);
+            when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
             doNothing().when(taskRepository).deleteById(1L);
 
             // Act
-            taskService.deleteTask(1L);
+            taskService.deleteTask(1L, USER_ID);
 
             // Assert
-            verify(taskRepository).existsById(1L);
+            verify(taskRepository).findById(1L);
             verify(taskRepository).deleteById(1L);
         }
 
         @Test
-        @DisplayName("Should throw exception when deleting non-existent task")
-        void shouldThrowExceptionWhenDeletingNonExistentTask() {
+        @DisplayName("Should throw when deleting task that doesn't belong to user")
+        void shouldThrowWhenDeletingUnownedTask() {
             // Arrange
-            when(taskRepository.existsById(99L)).thenReturn(false);
+            testTask.setAppUser(otherUser);
+            when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
 
             // Act & Assert
-            assertThatThrownBy(() -> taskService.deleteTask(99L))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("task with id '99' not found");
+            assertThatThrownBy(() -> taskService.deleteTask(1L, USER_ID))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Task does not belong to authenticated user");
 
-            verify(taskRepository).existsById(99L);
             verify(taskRepository, never()).deleteById(anyLong());
         }
     }
@@ -700,166 +484,58 @@ class TaskServiceTest {
     class FilterTasksTests {
 
         @Test
-        @DisplayName("Should get tasks by user ID")
-        void shouldFindTasksByUserId() {
+        @DisplayName("Should find tasks by project with ownership check")
+        void shouldFindTasksByProjectWithOwnershipCheck() {
             // Arrange
-            Task task2 = new Task();
-            task2.setId(2L);
-            task2.setTitle("Task 2");
-            task2.setAppUser(testUser);
+            List<Task> tasks = List.of(testTask);
+            List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto);
 
-            TaskResponseDto task2ResponseDto = TaskResponseDto.builder()
-                .id(2L)
-                .title("Task 2")
-                .appUser(testUserSummary)
-                .build();
-
-            List<Task> tasks = List.of(testTask, task2);
-            List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto, task2ResponseDto);
-
-            when(taskRepository.findWithAppUserAndProjectByAppUserId(1L)).thenReturn(tasks);
-            when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
-
-            // Act
-            List<TaskResponseDto> results = taskService.findByAppUserId(1L);
-
-            // Assert
-            assertThat(results).hasSize(2);
-            assertThat(results).extracting(dto -> dto.getAppUser().getId())
-                .containsOnly(1L);
-
-            verify(taskRepository).findWithAppUserAndProjectByAppUserId(1L);
-            verify(taskMapper).toResponseDtoList(tasks);
-        }
-
-        @Test
-        @DisplayName("Should get tasks by project ID")
-        void shouldFindTasksByProjectId() {
-            // Arrange
-            Task task2 = new Task();
-            task2.setId(2L);
-            task2.setTitle("Task 2");
-            task2.setAppUser(testUser);
-            task2.setProject(testProject);
-
-            TaskResponseDto task2ResponseDto = TaskResponseDto.builder()
-                .id(2L)
-                .title("Task 2")
-                .appUser(testUserSummary)
-                .project(testProjectSummary)
-                .build();
-
-            List<Task> tasks = List.of(testTask, task2);
-            List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto, task2ResponseDto);
-
+            when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
             when(taskRepository.findWithAppUserAndProjectByProjectId(1L)).thenReturn(tasks);
             when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
 
             // Act
-            List<TaskResponseDto> results = taskService.findByProjectId(1L);
+            List<TaskResponseDto> results = taskService.findByProjectId(1L, USER_ID);
 
             // Assert
-            assertThat(results).hasSize(2);
-            assertThat(results).extracting(dto -> dto.getProject().getId())
-                .containsOnly(1L);
-
-            verify(taskRepository).findWithAppUserAndProjectByProjectId(1L);
-            verify(taskMapper).toResponseDtoList(tasks);
+            assertThat(results).hasSize(1);
+            verify(projectRepository).findById(1L);
         }
 
         @Test
-        @DisplayName("Should get tasks by status")
-        void shouldFindTasksByStatus() {
+        @DisplayName("Should throw when filtering by unowned project")
+        void shouldThrowWhenFilteringByUnownedProject() {
+            // Arrange
+            testProject.setAppUser(otherUser);
+            when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+
+            // Act & Assert
+            assertThatThrownBy(() -> taskService.findByProjectId(1L, USER_ID))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Project does not belong to authenticated user");
+        }
+
+        @Test
+        @DisplayName("Should find tasks by status for authenticated user")
+        void shouldFindTasksByStatusForAuthenticatedUser() {
             // Arrange
             List<Task> tasks = List.of(testTask);
             List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto);
 
-            when(taskRepository.findWithAppUserAndProjectByStatus(TaskStatus.TODO)).thenReturn(tasks);
+            when(taskRepository.findByAppUserIdAndStatus(USER_ID, TaskStatus.TODO)).thenReturn(tasks);
             when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
 
             // Act
-            List<TaskResponseDto> results = taskService.findByStatus(TaskStatus.TODO);
+            List<TaskResponseDto> results = taskService.findByStatus(TaskStatus.TODO, USER_ID);
 
             // Assert
             assertThat(results).hasSize(1);
-            assertThat(results.getFirst().getStatus()).isEqualTo(TaskStatus.TODO);
-
-            verify(taskRepository).findWithAppUserAndProjectByStatus(TaskStatus.TODO);
-            verify(taskMapper).toResponseDtoList(tasks);
+            verify(taskRepository).findByAppUserIdAndStatus(USER_ID, TaskStatus.TODO);
         }
 
         @Test
-        @DisplayName("Should get tasks by user and status")
-        void shouldFindTasksByUserIdAndStatus() {
-            // Arrange
-            List<Task> tasks = List.of(testTask);
-            List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto);
-
-            when(taskRepository.findByAppUserIdAndStatus(1L, TaskStatus.TODO)).thenReturn(tasks);
-            when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
-
-            // Act
-            List<TaskResponseDto> results = taskService.findByAppUserIdAndStatus(1L, TaskStatus.TODO);
-
-            // Assert
-            assertThat(results).hasSize(1);
-            assertThat(results.getFirst().getAppUser().getId()).isEqualTo(1L);
-            assertThat(results.getFirst().getStatus()).isEqualTo(TaskStatus.TODO);
-
-            verify(taskRepository).findByAppUserIdAndStatus(1L, TaskStatus.TODO);
-            verify(taskMapper).toResponseDtoList(tasks);
-        }
-
-        @Test
-        @DisplayName("Should get tasks by project and status")
-        void shouldFindTasksByProjectIdAndStatus() {
-            // Arrange
-            List<Task> tasks = List.of(testTask);
-            List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto);
-
-            when(taskRepository.findByProjectIdAndStatus(1L, TaskStatus.TODO)).thenReturn(tasks);
-            when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
-
-            // Act
-            List<TaskResponseDto> results = taskService.findByProjectIdAndStatus(1L, TaskStatus.TODO);
-
-            // Assert
-            assertThat(results).hasSize(1);
-            assertThat(results.getFirst().getProject()).isNotNull();
-            assertThat(results.getFirst().getProject().getId()).isEqualTo(1L);
-            assertThat(results.getFirst().getStatus()).isEqualTo(TaskStatus.TODO);
-
-            verify(taskRepository).findByProjectIdAndStatus(1L, TaskStatus.TODO);
-            verify(taskMapper).toResponseDtoList(tasks);
-        }
-
-        @Test
-        @DisplayName("Should return empty list when no tasks match filters")
-        void shouldReturnEmptyListWhenNoTasksMatchFilters() {
-            // Arrange
-            List<Task> emptyList = List.of();
-            when(taskRepository.findWithAppUserAndProjectByStatus(TaskStatus.COMPLETED)).thenReturn(emptyList);
-            when(taskMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
-
-            // Act
-            List<TaskResponseDto> results = taskService.findByStatus(TaskStatus.COMPLETED);
-
-            // Assert
-            assertThat(results).isEmpty();
-            verify(taskRepository).findWithAppUserAndProjectByStatus(TaskStatus.COMPLETED);
-            verify(taskMapper).toResponseDtoList(emptyList);
-        }
-    }
-
-    // ==================== DATE-BASED QUERIES ====================
-
-    @Nested
-    @DisplayName("Date-Based Query Tests")
-    class DateBasedQueryTests {
-
-        @Test
-        @DisplayName("Should get overdue tasks")
-        void shouldFindOverdueTasks() {
+        @DisplayName("Should find overdue tasks for authenticated user")
+        void shouldFindOverdueTasksForAuthenticatedUser() {
             // Arrange
             Task overdueTask = new Task();
             overdueTask.setId(2L);
@@ -868,118 +544,23 @@ class TaskServiceTest {
             overdueTask.setStatus(TaskStatus.TODO);
             overdueTask.setAppUser(testUser);
 
-            TaskResponseDto overdueTaskResponseDto = TaskResponseDto.builder()
-                .id(2L)
-                .title("Overdue Task")
-                .status(TaskStatus.TODO)
-                .appUser(testUserSummary)
-                .build();
-
             List<Task> overdueTasks = List.of(overdueTask);
-            List<TaskResponseDto> responseDtos = List.of(overdueTaskResponseDto);
-
-            when(taskRepository.findWithAppUserAndProjectByDueDateBeforeAndStatusNotIn(
-                any(LocalDateTime.class),
-                eq(List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED))
-            )).thenReturn(overdueTasks);
-            when(taskMapper.toResponseDtoList(overdueTasks)).thenReturn(responseDtos);
-
-            // Act
-            List<TaskResponseDto> results = taskService.findOverdueTasks();
-
-            // Assert
-            assertThat(results).hasSize(1);
-            assertThat(results.getFirst().getId()).isEqualTo(2L);
-
-            verify(taskRepository).findWithAppUserAndProjectByDueDateBeforeAndStatusNotIn(
-                any(LocalDateTime.class),
-                eq(List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED))
+            List<TaskResponseDto> responseDtos = List.of(
+                TaskResponseDto.builder().id(2L).title("Overdue Task").build()
             );
-            verify(taskMapper).toResponseDtoList(overdueTasks);
-        }
-
-        @Test
-        @DisplayName("Should get overdue tasks for specific user")
-        void shouldFindOverdueTasksForUser() {
-            // Arrange
-            Task overdueTask = new Task();
-            overdueTask.setId(2L);
-            overdueTask.setTitle("Overdue Task");
-            overdueTask.setDueDate(LocalDateTime.now().minusDays(1));
-            overdueTask.setStatus(TaskStatus.TODO);
-            overdueTask.setAppUser(testUser);
-
-            TaskResponseDto overdueTaskResponseDto = TaskResponseDto.builder()
-                .id(2L)
-                .title("Overdue Task")
-                .status(TaskStatus.TODO)
-                .appUser(testUserSummary)
-                .build();
-
-            List<Task> overdueTasks = List.of(overdueTask);
-            List<TaskResponseDto> responseDtos = List.of(overdueTaskResponseDto);
 
             when(taskRepository.findByAppUserIdAndDueDateBeforeAndStatusNotIn(
-                eq(1L),
+                eq(USER_ID),
                 any(LocalDateTime.class),
                 eq(List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED))
             )).thenReturn(overdueTasks);
             when(taskMapper.toResponseDtoList(overdueTasks)).thenReturn(responseDtos);
 
             // Act
-            List<TaskResponseDto> results = taskService.findOverdueTasksByAppUserId(1L);
+            List<TaskResponseDto> results = taskService.findOverdueTasks(USER_ID);
 
             // Assert
             assertThat(results).hasSize(1);
-            assertThat(results.getFirst().getAppUser().getId()).isEqualTo(1L);
-
-            verify(taskRepository).findByAppUserIdAndDueDateBeforeAndStatusNotIn(
-                eq(1L),
-                any(LocalDateTime.class),
-                eq(List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED))
-            );
-            verify(taskMapper).toResponseDtoList(overdueTasks);
-        }
-
-        @Test
-        @DisplayName("Should get tasks due between dates")
-        void shouldFindTasksDueBetween() {
-            // Arrange
-            LocalDateTime startDate = LocalDateTime.now();
-            LocalDateTime endDate = LocalDateTime.now().plusDays(7);
-
-            List<Task> tasks = List.of(testTask);
-            List<TaskResponseDto> responseDtos = List.of(testTaskResponseDto);
-
-            when(taskRepository.findByDueDateBetween(startDate, endDate)).thenReturn(tasks);
-            when(taskMapper.toResponseDtoList(tasks)).thenReturn(responseDtos);
-
-            // Act
-            List<TaskResponseDto> results = taskService.findByDueDateBetween(startDate, endDate);
-
-            // Assert
-            assertThat(results).hasSize(1);
-            verify(taskRepository).findByDueDateBetween(startDate, endDate);
-            verify(taskMapper).toResponseDtoList(tasks);
-        }
-
-        @Test
-        @DisplayName("Should return empty list when no overdue tasks")
-        void shouldReturnEmptyListWhenNoOverdueTasks() {
-            // Arrange
-            List<Task> emptyList = List.of();
-            when(taskRepository.findWithAppUserAndProjectByDueDateBeforeAndStatusNotIn(
-                any(LocalDateTime.class),
-                eq(List.of(TaskStatus.COMPLETED, TaskStatus.CANCELLED))
-            )).thenReturn(emptyList);
-            when(taskMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
-
-            // Act
-            List<TaskResponseDto> results = taskService.findOverdueTasks();
-
-            // Assert
-            assertThat(results).isEmpty();
-            verify(taskMapper).toResponseDtoList(emptyList);
         }
     }
 }

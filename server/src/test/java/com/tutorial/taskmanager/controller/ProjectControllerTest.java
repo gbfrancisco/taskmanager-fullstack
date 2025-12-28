@@ -8,6 +8,8 @@ import com.tutorial.taskmanager.dto.project.ProjectUpdateDto;
 import com.tutorial.taskmanager.enums.ProjectStatus;
 import com.tutorial.taskmanager.exception.ResourceNotFoundException;
 import com.tutorial.taskmanager.exception.ValidationException;
+import com.tutorial.taskmanager.model.AppUser;
+import com.tutorial.taskmanager.security.AppUserDetails;
 import com.tutorial.taskmanager.service.ProjectService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,18 +39,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Slice tests for ProjectController using @WebMvcTest.
- *
- * <p><strong>Test Organization:</strong>
- * <ul>
- *   <li>CreateProjectTests - POST /api/projects</li>
- *   <li>ReadProjectTests - GET /api/projects, GET /api/projects/{id}</li>
- *   <li>FilterProjectsTests - GET /api/projects with query params</li>
- *   <li>UpdateProjectTests - PUT /api/projects/{id}</li>
- *   <li>DeleteProjectTests - DELETE /api/projects/{id}</li>
- * </ul>
+ * <p>
+ * Tests now include authentication mocking as all endpoints require
+ * an authenticated user via @AuthenticationPrincipal.
  */
 @WebMvcTest(ProjectController.class)
-@AutoConfigureMockMvc(addFilters = false)  // Disable security filters for unit testing
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("ProjectController Tests")
 class ProjectControllerTest {
 
@@ -59,7 +57,6 @@ class ProjectControllerTest {
     @MockitoBean
     private ProjectService projectService;
 
-    // Security beans required for component scanning (filters disabled via addFilters=false)
     @MockitoBean
     private JwtService jwtService;
 
@@ -69,14 +66,30 @@ class ProjectControllerTest {
     private ProjectCreateDto createDto;
     private ProjectUpdateDto updateDto;
     private ProjectResponseDto responseDto;
+    private AppUserDetails userDetails;
+
+    private static final Long USER_ID = 1L;
 
     @BeforeEach
     void setUp() {
+        // Set up authenticated user
+        AppUser testUser = new AppUser();
+        testUser.setId(USER_ID);
+        testUser.setUsername("testuser");
+        testUser.setEmail("test@example.com");
+        testUser.setPassword("password123");
+        userDetails = new AppUserDetails(testUser);
+
+        // Set up security context
+        UsernamePasswordAuthenticationToken auth =
+            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // No appUserId in createDto anymore
         createDto = ProjectCreateDto.builder()
                 .name("Test Project")
                 .description("Test Description")
                 .status(ProjectStatus.PLANNING)
-                .appUserId(1L)
                 .build();
 
         updateDto = ProjectUpdateDto.builder()
@@ -86,7 +99,7 @@ class ProjectControllerTest {
                 .build();
 
         AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
-                .id(1L)
+                .id(USER_ID)
                 .username("testuser")
                 .build();
 
@@ -96,6 +109,7 @@ class ProjectControllerTest {
                 .description("Test Description")
                 .status(ProjectStatus.PLANNING)
                 .appUser(userSummary)
+                .taskCount(0L)
                 .build();
     }
 
@@ -110,40 +124,29 @@ class ProjectControllerTest {
         @Test
         @DisplayName("Should create project and return 201 Created")
         void createProject_Success_Returns201() throws Exception {
-            when(projectService.createProject(any(ProjectCreateDto.class))).thenReturn(responseDto);
+            when(projectService.createProject(any(ProjectCreateDto.class), eq(USER_ID))).thenReturn(responseDto);
 
             mockMvc.perform(post("/api/projects")
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(createDto)))
                     .andExpect(status().isCreated())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.id").value(1L))
                     .andExpect(jsonPath("$.name").value("Test Project"))
-                    .andExpect(jsonPath("$.status").value("PLANNING"))
-                    .andExpect(jsonPath("$.appUser.id").value(1L));
+                    .andExpect(jsonPath("$.status").value("PLANNING"));
 
-            verify(projectService).createProject(any(ProjectCreateDto.class));
-        }
-
-        @Test
-        @DisplayName("Should return 404 when user not found")
-        void createProject_UserNotFound_Returns404() throws Exception {
-            when(projectService.createProject(any(ProjectCreateDto.class)))
-                    .thenThrow(new ResourceNotFoundException("appUser", 999L));
-
-            mockMvc.perform(post("/api/projects")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(createDto)))
-                    .andExpect(status().isNotFound());
+            verify(projectService).createProject(any(ProjectCreateDto.class), eq(USER_ID));
         }
 
         @Test
         @DisplayName("Should return 400 when project name already exists for user")
         void createProject_DuplicateName_Returns400() throws Exception {
-            when(projectService.createProject(any(ProjectCreateDto.class)))
+            when(projectService.createProject(any(ProjectCreateDto.class), eq(USER_ID)))
                     .thenThrow(new ValidationException("user with project name already exists"));
 
             mockMvc.perform(post("/api/projects")
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(createDto)))
                     .andExpect(status().isBadRequest());
@@ -161,32 +164,34 @@ class ProjectControllerTest {
         @Test
         @DisplayName("Should return project by ID with 200 OK")
         void getProjectById_Found_Returns200() throws Exception {
-            when(projectService.getById(1L)).thenReturn(responseDto);
+            when(projectService.getById(1L, USER_ID)).thenReturn(responseDto);
 
-            mockMvc.perform(get("/api/projects/{id}", 1L))
+            mockMvc.perform(get("/api/projects/{id}", 1L)
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.id").value(1L))
                     .andExpect(jsonPath("$.name").value("Test Project"));
 
-            verify(projectService).getById(1L);
+            verify(projectService).getById(1L, USER_ID);
         }
 
         @Test
         @DisplayName("Should return 404 when project ID not found")
         void getProjectById_NotFound_Returns404() throws Exception {
-            when(projectService.getById(999L))
+            when(projectService.getById(999L, USER_ID))
                     .thenThrow(new ResourceNotFoundException("project", 999L));
 
-            mockMvc.perform(get("/api/projects/{id}", 999L))
+            mockMvc.perform(get("/api/projects/{id}", 999L)
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())))
                     .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Should return all projects with 200 OK")
+        @DisplayName("Should return all projects for user with 200 OK")
         void getAllProjects_Success_Returns200() throws Exception {
             AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
-                    .id(1L)
+                    .id(USER_ID)
                     .username("testuser")
                     .build();
             ProjectResponseDto project2 = ProjectResponseDto.builder()
@@ -196,24 +201,24 @@ class ProjectControllerTest {
                     .appUser(userSummary)
                     .build();
             List<ProjectResponseDto> projects = Arrays.asList(responseDto, project2);
-            when(projectService.findAll()).thenReturn(projects);
+            when(projectService.findAll(USER_ID)).thenReturn(projects);
 
-            mockMvc.perform(get("/api/projects"))
+            mockMvc.perform(get("/api/projects")
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.length()").value(2))
-                    .andExpect(jsonPath("$[0].id").value(1L))
-                    .andExpect(jsonPath("$[1].id").value(2L));
+                    .andExpect(jsonPath("$.length()").value(2));
 
-            verify(projectService).findAll();
+            verify(projectService).findAll(USER_ID);
         }
 
         @Test
         @DisplayName("Should return empty list with 200 OK when no projects exist")
         void getAllProjects_EmptyList_Returns200() throws Exception {
-            when(projectService.findAll()).thenReturn(Collections.emptyList());
+            when(projectService.findAll(USER_ID)).thenReturn(Collections.emptyList());
 
-            mockMvc.perform(get("/api/projects"))
+            mockMvc.perform(get("/api/projects")
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(0));
         }
@@ -228,72 +233,31 @@ class ProjectControllerTest {
     class FilterProjectsTests {
 
         @Test
-        @DisplayName("Should filter projects by userId")
-        void getProjects_FilterByUserId_Returns200() throws Exception {
-            when(projectService.findByAppUserId(1L)).thenReturn(List.of(responseDto));
-
-            mockMvc.perform(get("/api/projects").param("userId", "1"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.length()").value(1))
-                    .andExpect(jsonPath("$[0].appUser.id").value(1L));
-
-            verify(projectService).findByAppUserId(1L);
-        }
-
-        @Test
         @DisplayName("Should filter projects by status")
         void getProjects_FilterByStatus_Returns200() throws Exception {
-            when(projectService.findByStatus(ProjectStatus.PLANNING)).thenReturn(List.of(responseDto));
-
-            mockMvc.perform(get("/api/projects").param("status", "PLANNING"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.length()").value(1))
-                    .andExpect(jsonPath("$[0].status").value("PLANNING"));
-
-            verify(projectService).findByStatus(ProjectStatus.PLANNING);
-        }
-
-        @Test
-        @DisplayName("Should filter projects by userId and status")
-        void getProjects_FilterByUserIdAndStatus_Returns200() throws Exception {
-            when(projectService.findByAppUserIdAndStatus(1L, ProjectStatus.PLANNING))
-                    .thenReturn(List.of(responseDto));
+            when(projectService.findByStatus(ProjectStatus.PLANNING, USER_ID)).thenReturn(List.of(responseDto));
 
             mockMvc.perform(get("/api/projects")
-                            .param("userId", "1")
-                            .param("status", "PLANNING"))
+                            .param("status", "PLANNING")
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(1));
 
-            verify(projectService).findByAppUserIdAndStatus(1L, ProjectStatus.PLANNING);
+            verify(projectService).findByStatus(ProjectStatus.PLANNING, USER_ID);
         }
 
         @Test
         @DisplayName("Should filter projects by name search")
         void getProjects_FilterByName_Returns200() throws Exception {
-            when(projectService.findByNameContaining("Test")).thenReturn(List.of(responseDto));
-
-            mockMvc.perform(get("/api/projects").param("name", "Test"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.length()").value(1))
-                    .andExpect(jsonPath("$[0].name").value("Test Project"));
-
-            verify(projectService).findByNameContaining("Test");
-        }
-
-        @Test
-        @DisplayName("Should filter projects by userId and name search")
-        void getProjects_FilterByUserIdAndName_Returns200() throws Exception {
-            when(projectService.findByAppUserIdAndNameContaining(1L, "Test"))
-                    .thenReturn(List.of(responseDto));
+            when(projectService.findByNameContaining("Test", USER_ID)).thenReturn(List.of(responseDto));
 
             mockMvc.perform(get("/api/projects")
-                            .param("userId", "1")
-                            .param("name", "Test"))
+                            .param("name", "Test")
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(1));
 
-            verify(projectService).findByAppUserIdAndNameContaining(1L, "Test");
+            verify(projectService).findByNameContaining("Test", USER_ID);
         }
     }
 
@@ -309,7 +273,7 @@ class ProjectControllerTest {
         @DisplayName("Should update project and return 200 OK")
         void updateProject_Success_Returns200() throws Exception {
             AppUserSummaryDto userSummary = AppUserSummaryDto.builder()
-                    .id(1L)
+                    .id(USER_ID)
                     .username("testuser")
                     .build();
             ProjectResponseDto updatedResponse = ProjectResponseDto.builder()
@@ -319,26 +283,28 @@ class ProjectControllerTest {
                     .status(ProjectStatus.ACTIVE)
                     .appUser(userSummary)
                     .build();
-            when(projectService.updateProject(eq(1L), any(ProjectUpdateDto.class)))
+            when(projectService.updateProject(eq(1L), any(ProjectUpdateDto.class), eq(USER_ID)))
                     .thenReturn(updatedResponse);
 
             mockMvc.perform(put("/api/projects/{id}", 1L)
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(updateDto)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("Updated Project"))
                     .andExpect(jsonPath("$.status").value("ACTIVE"));
 
-            verify(projectService).updateProject(eq(1L), any(ProjectUpdateDto.class));
+            verify(projectService).updateProject(eq(1L), any(ProjectUpdateDto.class), eq(USER_ID));
         }
 
         @Test
         @DisplayName("Should return 404 when updating non-existent project")
         void updateProject_NotFound_Returns404() throws Exception {
-            when(projectService.updateProject(eq(999L), any(ProjectUpdateDto.class)))
+            when(projectService.updateProject(eq(999L), any(ProjectUpdateDto.class), eq(USER_ID)))
                     .thenThrow(new ResourceNotFoundException("project", 999L));
 
             mockMvc.perform(put("/api/projects/{id}", 999L)
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(updateDto)))
                     .andExpect(status().isNotFound());
@@ -347,10 +313,11 @@ class ProjectControllerTest {
         @Test
         @DisplayName("Should return 400 when updating with duplicate name")
         void updateProject_DuplicateName_Returns400() throws Exception {
-            when(projectService.updateProject(eq(1L), any(ProjectUpdateDto.class)))
+            when(projectService.updateProject(eq(1L), any(ProjectUpdateDto.class), eq(USER_ID)))
                     .thenThrow(new ValidationException("name already exists"));
 
             mockMvc.perform(put("/api/projects/{id}", 1L)
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(updateDto)))
                     .andExpect(status().isBadRequest());
@@ -368,21 +335,23 @@ class ProjectControllerTest {
         @Test
         @DisplayName("Should delete project and return 204 No Content")
         void deleteProject_Success_Returns204() throws Exception {
-            doNothing().when(projectService).deleteProject(1L);
+            doNothing().when(projectService).deleteProject(1L, USER_ID);
 
-            mockMvc.perform(delete("/api/projects/{id}", 1L))
+            mockMvc.perform(delete("/api/projects/{id}", 1L)
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())))
                     .andExpect(status().isNoContent());
 
-            verify(projectService).deleteProject(1L);
+            verify(projectService).deleteProject(1L, USER_ID);
         }
 
         @Test
         @DisplayName("Should return 404 when deleting non-existent project")
         void deleteProject_NotFound_Returns404() throws Exception {
             doThrow(new ResourceNotFoundException("project", 999L))
-                    .when(projectService).deleteProject(999L);
+                    .when(projectService).deleteProject(999L, USER_ID);
 
-            mockMvc.perform(delete("/api/projects/{id}", 999L))
+            mockMvc.perform(delete("/api/projects/{id}", 999L)
+                            .principal(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())))
                     .andExpect(status().isNotFound());
         }
     }

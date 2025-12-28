@@ -19,9 +19,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Service layer for Project operations.
+ *
+ * <p><strong>Authorization:</strong>
+ * All methods require an authenticated user ID. Data is automatically scoped
+ * to the authenticated user - users can only access their own projects.
+ *
+ * <p>Ownership is validated on every operation:
+ * <ul>
+ *   <li>Create: Project is assigned to authenticated user</li>
+ *   <li>Read: Only returns projects owned by authenticated user</li>
+ *   <li>Update/Delete: Validates project belongs to authenticated user</li>
+ * </ul>
+ */
 @Service
 @Transactional
 public class ProjectService {
@@ -42,7 +57,9 @@ public class ProjectService {
         this.projectMapper = projectMapper;
     }
 
-    // ==================== TASK COUNT ENRICHMENT ====================
+    // =========================================================================
+    // TASK COUNT ENRICHMENT
+    // =========================================================================
 
     /**
      * Enrich a single DTO with task count.
@@ -85,21 +102,32 @@ public class ProjectService {
         return dtos;
     }
 
-    public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto) {
+    // =========================================================================
+    // CREATE
+    // =========================================================================
+
+    /**
+     * Create a new project for the authenticated user.
+     *
+     * @param projectCreateDto Project data
+     * @param userId ID of the authenticated user (from JWT)
+     * @return Created project
+     * @throws ResourceNotFoundException if user not found
+     * @throws ValidationException if project name already exists for user
+     */
+    public ProjectResponseDto createProject(ProjectCreateDto projectCreateDto, Long userId) {
         if (projectCreateDto == null) {
             throw new IllegalArgumentException("projectCreateDto is null");
         }
-
-        Long appUserId = projectCreateDto.getAppUserId();
-        if (appUserId == null) {
-            throw new IllegalArgumentException("appUserId is null");
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is null");
         }
 
-        AppUser appUser = appUserRepository.findById(appUserId)
-            .orElseThrow(() -> new ResourceNotFoundException("appUser", appUserId));
+        AppUser appUser = appUserRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("appUser", userId));
 
         boolean existsByUserAndName = projectRepository.existsByAppUserIdAndNameIgnoreCase(
-            appUserId,
+            userId,
             projectCreateDto.getName()
         );
         if (existsByUserAndName) {
@@ -113,139 +141,159 @@ public class ProjectService {
         return enrichWithTaskCount(projectMapper.toResponseDto(project));
     }
 
+    // =========================================================================
+    // READ - Single Project
+    // =========================================================================
+
+    /**
+     * Find a project by ID, with ownership check.
+     *
+     * @param projectId Project ID
+     * @param userId ID of the authenticated user
+     * @return Optional containing project if found and owned by user
+     */
     @Transactional(readOnly = true)
-    public Optional<ProjectResponseDto> findById(Long projectId) {
+    public Optional<ProjectResponseDto> findById(Long projectId, Long userId) {
         if (projectId == null) {
-            throw new IllegalArgumentException("id is null");
+            throw new IllegalArgumentException("projectId is null");
+        }
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is null");
         }
 
-        // Use EntityGraph method to eagerly fetch appUser
         return projectRepository.findWithAppUserById(projectId)
+            .filter(project -> Objects.equals(project.getAppUser().getId(), userId))
             .map(projectMapper::toResponseDto)
             .map(this::enrichWithTaskCount);
     }
 
+    /**
+     * Get a project by ID, with ownership check.
+     *
+     * @param projectId Project ID
+     * @param userId ID of the authenticated user
+     * @return Project data
+     * @throws ResourceNotFoundException if project not found
+     * @throws ValidationException if project doesn't belong to user
+     */
     @Transactional(readOnly = true)
-    public ProjectResponseDto getById(Long projectId) {
+    public ProjectResponseDto getById(Long projectId, Long userId) {
         if (projectId == null) {
-            throw new IllegalArgumentException("id is null");
+            throw new IllegalArgumentException("projectId is null");
+        }
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is null");
         }
 
-        // Use EntityGraph method to eagerly fetch appUser
-        return projectRepository.findWithAppUserById(projectId)
-            .map(projectMapper::toResponseDto)
-            .map(this::enrichWithTaskCount)
+        Project project = projectRepository.findWithAppUserById(projectId)
             .orElseThrow(() -> new ResourceNotFoundException("project", projectId));
+
+        validateOwnership(project, userId);
+        return enrichWithTaskCount(projectMapper.toResponseDto(project));
     }
 
-    @Transactional(readOnly = true)
-    public List<ProjectResponseDto> findAll() {
-        // Use EntityGraph method to eagerly fetch appUser for all projects
-        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projectRepository.findAllWithAppUser());
-        return enrichWithTaskCounts(dtos);
-    }
+    // =========================================================================
+    // READ - Lists (All scoped to authenticated user)
+    // =========================================================================
 
+    /**
+     * Get all projects for the authenticated user.
+     *
+     * @param userId ID of the authenticated user
+     * @return List of user's projects
+     */
     @Transactional(readOnly = true)
-    public List<ProjectResponseDto> findByAppUserId(Long appUserId) {
-        if (appUserId == null) {
-            throw new IllegalArgumentException("appUserId is null");
+    public List<ProjectResponseDto> findAll(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is null");
         }
 
-        // Use EntityGraph method to eagerly fetch appUser
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findWithAppUserByAppUserId(appUserId)
+            projectRepository.findWithAppUserByAppUserId(userId)
         );
         return enrichWithTaskCounts(dtos);
     }
 
+    /**
+     * Get projects by status for the authenticated user.
+     *
+     * @param status Project status
+     * @param userId ID of the authenticated user
+     * @return List of user's projects with given status
+     */
     @Transactional(readOnly = true)
-    public List<ProjectResponseDto> findByStatus(ProjectStatus projectStatus) {
-        if (projectStatus == null) {
-            throw new IllegalArgumentException("projectStatus is null");
+    public List<ProjectResponseDto> findByStatus(ProjectStatus status, Long userId) {
+        if (status == null) {
+            throw new IllegalArgumentException("status is null");
+        }
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is null");
         }
 
-        // Use EntityGraph method to eagerly fetch appUser
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findWithAppUserByStatus(projectStatus)
+            projectRepository.findWithAppUserByAppUserIdAndStatus(userId, status)
         );
         return enrichWithTaskCounts(dtos);
     }
 
+    /**
+     * Search projects by name for the authenticated user.
+     *
+     * @param nameQuery Name search query
+     * @param userId ID of the authenticated user
+     * @return List of user's projects matching the name query
+     */
     @Transactional(readOnly = true)
-    public List<ProjectResponseDto> findByAppUserIdAndStatus(Long appUserId, ProjectStatus projectStatus) {
-        if (appUserId == null) {
-            throw new IllegalArgumentException("appUserId is null");
-        }
-
-        if (projectStatus == null) {
-            throw new IllegalArgumentException("projectStatus is null");
-        }
-
-        // Use EntityGraph method to eagerly fetch appUser
-        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findWithAppUserByAppUserIdAndStatus(appUserId, projectStatus)
-        );
-        return enrichWithTaskCounts(dtos);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ProjectResponseDto> findByNameContaining(String nameQuery) {
+    public List<ProjectResponseDto> findByNameContaining(String nameQuery, Long userId) {
         if (StringUtils.isEmpty(nameQuery)) {
             throw new IllegalArgumentException("nameQuery is empty");
         }
-
-        // Use EntityGraph method to eagerly fetch appUser
-        List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(
-            projectRepository.findWithAppUserByNameContainingIgnoreCase(nameQuery)
-        );
-        return enrichWithTaskCounts(dtos);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ProjectResponseDto> findByAppUserIdAndNameContaining(Long appUserId, String nameQuery) {
-        if (appUserId == null) {
-            throw new IllegalArgumentException("appUserId is null");
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is null");
         }
 
-        if (StringUtils.isEmpty(nameQuery)) {
-            throw new IllegalArgumentException("nameQuery is empty");
-        }
-
-        // Use EntityGraph method to eagerly fetch appUser
         List<Project> projects = projectRepository.findWithAppUserByAppUserIdAndNameContainingIgnoreCase(
-            appUserId, nameQuery
+            userId, nameQuery
         );
         List<ProjectResponseDto> dtos = projectMapper.toResponseDtoList(projects);
         return enrichWithTaskCounts(dtos);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<ProjectResponseDto> findByName(String name) {
-        if (StringUtils.isEmpty(name)) {
-            throw new IllegalArgumentException("name is empty");
-        }
+    // =========================================================================
+    // UPDATE
+    // =========================================================================
 
-        return projectRepository.findByName(name)
-            .map(projectMapper::toResponseDto)
-            .map(this::enrichWithTaskCount);
-    }
-
-    public ProjectResponseDto updateProject(Long projectId, ProjectUpdateDto projectUpdateDto) {
+    /**
+     * Update a project, with ownership check.
+     *
+     * @param projectId Project ID
+     * @param projectUpdateDto Updated project data
+     * @param userId ID of the authenticated user
+     * @return Updated project
+     * @throws ResourceNotFoundException if project not found
+     * @throws ValidationException if project doesn't belong to user or name already exists
+     */
+    public ProjectResponseDto updateProject(Long projectId, ProjectUpdateDto projectUpdateDto, Long userId) {
         if (projectId == null) {
-            throw new IllegalArgumentException("id is null");
+            throw new IllegalArgumentException("projectId is null");
         }
-
         if (projectUpdateDto == null) {
-            throw new IllegalArgumentException("updateDto is null");
+            throw new IllegalArgumentException("projectUpdateDto is null");
+        }
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is null");
         }
 
         Project projectToUpdate = projectRepository.findById(projectId)
             .orElseThrow(() -> new ResourceNotFoundException("project", projectId));
 
+        validateOwnership(projectToUpdate, userId);
+
+        // Check for duplicate name (only if name is changing)
         boolean hasDuplicateName = false;
         if (!Strings.CI.equals(projectToUpdate.getName(), projectUpdateDto.getName())) {
             hasDuplicateName = projectRepository.existsByAppUserIdAndNameIgnoreCase(
-                projectToUpdate.getAppUser().getId(),
+                userId,
                 projectUpdateDto.getName()
             );
         }
@@ -258,36 +306,72 @@ public class ProjectService {
         return enrichWithTaskCount(projectMapper.toResponseDto(projectRepository.save(projectToUpdate)));
     }
 
-    public void deleteProject(Long projectId) {
+    // =========================================================================
+    // DELETE
+    // =========================================================================
+
+    /**
+     * Delete a project, with ownership check.
+     *
+     * @param projectId Project ID
+     * @param userId ID of the authenticated user
+     * @throws ResourceNotFoundException if project not found
+     * @throws ValidationException if project doesn't belong to user
+     */
+    public void deleteProject(Long projectId, Long userId) {
         if (projectId == null) {
-            throw new IllegalArgumentException("id is null");
+            throw new IllegalArgumentException("projectId is null");
+        }
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is null");
         }
 
-        boolean doesProjectExist = projectRepository.existsById(projectId);
-        if (!doesProjectExist) {
-            throw new ResourceNotFoundException("project", projectId);
-        }
+        Project project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new ResourceNotFoundException("project", projectId));
+
+        validateOwnership(project, userId);
 
         projectRepository.deleteById(projectId);
     }
 
+    // =========================================================================
+    // EXISTENCE CHECK
+    // =========================================================================
+
     /**
-     * Checks if a project with the given name exists for a user.
+     * Checks if a project with the given name exists for the authenticated user.
      * Comparison is case-insensitive (e.g., "My Project" matches "my project").
      *
-     * @param appUserId the user's ID
      * @param name the project name to check
+     * @param userId ID of the authenticated user
      * @return true if a project with that name exists for the user
      */
     @Transactional(readOnly = true)
-    public boolean existsByAppUserIdAndName(Long appUserId, String name) {
-        if (appUserId == null) {
-            throw new IllegalArgumentException("appUserId is null");
-        }
+    public boolean existsByName(String name, Long userId) {
         if (StringUtils.isEmpty(name)) {
             throw new IllegalArgumentException("name is empty");
         }
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is null");
+        }
 
-        return projectRepository.existsByAppUserIdAndNameIgnoreCase(appUserId, name);
+        return projectRepository.existsByAppUserIdAndNameIgnoreCase(userId, name);
+    }
+
+    // =========================================================================
+    // PRIVATE HELPERS
+    // =========================================================================
+
+    /**
+     * Validate that a project belongs to the given user.
+     *
+     * @param project The project to check
+     * @param userId The user ID to validate against
+     * @throws ValidationException if project doesn't belong to user
+     */
+    private void validateOwnership(Project project, Long userId) {
+        if (!Objects.equals(project.getAppUser().getId(), userId)) {
+            throw new ValidationException("Project does not belong to authenticated user");
+        }
     }
 }

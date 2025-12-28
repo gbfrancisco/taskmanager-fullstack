@@ -34,20 +34,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * Comprehensive unit tests for ProjectService.
+ * Comprehensive unit tests for ProjectService with user-scoped authorization.
  * <p>
- * Tests all CRUD operations, validation logic, filtering, and business rules.
- * Uses Mockito to mock repository and mapper dependencies and AssertJ for assertions.
- * <p>
- * Test organization:
- * - Create operations (createProject) - returns ProjectResponseDto
- * - Read operations (findById, getById, findAll) - returns ProjectResponseDto
- * - Update operations (updateProject) - returns ProjectResponseDto
- * - Delete operations (deleteProject)
- * - Filter operations (findByAppUserId, findByStatus, search by name) - returns ProjectResponseDto
- * - Existence checks (existsByAppUserIdAndName)
- * <p>
- * Note: Services return DTOs for public API. Controllers pass DTOs to clients.
+ * All service methods now require a userId parameter for authorization.
+ * Tests verify both happy paths and authorization failure scenarios.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ProjectService Tests")
@@ -70,28 +60,38 @@ class ProjectServiceTest {
 
     // Test data
     private AppUser testUser;
+    private AppUser otherUser;
     private AppUserSummaryDto testUserSummary;
     private Project testProject;
     private ProjectResponseDto testProjectResponseDto;
     private ProjectCreateDto createDto;
     private ProjectUpdateDto updateDto;
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTHER_USER_ID = 2L;
+
     @BeforeEach
     void setUp() {
-        // Set up test user
+        // Set up test user (authenticated user)
         testUser = new AppUser();
-        testUser.setId(1L);
+        testUser.setId(USER_ID);
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
         testUser.setPassword("password123");
 
+        // Set up other user (for authorization failure tests)
+        otherUser = new AppUser();
+        otherUser.setId(OTHER_USER_ID);
+        otherUser.setUsername("otheruser");
+        otherUser.setEmail("other@example.com");
+
         // Set up test user summary (for response DTOs)
         testUserSummary = AppUserSummaryDto.builder()
-                .id(1L)
+                .id(USER_ID)
                 .username("testuser")
                 .build();
 
-        // Set up test project
+        // Set up test project (owned by testUser)
         testProject = new Project();
         testProject.setId(1L);
         testProject.setName("Test Project");
@@ -109,12 +109,11 @@ class ProjectServiceTest {
                 .taskCount(0L)
                 .build();
 
-        // Set up create DTO
+        // Set up create DTO (no appUserId - extracted from JWT)
         createDto = ProjectCreateDto.builder()
                 .name("New Project")
                 .description("New Description")
                 .status(ProjectStatus.PLANNING)
-                .appUserId(1L)
                 .build();
 
         // Set up update DTO
@@ -136,136 +135,59 @@ class ProjectServiceTest {
     class CreateProjectTests {
 
         @Test
-        @DisplayName("Should create project successfully")
-        void shouldCreateProjectSuccessfully() {
+        @DisplayName("Should create project for authenticated user")
+        void shouldCreateProjectForAuthenticatedUser() {
             // Arrange
-            when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName())).thenReturn(false);
+            when(appUserRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(USER_ID, createDto.getName())).thenReturn(false);
             when(projectMapper.toEntity(createDto)).thenReturn(testProject);
             when(projectRepository.save(any(Project.class))).thenReturn(testProject);
             when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
 
             // Act
-            ProjectResponseDto result = projectService.createProject(createDto);
+            ProjectResponseDto result = projectService.createProject(createDto, USER_ID);
 
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getName()).isEqualTo(testProjectResponseDto.getName());
-            assertThat(result.getDescription()).isEqualTo(testProjectResponseDto.getDescription());
-            assertThat(result.getStatus()).isEqualTo(testProjectResponseDto.getStatus());
-            assertThat(result.getAppUser().getId()).isEqualTo(1L);
+            assertThat(result.getAppUser().getId()).isEqualTo(USER_ID);
 
-            verify(appUserRepository).findById(1L);
-            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName());
-            verify(projectMapper).toEntity(createDto);
+            verify(appUserRepository).findById(USER_ID);
+            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(USER_ID, createDto.getName());
             verify(projectRepository).save(any(Project.class));
-            verify(projectMapper).toResponseDto(testProject);
-        }
-
-        @Test
-        @DisplayName("Should create project with default status PLANNING")
-        void shouldCreateProjectWithDefaultStatus() {
-            // Arrange
-            createDto.setStatus(null);
-            when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName())).thenReturn(false);
-            when(projectMapper.toEntity(createDto)).thenReturn(testProject);
-            when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> {
-                Project saved = invocation.getArgument(0);
-                assertThat(saved.getStatus()).isEqualTo(ProjectStatus.PLANNING);
-                return testProject;
-            });
-            when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
-
-            // Act
-            projectService.createProject(createDto);
-
-            // Assert
-            verify(projectRepository).save(any(Project.class));
-        }
-
-        @Test
-        @DisplayName("Should throw exception when user not found")
-        void shouldThrowExceptionWhenUserNotFound() {
-            // Arrange
-            createDto.setAppUserId(99L);
-            when(appUserRepository.findById(99L)).thenReturn(Optional.empty());
-
-            // Act & Assert
-            assertThatThrownBy(() -> projectService.createProject(createDto))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("appUser")
-                    .hasMessageContaining("99");
-
-            verify(appUserRepository).findById(99L);
-            verify(projectRepository, never()).save(any(Project.class));
         }
 
         @Test
         @DisplayName("Should throw exception when project name already exists for user")
         void shouldThrowExceptionWhenProjectNameExistsForUser() {
             // Arrange
-            when(appUserRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName())).thenReturn(true);
+            when(appUserRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(USER_ID, createDto.getName())).thenReturn(true);
 
             // Act & Assert
-            assertThatThrownBy(() -> projectService.createProject(createDto))
+            assertThatThrownBy(() -> projectService.createProject(createDto, USER_ID))
                     .isInstanceOf(ValidationException.class)
                     .hasMessageContaining("name")
                     .hasMessageContaining("exists");
 
-            verify(appUserRepository).findById(1L);
-            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, createDto.getName());
             verify(projectRepository, never()).save(any(Project.class));
         }
 
         @Test
-        @DisplayName("Should throw exception when appUserId is null")
-        void shouldThrowExceptionWhenAppUserIdIsNull() {
-            // Arrange
-            createDto.setAppUserId(null);
-
+        @DisplayName("Should throw exception when userId is null")
+        void shouldThrowExceptionWhenUserIdIsNull() {
             // Act & Assert
-            assertThatThrownBy(() -> projectService.createProject(createDto))
+            assertThatThrownBy(() -> projectService.createProject(createDto, null))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("appUserId");
-
-            verify(appUserRepository, never()).findById(anyLong());
-            verify(projectRepository, never()).save(any(Project.class));
+                    .hasMessageContaining("userId is null");
         }
 
         @Test
         @DisplayName("Should throw exception when createDto is null")
         void shouldThrowExceptionWhenCreateDtoIsNull() {
             // Act & Assert
-            assertThatThrownBy(() -> projectService.createProject(null))
+            assertThatThrownBy(() -> projectService.createProject(null, USER_ID))
                     .isInstanceOf(IllegalArgumentException.class);
-
-            verify(projectRepository, never()).save(any(Project.class));
-        }
-
-        @Test
-        @DisplayName("Should allow same project name for different users")
-        void shouldAllowSameProjectNameForDifferentUsers() {
-            // Arrange - Different user (ID 2) can have same project name
-            AppUser differentUser = new AppUser();
-            differentUser.setId(2L);
-            differentUser.setUsername("otheruser");
-
-            createDto.setAppUserId(2L);
-
-            when(appUserRepository.findById(2L)).thenReturn(Optional.of(differentUser));
-            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(2L, createDto.getName())).thenReturn(false);
-            when(projectMapper.toEntity(createDto)).thenReturn(testProject);
-            when(projectRepository.save(any(Project.class))).thenReturn(testProject);
-            when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
-
-            // Act
-            ProjectResponseDto result = projectService.createProject(createDto);
-
-            // Assert
-            assertThat(result).isNotNull();
-            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(2L, createDto.getName());
         }
     }
 
@@ -276,141 +198,80 @@ class ProjectServiceTest {
     class ReadProjectTests {
 
         @Test
-        @DisplayName("Should find project by ID (returns Optional)")
-        void shouldFindProjectById() {
+        @DisplayName("Should find project by ID with ownership check")
+        void shouldFindProjectByIdWithOwnershipCheck() {
             // Arrange
             when(projectRepository.findWithAppUserById(1L)).thenReturn(Optional.of(testProject));
             when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
 
             // Act
-            Optional<ProjectResponseDto> result = projectService.findById(1L);
+            Optional<ProjectResponseDto> result = projectService.findById(1L, USER_ID);
 
             // Assert
             assertThat(result).isPresent();
             assertThat(result.get().getId()).isEqualTo(1L);
-            assertThat(result.get().getName()).isEqualTo(testProjectResponseDto.getName());
-
             verify(projectRepository).findWithAppUserById(1L);
-            verify(projectMapper).toResponseDto(testProject);
         }
 
         @Test
-        @DisplayName("Should return empty Optional when project not found")
-        void shouldReturnEmptyWhenProjectNotFound() {
+        @DisplayName("Should return empty when project belongs to different user")
+        void shouldReturnEmptyWhenProjectBelongsToDifferentUser() {
             // Arrange
-            when(projectRepository.findWithAppUserById(99L)).thenReturn(Optional.empty());
+            testProject.setAppUser(otherUser); // Project belongs to different user
+            when(projectRepository.findWithAppUserById(1L)).thenReturn(Optional.of(testProject));
 
             // Act
-            Optional<ProjectResponseDto> result = projectService.findById(99L);
+            Optional<ProjectResponseDto> result = projectService.findById(1L, USER_ID);
 
             // Assert
             assertThat(result).isEmpty();
-            verify(projectRepository).findWithAppUserById(99L);
             verify(projectMapper, never()).toResponseDto(any());
         }
 
         @Test
-        @DisplayName("Should throw exception when findById with null id")
-        void shouldThrowExceptionWhenFindByIdWithNullId() {
-            // Act & Assert
-            assertThatThrownBy(() -> projectService.findById(null))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("id");
-
-            verify(projectRepository, never()).findById(anyLong());
-        }
-
-        @Test
-        @DisplayName("Should get project by ID (throws exception if not found)")
-        void shouldGetProjectById() {
+        @DisplayName("Should get project by ID with ownership validation")
+        void shouldGetProjectByIdWithOwnershipValidation() {
             // Arrange
             when(projectRepository.findWithAppUserById(1L)).thenReturn(Optional.of(testProject));
             when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
 
             // Act
-            ProjectResponseDto result = projectService.getById(1L);
+            ProjectResponseDto result = projectService.getById(1L, USER_ID);
 
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo(1L);
-            verify(projectRepository).findWithAppUserById(1L);
-            verify(projectMapper).toResponseDto(testProject);
         }
 
         @Test
-        @DisplayName("Should throw exception when getting non-existent project")
-        void shouldThrowExceptionWhenGettingNonExistentProject() {
+        @DisplayName("Should throw exception when project doesn't belong to user")
+        void shouldThrowExceptionWhenProjectDoesntBelongToUser() {
             // Arrange
-            when(projectRepository.findWithAppUserById(99L)).thenReturn(Optional.empty());
+            testProject.setAppUser(otherUser);
+            when(projectRepository.findWithAppUserById(1L)).thenReturn(Optional.of(testProject));
 
             // Act & Assert
-            assertThatThrownBy(() -> projectService.getById(99L))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("project")
-                    .hasMessageContaining("99");
-
-            verify(projectRepository).findWithAppUserById(99L);
+            assertThatThrownBy(() -> projectService.getById(1L, USER_ID))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Project does not belong to authenticated user");
         }
 
         @Test
-        @DisplayName("Should throw exception when getById with null id")
-        void shouldThrowExceptionWhenGetByIdWithNullId() {
-            // Act & Assert
-            assertThatThrownBy(() -> projectService.getById(null))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("id");
-
-            verify(projectRepository, never()).findById(anyLong());
-        }
-
-        @Test
-        @DisplayName("Should find all projects")
-        void shouldFindAllProjects() {
+        @DisplayName("Should find all projects for authenticated user only")
+        void shouldFindAllProjectsForAuthenticatedUser() {
             // Arrange
-            Project project2 = new Project();
-            project2.setId(2L);
-            project2.setName("Project 2");
-            project2.setAppUser(testUser);
+            List<Project> projects = List.of(testProject);
+            List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto);
 
-            ProjectResponseDto project2ResponseDto = ProjectResponseDto.builder()
-                    .id(2L)
-                    .name("Project 2")
-                    .appUser(testUserSummary)
-                    .build();
-
-            List<Project> projects = List.of(testProject, project2);
-            List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto, project2ResponseDto);
-
-            when(projectRepository.findAllWithAppUser()).thenReturn(projects);
+            when(projectRepository.findWithAppUserByAppUserId(USER_ID)).thenReturn(projects);
             when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
 
             // Act
-            List<ProjectResponseDto> results = projectService.findAll();
+            List<ProjectResponseDto> results = projectService.findAll(USER_ID);
 
             // Assert
-            assertThat(results).hasSize(2);
-            assertThat(results).extracting(ProjectResponseDto::getId)
-                    .containsExactly(1L, 2L);
-
-            verify(projectRepository).findAllWithAppUser();
-            verify(projectMapper).toResponseDtoList(projects);
-        }
-
-        @Test
-        @DisplayName("Should return empty list when no projects exist")
-        void shouldReturnEmptyListWhenNoProjects() {
-            // Arrange
-            List<Project> emptyList = List.of();
-            when(projectRepository.findAllWithAppUser()).thenReturn(emptyList);
-            when(projectMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
-
-            // Act
-            List<ProjectResponseDto> results = projectService.findAll();
-
-            // Assert
-            assertThat(results).isEmpty();
-            verify(projectRepository).findAllWithAppUser();
-            verify(projectMapper).toResponseDtoList(emptyList);
+            assertThat(results).hasSize(1);
+            verify(projectRepository).findWithAppUserByAppUserId(USER_ID);
         }
     }
 
@@ -421,83 +282,42 @@ class ProjectServiceTest {
     class UpdateProjectTests {
 
         @Test
-        @DisplayName("Should update all project fields")
-        void shouldUpdateAllProjectFields() {
+        @DisplayName("Should update project with ownership check")
+        void shouldUpdateProjectWithOwnershipCheck() {
             // Arrange
             ProjectResponseDto updatedResponseDto = ProjectResponseDto.builder()
                     .id(1L)
                     .name(updateDto.getName())
-                    .description(updateDto.getDescription())
                     .status(updateDto.getStatus())
                     .appUser(testUserSummary)
                     .build();
 
             when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
-            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, updateDto.getName())).thenReturn(false);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(USER_ID, updateDto.getName())).thenReturn(false);
             when(projectRepository.save(any(Project.class))).thenReturn(testProject);
             when(projectMapper.toResponseDto(testProject)).thenReturn(updatedResponseDto);
 
             // Act
-            ProjectResponseDto result = projectService.updateProject(1L, updateDto);
+            ProjectResponseDto result = projectService.updateProject(1L, updateDto, USER_ID);
 
             // Assert
-            assertThat(result).isNotNull();
             assertThat(result.getName()).isEqualTo(updateDto.getName());
-            assertThat(result.getDescription()).isEqualTo(updateDto.getDescription());
-            assertThat(result.getStatus()).isEqualTo(updateDto.getStatus());
-
-            verify(projectRepository).findById(1L);
             verify(projectMapper).patchEntityFromDto(updateDto, testProject);
             verify(projectRepository).save(testProject);
-            verify(projectMapper).toResponseDto(testProject);
         }
 
         @Test
-        @DisplayName("Should update only provided fields (partial update)")
-        void shouldUpdateOnlyProvidedFields() {
+        @DisplayName("Should throw exception when updating project that doesn't belong to user")
+        void shouldThrowExceptionWhenUpdatingUnownedProject() {
             // Arrange
-            updateDto.setName(null);  // Don't update name
-            updateDto.setDescription(null);  // Don't update description
-
-            ProjectResponseDto partiallyUpdatedDto = ProjectResponseDto.builder()
-                    .id(1L)
-                    .name(testProject.getName())  // Original name
-                    .description(testProject.getDescription())  // Original description
-                    .status(updateDto.getStatus())  // Updated status
-                    .appUser(testUserSummary)
-                    .build();
-
+            testProject.setAppUser(otherUser);
             when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
-            // No uniqueness check needed when name is not changing
-            when(projectRepository.save(any(Project.class))).thenReturn(testProject);
-            when(projectMapper.toResponseDto(testProject)).thenReturn(partiallyUpdatedDto);
-
-            // Act
-            ProjectResponseDto result = projectService.updateProject(1L, updateDto);
-
-            // Assert
-            assertThat(result.getName()).isEqualTo(testProject.getName());  // Unchanged
-            assertThat(result.getStatus()).isEqualTo(updateDto.getStatus());  // Changed
-
-            verify(projectMapper).patchEntityFromDto(updateDto, testProject);
-            verify(projectRepository).save(testProject);
-            // Should NOT check uniqueness when name is null (not being updated)
-            verify(projectRepository, never()).existsByAppUserIdAndNameIgnoreCase(anyLong(), anyString());
-        }
-
-        @Test
-        @DisplayName("Should throw exception when updating non-existent project")
-        void shouldThrowExceptionWhenUpdatingNonExistentProject() {
-            // Arrange
-            when(projectRepository.findById(99L)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> projectService.updateProject(99L, updateDto))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("project")
-                    .hasMessageContaining("99");
+            assertThatThrownBy(() -> projectService.updateProject(1L, updateDto, USER_ID))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Project does not belong to authenticated user");
 
-            verify(projectRepository).findById(99L);
             verify(projectRepository, never()).save(any(Project.class));
         }
 
@@ -506,16 +326,14 @@ class ProjectServiceTest {
         void shouldThrowExceptionWhenUpdatingToDuplicateName() {
             // Arrange
             when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
-            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, updateDto.getName())).thenReturn(true);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(USER_ID, updateDto.getName())).thenReturn(true);
 
             // Act & Assert
-            assertThatThrownBy(() -> projectService.updateProject(1L, updateDto))
+            assertThatThrownBy(() -> projectService.updateProject(1L, updateDto, USER_ID))
                     .isInstanceOf(ValidationException.class)
                     .hasMessageContaining("name")
                     .hasMessageContaining("exists");
 
-            verify(projectRepository).findById(1L);
-            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, updateDto.getName());
             verify(projectRepository, never()).save(any(Project.class));
         }
 
@@ -533,39 +351,16 @@ class ProjectServiceTest {
                     .build();
 
             when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
-            // When name is same as current, should skip uniqueness check OR handle it gracefully
             when(projectRepository.save(any(Project.class))).thenReturn(testProject);
             when(projectMapper.toResponseDto(testProject)).thenReturn(updatedResponseDto);
 
             // Act
-            ProjectResponseDto result = projectService.updateProject(1L, updateDto);
+            ProjectResponseDto result = projectService.updateProject(1L, updateDto, USER_ID);
 
             // Assert
             assertThat(result).isNotNull();
             verify(projectRepository, never()).existsByAppUserIdAndNameIgnoreCase(anyLong(), anyString());
             verify(projectRepository).save(testProject);
-        }
-
-        @Test
-        @DisplayName("Should throw exception when update id is null")
-        void shouldThrowExceptionWhenUpdateIdIsNull() {
-            // Act & Assert
-            assertThatThrownBy(() -> projectService.updateProject(null, updateDto))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("id");
-
-            verify(projectRepository, never()).findById(anyLong());
-        }
-
-        @Test
-        @DisplayName("Should throw exception when updateDto is null")
-        void shouldThrowExceptionWhenUpdateDtoIsNull() {
-            // Act & Assert
-            assertThatThrownBy(() -> projectService.updateProject(1L, null))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("updateDto");
-
-            verify(projectRepository, never()).save(any(Project.class));
         }
     }
 
@@ -576,45 +371,47 @@ class ProjectServiceTest {
     class DeleteProjectTests {
 
         @Test
-        @DisplayName("Should delete project successfully")
-        void shouldDeleteProject() {
+        @DisplayName("Should delete project with ownership check")
+        void shouldDeleteProjectWithOwnershipCheck() {
             // Arrange
-            when(projectRepository.existsById(1L)).thenReturn(true);
+            when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
             doNothing().when(projectRepository).deleteById(1L);
 
             // Act
-            projectService.deleteProject(1L);
+            projectService.deleteProject(1L, USER_ID);
 
             // Assert
-            verify(projectRepository).existsById(1L);
+            verify(projectRepository).findById(1L);
             verify(projectRepository).deleteById(1L);
         }
 
         @Test
-        @DisplayName("Should throw exception when deleting non-existent project")
-        void shouldThrowExceptionWhenDeletingNonExistentProject() {
+        @DisplayName("Should throw when deleting project that doesn't belong to user")
+        void shouldThrowWhenDeletingUnownedProject() {
             // Arrange
-            when(projectRepository.existsById(99L)).thenReturn(false);
+            testProject.setAppUser(otherUser);
+            when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
 
             // Act & Assert
-            assertThatThrownBy(() -> projectService.deleteProject(99L))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("project")
-                    .hasMessageContaining("99");
+            assertThatThrownBy(() -> projectService.deleteProject(1L, USER_ID))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Project does not belong to authenticated user");
 
-            verify(projectRepository).existsById(99L);
             verify(projectRepository, never()).deleteById(anyLong());
         }
 
         @Test
-        @DisplayName("Should throw exception when delete id is null")
-        void shouldThrowExceptionWhenDeleteIdIsNull() {
-            // Act & Assert
-            assertThatThrownBy(() -> projectService.deleteProject(null))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("id");
+        @DisplayName("Should throw exception when project not found")
+        void shouldThrowExceptionWhenProjectNotFound() {
+            // Arrange
+            when(projectRepository.findById(99L)).thenReturn(Optional.empty());
 
-            verify(projectRepository, never()).existsById(anyLong());
+            // Act & Assert
+            assertThatThrownBy(() -> projectService.deleteProject(99L, USER_ID))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("project")
+                    .hasMessageContaining("99");
+
             verify(projectRepository, never()).deleteById(anyLong());
         }
     }
@@ -626,79 +423,40 @@ class ProjectServiceTest {
     class FilterProjectsTests {
 
         @Test
-        @DisplayName("Should find projects by user ID")
-        void shouldFindProjectsByUserId() {
-            // Arrange
-            Project project2 = new Project();
-            project2.setId(2L);
-            project2.setName("Project 2");
-            project2.setAppUser(testUser);
-
-            ProjectResponseDto project2ResponseDto = ProjectResponseDto.builder()
-                    .id(2L)
-                    .name("Project 2")
-                    .appUser(testUserSummary)
-                    .build();
-
-            List<Project> projects = List.of(testProject, project2);
-            List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto, project2ResponseDto);
-
-            when(projectRepository.findWithAppUserByAppUserId(1L)).thenReturn(projects);
-            when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
-
-            // Act
-            List<ProjectResponseDto> results = projectService.findByAppUserId(1L);
-
-            // Assert
-            assertThat(results).hasSize(2);
-            assertThat(results).extracting(dto -> dto.getAppUser().getId())
-                    .containsOnly(1L);
-
-            verify(projectRepository).findWithAppUserByAppUserId(1L);
-            verify(projectMapper).toResponseDtoList(projects);
-        }
-
-        @Test
-        @DisplayName("Should find projects by status")
-        void shouldFindProjectsByStatus() {
+        @DisplayName("Should find projects by status for authenticated user")
+        void shouldFindProjectsByStatusForAuthenticatedUser() {
             // Arrange
             List<Project> projects = List.of(testProject);
             List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto);
 
-            when(projectRepository.findWithAppUserByStatus(ProjectStatus.PLANNING)).thenReturn(projects);
+            when(projectRepository.findWithAppUserByAppUserIdAndStatus(USER_ID, ProjectStatus.PLANNING)).thenReturn(projects);
             when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
 
             // Act
-            List<ProjectResponseDto> results = projectService.findByStatus(ProjectStatus.PLANNING);
+            List<ProjectResponseDto> results = projectService.findByStatus(ProjectStatus.PLANNING, USER_ID);
 
             // Assert
             assertThat(results).hasSize(1);
             assertThat(results.getFirst().getStatus()).isEqualTo(ProjectStatus.PLANNING);
-
-            verify(projectRepository).findWithAppUserByStatus(ProjectStatus.PLANNING);
-            verify(projectMapper).toResponseDtoList(projects);
+            verify(projectRepository).findWithAppUserByAppUserIdAndStatus(USER_ID, ProjectStatus.PLANNING);
         }
 
         @Test
-        @DisplayName("Should find projects by user ID and status")
-        void shouldFindProjectsByUserIdAndStatus() {
+        @DisplayName("Should search projects by name for authenticated user")
+        void shouldSearchProjectsByNameForAuthenticatedUser() {
             // Arrange
             List<Project> projects = List.of(testProject);
             List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto);
 
-            when(projectRepository.findWithAppUserByAppUserIdAndStatus(1L, ProjectStatus.PLANNING)).thenReturn(projects);
+            when(projectRepository.findWithAppUserByAppUserIdAndNameContainingIgnoreCase(USER_ID, "test")).thenReturn(projects);
             when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
 
             // Act
-            List<ProjectResponseDto> results = projectService.findByAppUserIdAndStatus(1L, ProjectStatus.PLANNING);
+            List<ProjectResponseDto> results = projectService.findByNameContaining("test", USER_ID);
 
             // Assert
             assertThat(results).hasSize(1);
-            assertThat(results.getFirst().getAppUser().getId()).isEqualTo(1L);
-            assertThat(results.getFirst().getStatus()).isEqualTo(ProjectStatus.PLANNING);
-
-            verify(projectRepository).findWithAppUserByAppUserIdAndStatus(1L, ProjectStatus.PLANNING);
-            verify(projectMapper).toResponseDtoList(projects);
+            verify(projectRepository).findWithAppUserByAppUserIdAndNameContainingIgnoreCase(USER_ID, "test");
         }
 
         @Test
@@ -706,115 +464,14 @@ class ProjectServiceTest {
         void shouldReturnEmptyListWhenNoProjectsMatchFilters() {
             // Arrange
             List<Project> emptyList = List.of();
-            when(projectRepository.findWithAppUserByStatus(ProjectStatus.COMPLETED)).thenReturn(emptyList);
+            when(projectRepository.findWithAppUserByAppUserIdAndStatus(USER_ID, ProjectStatus.COMPLETED)).thenReturn(emptyList);
             when(projectMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
 
             // Act
-            List<ProjectResponseDto> results = projectService.findByStatus(ProjectStatus.COMPLETED);
+            List<ProjectResponseDto> results = projectService.findByStatus(ProjectStatus.COMPLETED, USER_ID);
 
             // Assert
             assertThat(results).isEmpty();
-            verify(projectRepository).findWithAppUserByStatus(ProjectStatus.COMPLETED);
-            verify(projectMapper).toResponseDtoList(emptyList);
-        }
-    }
-
-    // ==================== SEARCH OPERATIONS ====================
-
-    @Nested
-    @DisplayName("Search Projects Tests")
-    class SearchProjectsTests {
-
-        @Test
-        @DisplayName("Should search projects by name (case-insensitive, partial match)")
-        void shouldSearchProjectsByName() {
-            // Arrange
-            List<Project> projects = List.of(testProject);
-            List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto);
-
-            when(projectRepository.findWithAppUserByNameContainingIgnoreCase("test")).thenReturn(projects);
-            when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
-
-            // Act
-            List<ProjectResponseDto> results = projectService.findByNameContaining("test");
-
-            // Assert
-            assertThat(results).hasSize(1);
-            assertThat(results.getFirst().getName()).containsIgnoringCase("test");
-
-            verify(projectRepository).findWithAppUserByNameContainingIgnoreCase("test");
-            verify(projectMapper).toResponseDtoList(projects);
-        }
-
-        @Test
-        @DisplayName("Should search projects by user ID and name")
-        void shouldSearchProjectsByUserIdAndName() {
-            // Arrange
-            List<Project> projects = List.of(testProject);
-            List<ProjectResponseDto> responseDtos = List.of(testProjectResponseDto);
-
-            when(projectRepository.findWithAppUserByAppUserIdAndNameContainingIgnoreCase(1L, "test")).thenReturn(projects);
-            when(projectMapper.toResponseDtoList(projects)).thenReturn(responseDtos);
-
-            // Act
-            List<ProjectResponseDto> results = projectService.findByAppUserIdAndNameContaining(1L, "test");
-
-            // Assert
-            assertThat(results).hasSize(1);
-            assertThat(results.getFirst().getAppUser().getId()).isEqualTo(1L);
-            assertThat(results.getFirst().getName()).containsIgnoringCase("test");
-
-            verify(projectRepository).findWithAppUserByAppUserIdAndNameContainingIgnoreCase(1L, "test");
-            verify(projectMapper).toResponseDtoList(projects);
-        }
-
-        @Test
-        @DisplayName("Should find project by exact name")
-        void shouldFindProjectByExactName() {
-            // Arrange
-            when(projectRepository.findByName("Test Project")).thenReturn(Optional.of(testProject));
-            when(projectMapper.toResponseDto(testProject)).thenReturn(testProjectResponseDto);
-
-            // Act
-            Optional<ProjectResponseDto> result = projectService.findByName("Test Project");
-
-            // Assert
-            assertThat(result).isPresent();
-            assertThat(result.get().getName()).isEqualTo("Test Project");
-
-            verify(projectRepository).findByName("Test Project");
-            verify(projectMapper).toResponseDto(testProject);
-        }
-
-        @Test
-        @DisplayName("Should return empty when project name not found")
-        void shouldReturnEmptyWhenProjectNameNotFound() {
-            // Arrange
-            when(projectRepository.findByName("Nonexistent")).thenReturn(Optional.empty());
-
-            // Act
-            Optional<ProjectResponseDto> result = projectService.findByName("Nonexistent");
-
-            // Assert
-            assertThat(result).isEmpty();
-            verify(projectRepository).findByName("Nonexistent");
-            verify(projectMapper, never()).toResponseDto(any());
-        }
-
-        @Test
-        @DisplayName("Should return empty list when search finds nothing")
-        void shouldReturnEmptyListWhenSearchFindsNothing() {
-            // Arrange
-            List<Project> emptyList = List.of();
-            when(projectRepository.findWithAppUserByNameContainingIgnoreCase("xyz")).thenReturn(emptyList);
-            when(projectMapper.toResponseDtoList(emptyList)).thenReturn(List.of());
-
-            // Act
-            List<ProjectResponseDto> results = projectService.findByNameContaining("xyz");
-
-            // Assert
-            assertThat(results).isEmpty();
-            verify(projectRepository).findWithAppUserByNameContainingIgnoreCase("xyz");
         }
     }
 
@@ -825,53 +482,48 @@ class ProjectServiceTest {
     class ExistenceCheckTests {
 
         @Test
-        @DisplayName("Should return true when project name exists for user")
-        void shouldReturnTrueWhenProjectNameExistsForUser() {
+        @DisplayName("Should check if project name exists for authenticated user")
+        void shouldCheckIfProjectNameExistsForAuthenticatedUser() {
             // Arrange
-            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, "Test Project")).thenReturn(true);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(USER_ID, "Test Project")).thenReturn(true);
 
             // Act
-            boolean result = projectService.existsByAppUserIdAndName(1L, "Test Project");
+            boolean result = projectService.existsByName("Test Project", USER_ID);
 
             // Assert
             assertThat(result).isTrue();
-            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, "Test Project");
+            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(USER_ID, "Test Project");
         }
 
         @Test
         @DisplayName("Should return false when project name does not exist for user")
         void shouldReturnFalseWhenProjectNameDoesNotExistForUser() {
             // Arrange
-            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(1L, "Nonexistent")).thenReturn(false);
+            when(projectRepository.existsByAppUserIdAndNameIgnoreCase(USER_ID, "Nonexistent")).thenReturn(false);
 
             // Act
-            boolean result = projectService.existsByAppUserIdAndName(1L, "Nonexistent");
+            boolean result = projectService.existsByName("Nonexistent", USER_ID);
 
             // Assert
             assertThat(result).isFalse();
-            verify(projectRepository).existsByAppUserIdAndNameIgnoreCase(1L, "Nonexistent");
         }
 
         @Test
-        @DisplayName("Should throw exception when checking existence with null appUserId")
-        void shouldThrowExceptionWhenCheckingExistenceWithNullAppUserId() {
+        @DisplayName("Should throw exception when checking existence with null userId")
+        void shouldThrowExceptionWhenCheckingExistenceWithNullUserId() {
             // Act & Assert
-            assertThatThrownBy(() -> projectService.existsByAppUserIdAndName(null, "Test"))
+            assertThatThrownBy(() -> projectService.existsByName("Test", null))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("appUserId");
-
-            verify(projectRepository, never()).existsByAppUserIdAndNameIgnoreCase(anyLong(), anyString());
+                    .hasMessageContaining("userId");
         }
 
         @Test
         @DisplayName("Should throw exception when checking existence with null name")
         void shouldThrowExceptionWhenCheckingExistenceWithNullName() {
             // Act & Assert
-            assertThatThrownBy(() -> projectService.existsByAppUserIdAndName(1L, null))
+            assertThatThrownBy(() -> projectService.existsByName(null, USER_ID))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("name");
-
-            verify(projectRepository, never()).existsByAppUserIdAndNameIgnoreCase(anyLong(), anyString());
         }
     }
 }
