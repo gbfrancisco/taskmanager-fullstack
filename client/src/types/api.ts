@@ -211,3 +211,41 @@ export interface ApiError {
   error: string;
   message: string;
 }
+
+// =============================================================================
+// AUTHENTICATION TYPES
+// =============================================================================
+
+/**
+ * LoginRequest - Matches backend LoginRequestDto
+ *
+ * Used for POST /api/auth/login
+ */
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+/**
+ * RegisterRequest - Matches backend RegisterRequestDto
+ *
+ * Used for POST /api/auth/register
+ */
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+}
+
+/**
+ * AuthResponse - Matches backend AuthResponseDto
+ *
+ * Returned from both /api/auth/login and /api/auth/register.
+ * Contains the JWT token and user info.
+ */
+export interface AuthResponse {
+  token: string;
+  tokenType: string; // "Bearer"
+  expiresIn: number; // seconds until expiration
+  user: User;
+}

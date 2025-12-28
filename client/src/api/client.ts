@@ -1,22 +1,23 @@
 /**
- * API Client - Fetch wrapper with error handling
+ * API Client - Fetch wrapper with error handling and authentication
  *
  * This module provides a centralized way to make HTTP requests to the backend.
  * It handles:
  * - Base URL configuration
  * - JSON serialization/deserialization
  * - Error handling with typed error responses
- * - Common headers (Content-Type, etc.)
+ * - Common headers (Content-Type, Authorization)
  *
  * WHY A WRAPPER?
  * Instead of calling fetch() directly in every component, we use this wrapper to:
  * 1. Avoid repeating the base URL everywhere
  * 2. Automatically parse JSON responses
  * 3. Handle errors consistently
- * 4. Add common headers (and later, auth tokens)
+ * 4. Automatically include JWT token in Authorization header
  */
 
 import type { ApiError } from '../types/api';
+import { getToken } from '../lib/tokenStorage';
 
 // =============================================================================
 // CONFIGURATION
@@ -61,6 +62,37 @@ export class ApiClientError extends Error {
 }
 
 // =============================================================================
+// HEADER UTILITIES
+// =============================================================================
+
+/**
+ * Build common headers for API requests
+ *
+ * Includes Authorization header if a JWT token is stored.
+ * This is called on every request to get the current token.
+ *
+ * @param includeContentType - Whether to include Content-Type header (for POST/PUT)
+ * @returns Headers object ready for fetch
+ */
+function buildHeaders(includeContentType = false): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json'
+  };
+
+  if (includeContentType) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  // Add Authorization header if token exists
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+// =============================================================================
 // HTTP METHODS
 // =============================================================================
 
@@ -78,9 +110,7 @@ export class ApiClientError extends Error {
 export async function get<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'GET',
-    headers: {
-      Accept: 'application/json'
-    }
+    headers: buildHeaders()
   });
 
   return handleResponse<T>(response);
@@ -100,10 +130,7 @@ export async function get<T>(endpoint: string): Promise<T> {
 export async function post<T>(endpoint: string, data: unknown): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
+    headers: buildHeaders(true),
     body: JSON.stringify(data)
   });
 
@@ -124,10 +151,7 @@ export async function post<T>(endpoint: string, data: unknown): Promise<T> {
 export async function put<T>(endpoint: string, data: unknown): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
+    headers: buildHeaders(true),
     body: JSON.stringify(data)
   });
 
@@ -148,9 +172,7 @@ export async function put<T>(endpoint: string, data: unknown): Promise<T> {
 export async function del(endpoint: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'DELETE',
-    headers: {
-      Accept: 'application/json'
-    }
+    headers: buildHeaders()
   });
 
   // 204 No Content is success for DELETE

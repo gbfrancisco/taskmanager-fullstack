@@ -64,3 +64,4 @@ This folder contains learning documentation for the React frontend, organized by
 | FE-09 | Error Handling | Complete |
 | FE-10,11 | FE Fixes & Auth Init | Complete |
 | FE-12 | Mock Authentication | Complete |
+| FE-13 | JWT Authentication Integration | Complete |

@@ -11,6 +11,8 @@ This document covers frontend authentication patterns: React Context for global 
 - [Login Flow with Redirects](#login-flow-with-redirects)
 - [Session Persistence](#session-persistence)
 - [Mock Authentication Pattern](#mock-authentication-pattern)
+- [JWT Authentication Integration](#jwt-authentication-integration)
+- [HttpOnly Cookie Authentication (Future)](#httponly-cookie-authentication-future)
 - [Implementation Reference](#implementation-reference)
 
 ---
@@ -602,6 +604,56 @@ The `isLoading` state lets you show a loading spinner or delay rendering until t
 
 For learning/mock auth, `localStorage` is fine. Production apps typically use HTTP-only cookies set by the server (not accessible to JavaScript, preventing XSS attacks).
 
+### JWT Token Storage (Production)
+
+When using JWT authentication with a backend, you store the **token** instead of the user object:
+
+```tsx
+// lib/tokenStorage.ts
+const TOKEN_KEY = 'myapp_token';
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function removeToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+```
+
+**Key difference from mock auth:**
+- Mock auth stores the entire user object (synchronous read)
+- JWT auth stores only the token, then validates with the backend (async)
+
+```tsx
+// JWT session check (async - requires API call)
+useEffect(() => {
+  async function validateToken() {
+    const token = getToken();
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const user = await getCurrentUser();  // GET /api/auth/me
+      setUser(user);
+    } catch {
+      removeToken();  // Invalid/expired token
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  validateToken();
+}, []);
+```
+
+See [JWT Authentication Integration](#jwt-authentication-integration) for full implementation details.
+
 ---
 
 ## Mock Authentication Pattern
@@ -734,6 +786,595 @@ export function getCurrentUser(): AuthUser | null {
 
 ---
 
+## JWT Authentication Integration
+
+Once you have a backend with JWT authentication, you replace the mock auth service with real API calls. This section shows how to integrate JWT authentication while keeping the same React Context structure.
+
+### What Changes from Mock Auth?
+
+| Aspect | Mock Auth | JWT Auth |
+|--------|-----------|----------|
+| **Storage** | User object in localStorage | JWT token in localStorage |
+| **Login response** | Returns user directly | Returns token + user |
+| **Session validation** | Read stored user | Call `/api/auth/me` with token |
+| **API requests** | No auth headers | Include `Authorization: Bearer <token>` |
+
+### Architecture Overview
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                         React App                                     │
+│                                                                       │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │                     AuthProvider                                │  │
+│  │  ┌──────────────────────────────────────────────────────────┐  │  │
+│  │  │                   AuthContext                             │  │  │
+│  │  │  • user: User | null                                     │  │  │
+│  │  │  • isAuthenticated: boolean                              │  │  │
+│  │  │  • login(username, password) → calls API                 │  │  │
+│  │  │  • register(username, email, password) → calls API       │  │  │
+│  │  │  • logout() → clears token                               │  │  │
+│  │  └──────────────────────────────────────────────────────────┘  │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                              │                                        │
+│              ┌───────────────┼───────────────┐                       │
+│              ▼               ▼               ▼                       │
+│          API Client      Routes          Components                   │
+│       (adds Bearer)   (beforeLoad)      (useAuth)                    │
+│              │                                                        │
+│              ▼                                                        │
+│     ┌─────────────────┐                                              │
+│     │ Token Storage   │  ← JWT stored here                           │
+│     │ (localStorage)  │                                              │
+│     └─────────────────┘                                              │
+│              │                                                        │
+│              ▼                                                        │
+│     ┌─────────────────┐                                              │
+│     │  Backend API    │  ← Validates token on each request           │
+│     └─────────────────┘                                              │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Step 1: Define Auth Types
+
+Create TypeScript types matching your backend DTOs:
+
+```tsx
+// types/api.ts
+
+// Request for POST /api/auth/login
+interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+// Request for POST /api/auth/register
+interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+}
+
+// Response from login and register endpoints
+interface AuthResponse {
+  token: string;        // JWT token
+  tokenType: string;    // "Bearer"
+  expiresIn: number;    // seconds until expiration
+  user: User;           // user info
+}
+
+// User info (same as before)
+interface User {
+  id: number;
+  username: string;
+  email: string;
+}
+```
+
+### Step 2: Create Token Storage
+
+Centralize token storage operations:
+
+```tsx
+// lib/tokenStorage.ts
+
+const TOKEN_STORAGE_KEY = 'myapp_token';
+
+// Get the stored JWT token
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+// Store a JWT token
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+}
+
+// Remove the stored token (logout)
+export function removeToken(): void {
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+// Check if a token is stored
+export function hasToken(): boolean {
+  return getToken() !== null;
+}
+```
+
+**Why a separate module?**
+- Single source of truth for the storage key
+- Easy to change storage mechanism (e.g., sessionStorage)
+- Type-safe access throughout the app
+
+### Step 3: Create Auth API Functions
+
+Create API functions for authentication endpoints:
+
+```tsx
+// api/auth.ts
+import { get, post } from './client';
+import type { AuthResponse, LoginRequest, RegisterRequest, User } from '../types/api';
+
+// POST /api/auth/login
+export function loginUser(credentials: LoginRequest): Promise<AuthResponse> {
+  return post<AuthResponse>('/api/auth/login', credentials);
+}
+
+// POST /api/auth/register
+export function registerUser(data: RegisterRequest): Promise<AuthResponse> {
+  return post<AuthResponse>('/api/auth/register', data);
+}
+
+// GET /api/auth/me - Validate token and get current user
+export function getCurrentUser(): Promise<User> {
+  return get<User>('/api/auth/me');
+}
+```
+
+### Step 4: Add Authorization Header to API Client
+
+The API client automatically includes the JWT token in all requests:
+
+```tsx
+// api/client.ts
+import { getToken } from '../lib/tokenStorage';
+
+function buildHeaders(includeContentType = false): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json'
+  };
+
+  if (includeContentType) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  // Add Authorization header if token exists
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+// Use buildHeaders in all request functions
+export async function get<T>(endpoint: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'GET',
+    headers: buildHeaders()  // ← Includes Bearer token automatically
+  });
+  return handleResponse<T>(response);
+}
+
+export async function post<T>(endpoint: string, data: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers: buildHeaders(true),  // ← Content-Type + Bearer token
+    body: JSON.stringify(data)
+  });
+  return handleResponse<T>(response);
+}
+```
+
+**Key Point:** Every API request automatically includes the JWT token. No need to manually add headers in components.
+
+### Step 5: Update AuthContext for Real API
+
+Replace mock auth calls with real API calls:
+
+```tsx
+// contexts/AuthContext.tsx
+import { loginUser, registerUser, getCurrentUser } from '@/api/auth';
+import { getToken, setToken, removeToken } from '@/lib/tokenStorage';
+import type { User } from '@/types/api';
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Validate existing token on app load
+  useEffect(() => {
+    async function validateToken() {
+      const token = getToken();
+
+      if (!token) {
+        // No token stored - user is not logged in
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Token exists - validate by calling /api/auth/me
+        // The API client automatically includes the token
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch {
+        // Token is invalid or expired - clear it
+        removeToken();
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    validateToken();
+  }, []);
+
+  // Login handler
+  const login = async (username: string, password: string) => {
+    const response = await loginUser({ username, password });
+    setToken(response.token);     // Store the JWT
+    setUser(response.user);       // Update state
+  };
+
+  // Register handler
+  const register = async (username: string, email: string, password: string) => {
+    const response = await registerUser({ username, email, password });
+    setToken(response.token);     // Store the JWT
+    setUser(response.user);       // Update state
+  };
+
+  // Logout handler
+  const logout = async () => {
+    removeToken();                // Clear the JWT
+    setUser(null);                // Update state
+  };
+
+  // ... rest of provider
+}
+```
+
+### Token Validation Flow
+
+```
+App Starts
+    │
+    ▼
+Check localStorage for token
+    │
+    ├─── No token found ──────► setIsLoading(false), user stays null
+    │
+    └─── Token found ─────────► Call GET /api/auth/me
+                                     │
+                         ┌───────────┴───────────┐
+                         ▼                       ▼
+                    Success (200)           Error (401)
+                         │                       │
+                         ▼                       ▼
+                  setUser(response)        removeToken()
+                  setIsLoading(false)      setIsLoading(false)
+```
+
+### Differences from Mock Auth
+
+| Mock Auth | JWT Auth |
+|-----------|----------|
+| `mockAuth.login()` validates locally | `loginUser()` calls backend |
+| Stores user object in localStorage | Stores JWT token in localStorage |
+| `mockAuth.getCurrentUser()` reads localStorage | `getCurrentUser()` calls `/api/auth/me` |
+| No network requests | Real HTTP requests |
+| `AuthUser` from mock | `User` from backend DTO |
+
+### Security Considerations
+
+**localStorage for JWT tokens:**
+- Vulnerable to XSS attacks (malicious scripts can read tokens)
+- Acceptable for learning/development
+- Production apps should consider:
+  - HttpOnly cookies (set by backend)
+  - Short token expiration + refresh tokens
+  - Content Security Policy headers
+
+**Token expiration:**
+- Backend sets expiration in the JWT
+- When token expires, `/api/auth/me` returns 401
+- AuthContext clears the invalid token
+- User is redirected to login
+
+### Testing JWT Integration
+
+1. **Registration flow:**
+   - Register a new user
+   - Verify token is stored in localStorage
+   - Refresh page - should stay logged in
+
+2. **Login flow:**
+   - Login with credentials
+   - Check network tab - see POST to `/api/auth/login`
+   - Verify subsequent requests include `Authorization: Bearer ...`
+
+3. **Session persistence:**
+   - Login, then refresh the page
+   - Check network tab - see GET to `/api/auth/me`
+   - Verify user is still logged in
+
+4. **Logout:**
+   - Click logout
+   - Verify token is removed from localStorage
+   - Verify protected routes redirect to login
+
+---
+
+## HttpOnly Cookie Authentication (Future)
+
+> **Status**: Not yet implemented. This section documents the production-recommended approach for future reference.
+
+HttpOnly cookies are the **industry standard for production authentication**. Unlike localStorage, cookies with the HttpOnly flag cannot be accessed by JavaScript, making them immune to XSS attacks.
+
+### Why HttpOnly Cookies?
+
+| Aspect | localStorage | HttpOnly Cookie |
+|--------|--------------|-----------------|
+| **XSS vulnerability** | Yes - any script can read token | No - invisible to JavaScript |
+| **CSRF vulnerability** | No | Yes - requires CSRF protection |
+| **Token handling** | Manual (Authorization header) | Automatic (browser sends cookie) |
+| **Frontend complexity** | More code | Less code |
+| **Logout** | Client removes token | Server invalidates cookie |
+
+**The trade-off**: HttpOnly cookies protect against XSS but introduce CSRF risk. However, CSRF is easier to mitigate (SameSite attribute, CSRF tokens) than XSS.
+
+### Architecture Comparison
+
+**Current (localStorage):**
+```
+Login Response:
+{ "token": "eyJ...", "user": {...} }
+
+Frontend stores token, adds to every request:
+Authorization: Bearer eyJ...
+```
+
+**HttpOnly Cookie:**
+```
+Login Response:
+Set-Cookie: token=eyJ...; HttpOnly; Secure; SameSite=Strict; Path=/
+{ "user": {...} }
+
+Browser automatically sends cookie with every request.
+Frontend never sees the token.
+```
+
+### Backend Changes Required (Spring Boot)
+
+**1. Return cookie instead of token in response body:**
+
+```java
+@PostMapping("/login")
+public ResponseEntity<UserResponse> login(
+    @RequestBody LoginRequest request,
+    HttpServletResponse response
+) {
+    // Authenticate and generate token
+    String token = jwtService.generateToken(user);
+
+    // Set HttpOnly cookie
+    Cookie cookie = new Cookie("token", token);
+    cookie.setHttpOnly(true);        // JavaScript cannot access
+    cookie.setSecure(true);          // HTTPS only
+    cookie.setPath("/");             // Sent with all requests
+    cookie.setMaxAge(86400);         // 24 hours
+    cookie.setAttribute("SameSite", "Strict");  // CSRF protection
+    response.addCookie(cookie);
+
+    // Return user info only (no token in body)
+    return ResponseEntity.ok(new UserResponse(user));
+}
+```
+
+**2. Read token from cookie instead of Authorization header:**
+
+```java
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    @Override
+    protected void doFilterInternal(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        FilterChain chain
+    ) {
+        // Extract token from cookie (not header)
+        String token = extractTokenFromCookie(request);
+
+        if (token != null && jwtService.isTokenValid(token)) {
+            // Set authentication...
+        }
+
+        chain.doFilter(request, response);
+    }
+
+    private String extractTokenFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+}
+```
+
+**3. Logout clears the cookie:**
+
+```java
+@PostMapping("/logout")
+public ResponseEntity<Void> logout(HttpServletResponse response) {
+    Cookie cookie = new Cookie("token", "");
+    cookie.setHttpOnly(true);
+    cookie.setSecure(true);
+    cookie.setPath("/");
+    cookie.setMaxAge(0);  // Delete cookie
+    response.addCookie(cookie);
+
+    return ResponseEntity.noContent().build();
+}
+```
+
+### Frontend Changes Required
+
+**1. API client becomes simpler:**
+
+```tsx
+// No more token handling!
+// api/client.ts
+
+function buildHeaders(includeContentType = false): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json'
+  };
+
+  if (includeContentType) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  // No Authorization header needed - cookie is automatic
+  return headers;
+}
+
+// Important: Enable credentials for cookies to be sent
+export async function get<T>(endpoint: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'GET',
+    headers: buildHeaders(),
+    credentials: 'include'  // ← Required for cookies
+  });
+  return handleResponse<T>(response);
+}
+```
+
+**2. Remove tokenStorage.ts entirely:**
+
+```tsx
+// DELETE: src/lib/tokenStorage.ts
+// No longer needed - browser manages the cookie
+```
+
+**3. Simplified AuthContext:**
+
+```tsx
+// contexts/AuthContext.tsx
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check session on mount - no token to check, just call API
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        // Cookie is sent automatically
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch {
+        // Not authenticated (no valid cookie)
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    checkSession();
+  }, []);
+
+  const login = async (username: string, password: string) => {
+    // Server sets the cookie, we just get user back
+    const response = await loginUser({ username, password });
+    setUser(response.user);
+  };
+
+  const logout = async () => {
+    // Server clears the cookie
+    await logoutUser();  // POST /api/auth/logout
+    setUser(null);
+  };
+
+  // ...
+}
+```
+
+**4. Auth API changes:**
+
+```tsx
+// api/auth.ts
+
+// Login no longer returns token
+interface LoginResponse {
+  user: User;  // No token field
+}
+
+export function loginUser(credentials: LoginRequest): Promise<LoginResponse> {
+  return post<LoginResponse>('/api/auth/login', credentials);
+}
+
+// New logout endpoint (server clears cookie)
+export function logoutUser(): Promise<void> {
+  return post<void>('/api/auth/logout', {});
+}
+```
+
+### CORS Configuration for Cookies
+
+When using cookies across origins, CORS must be configured to allow credentials:
+
+**Backend (Spring Boot):**
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+            .allowedOrigins("http://localhost:5173")  // Specific origin required
+            .allowedMethods("GET", "POST", "PUT", "DELETE")
+            .allowCredentials(true);  // ← Required for cookies
+    }
+}
+```
+
+**Note**: When `allowCredentials(true)`, you cannot use `allowedOrigins("*")`. You must specify exact origins.
+
+### Cookie Attributes Reference
+
+| Attribute | Value | Purpose |
+|-----------|-------|---------|
+| `HttpOnly` | true | Prevents JavaScript access (XSS protection) |
+| `Secure` | true | Only sent over HTTPS |
+| `SameSite` | Strict | Only sent with same-site requests (CSRF protection) |
+| `Path` | / | Sent with all requests to the domain |
+| `MaxAge` | seconds | Cookie expiration (omit for session cookie) |
+
+### When to Implement
+
+Consider migrating to HttpOnly cookies when:
+- Moving to production
+- Handling sensitive user data
+- Security audit requires it
+- You need server-controlled session invalidation
+
+For learning and development, localStorage + JWT is acceptable and easier to debug (you can see the token in DevTools).
+
+---
+
 ## Implementation Reference
 
 This section lists the actual files in our Task Manager app.
@@ -742,8 +1383,12 @@ This section lists the actual files in our Task Manager app.
 
 | File | Purpose |
 |------|---------|
-| `src/lib/mockAuth.ts` | Mock auth service with localStorage |
 | `src/contexts/AuthContext.tsx` | AuthProvider + useAuth hook |
+| `src/api/auth.ts` | Auth API functions (login, register, getCurrentUser) |
+| `src/lib/tokenStorage.ts` | JWT token storage utilities |
+| `src/api/client.ts` | API client with automatic Authorization header |
+| `src/types/api.ts` | Auth types (LoginRequest, RegisterRequest, AuthResponse) |
+| `src/lib/mockAuth.ts` | Mock auth (development/learning only) |
 
 ### Route Files
 

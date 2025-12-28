@@ -2,7 +2,7 @@
  * Authentication Context
  *
  * Provides global authentication state and methods to the entire app.
- * Uses React Context for state management and the mockAuth service for persistence.
+ * Uses React Context for state management and JWT tokens for persistence.
  *
  * USAGE:
  * 1. Wrap your app with <AuthProvider>
@@ -35,8 +35,9 @@ import {
   useEffect,
   type ReactNode
 } from 'react';
-import * as mockAuth from '@/lib/mockAuth';
-import type { AuthUser } from '@/lib/mockAuth';
+import { loginUser, registerUser, getCurrentUser } from '@/api/auth';
+import { getToken, setToken, removeToken } from '@/lib/tokenStorage';
+import type { User } from '@/types/api';
 
 // =============================================================================
 // TYPES
@@ -48,7 +49,7 @@ import type { AuthUser } from '@/lib/mockAuth';
  */
 export interface AuthContextType {
   /** The currently authenticated user, or null if not logged in */
-  user: AuthUser | null;
+  user: User | null;
 
   /** Convenience boolean: true if user is logged in */
   isAuthenticated: boolean;
@@ -96,10 +97,11 @@ interface AuthProviderProps {
  * Wraps your app to provide authentication state and methods.
  * Must be placed high in the component tree (typically in main.tsx).
  *
- * On mount, it checks localStorage for an existing session.
+ * On mount, it checks for a stored JWT token and validates it
+ * by calling /api/auth/me on the backend.
  */
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // ---------------------------------------------------------------------------
@@ -107,11 +109,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    // Check for existing session on mount
-    // getCurrentUser() is synchronous (reads localStorage)
-    const existingUser = mockAuth.getCurrentUser();
-    setUser(existingUser);
-    setIsLoading(false);
+    // Check for existing token on mount and validate it
+    async function validateToken() {
+      const token = getToken();
+
+      if (!token) {
+        // No token stored - user is not logged in
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Token exists - validate it by calling /api/auth/me
+        // The API client will automatically include the token in the header
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch {
+        // Token is invalid or expired - clear it
+        removeToken();
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    validateToken();
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -119,26 +140,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // ---------------------------------------------------------------------------
 
   /**
-   * Login handler - validates credentials and updates state
+   * Login handler - validates credentials, stores token, updates state
    */
   const login = async (username: string, password: string) => {
-    const loggedInUser = await mockAuth.login({ username, password });
-    setUser(loggedInUser);
+    const response = await loginUser({ username, password });
+    setToken(response.token);
+    setUser(response.user);
   };
 
   /**
-   * Register handler - creates user, auto-logs in, updates state
+   * Register handler - creates user, stores token, updates state
    */
   const register = async (username: string, email: string, password: string) => {
-    const newUser = await mockAuth.register({ username, email, password });
-    setUser(newUser);
+    const response = await registerUser({ username, email, password });
+    setToken(response.token);
+    setUser(response.user);
   };
 
   /**
-   * Logout handler - clears session and updates state
+   * Logout handler - clears token and updates state
    */
   const logout = async () => {
-    await mockAuth.logout();
+    removeToken();
     setUser(null);
   };
 
