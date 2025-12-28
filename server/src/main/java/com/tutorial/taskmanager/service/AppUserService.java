@@ -9,6 +9,7 @@ import com.tutorial.taskmanager.model.AppUser;
 import com.tutorial.taskmanager.repository.AppUserRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,21 +19,34 @@ import java.util.Optional;
 @Service
 @Transactional
 public class AppUserService {
+
     private final AppUserRepository appUserRepository;
     private final AppUserMapper appUserMapper;
+    private final PasswordEncoder passwordEncoder;
 
-    public AppUserService(AppUserRepository appUserRepository, AppUserMapper appUserMapper) {
+    public AppUserService(
+        AppUserRepository appUserRepository,
+        AppUserMapper appUserMapper,
+        PasswordEncoder passwordEncoder
+    ) {
         this.appUserRepository = appUserRepository;
         this.appUserMapper = appUserMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public AppUserResponseDto createAppUser(AppUserCreateDto appUserCreateDto) {
+        AppUser appUser = createAppUserEntity(appUserCreateDto);
+        return appUserMapper.toResponseDto(appUser);
+    }
+
+    public AppUser createAppUserEntity(AppUserCreateDto appUserCreateDto) {
         if (appUserCreateDto == null) {
             throw new IllegalArgumentException("appUserCreateDto cannot be null");
         }
 
         String username = appUserCreateDto.getUsername();
         String email = appUserCreateDto.getEmail();
+        String password = appUserCreateDto.getPassword();
 
         if (StringUtils.isEmpty(username)) {
             throw new IllegalArgumentException("username cannot be empty");
@@ -40,6 +54,10 @@ public class AppUserService {
 
         if (StringUtils.isEmpty(email)) {
             throw new IllegalArgumentException("email cannot be empty");
+        }
+
+        if (StringUtils.isEmpty(password)) {
+            throw new IllegalArgumentException("password cannot be empty");
         }
 
         if (appUserRepository.existsByUsername(username)) {
@@ -51,8 +69,8 @@ public class AppUserService {
         }
 
         AppUser appUser = appUserMapper.toEntity(appUserCreateDto);
-        appUser = appUserRepository.save(appUser);
-        return appUserMapper.toResponseDto(appUser);
+        appUser.setPassword(passwordEncoder.encode(password));
+        return appUserRepository.save(appUser);
     }
 
     @Transactional(readOnly = true)
@@ -94,6 +112,15 @@ public class AppUserService {
 
         return appUserRepository.findByUsername(username)
             .map(appUserMapper::toResponseDto);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<AppUser> findEntityByUsername(String username) {
+        if (StringUtils.isEmpty(username)) {
+            throw new IllegalArgumentException("username cannot be empty");
+        }
+
+        return appUserRepository.findByUsername(username);
     }
 
     @Transactional(readOnly = true)
@@ -141,7 +168,13 @@ public class AppUserService {
             }
         }
 
+        String password = appUserUpdateDto.getPassword();
+
         appUserMapper.patchEntityFromDto(appUserUpdateDto, existingAppUser);
+
+        if (password != null) {
+            existingAppUser.setPassword(passwordEncoder.encode(password));
+        }
 
         AppUser savedAppUser = appUserRepository.save(existingAppUser);
         return appUserMapper.toResponseDto(savedAppUser);

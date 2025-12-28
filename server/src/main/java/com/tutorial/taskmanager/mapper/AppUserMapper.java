@@ -148,6 +148,7 @@ public interface AppUserMapper {
      * @param entity the existing entity to update (modified in-place)
      */
     @Mapping(target = "username", ignore = true)
+    @Mapping(target = "password", ignore = true)    // Handle manually with encoding
     @Mapping(target = "tasks", ignore = true)
     @Mapping(target = "projects", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

@@ -94,6 +94,44 @@ Spring provides annotations for each HTTP method:
 
 ## Request Handling
 
+### Argument Resolution vs Dependency Injection
+
+Controller method parameters use **argument resolution**, not dependency injection:
+
+```java
+@GetMapping("/{id}")
+public ResponseEntity<AppUserResponseDto> getUser(
+        @PathVariable Long id,           // ← Argument resolution (from URL)
+        AppUserService service            // ← This would NOT work (not a parameter annotation)
+) { ... }
+```
+
+**Key Difference:**
+
+| Mechanism | When | Source | Example |
+|-----------|------|--------|---------|
+| **Dependency Injection** | App startup | Bean container | Constructor params, `@Autowired` |
+| **Argument Resolution** | Per request | Request context | `@PathVariable`, `@RequestBody` |
+
+**Argument Resolution Annotations:**
+
+| Annotation | Source | Example |
+|------------|--------|---------|
+| `@PathVariable` | URL path | `/users/42` → `id = 42` |
+| `@RequestBody` | HTTP body | JSON → DTO |
+| `@RequestParam` | Query string | `?status=ACTIVE` → `status` |
+| `@RequestHeader` | HTTP header | `Authorization: Bearer...` |
+| `@AuthenticationPrincipal` | SecurityContext | Current logged-in user |
+
+Spring MVC uses `HandlerMethodArgumentResolver` classes to populate these parameters from the incoming request. Each annotation has a corresponding resolver.
+
+**Why does this matter?**
+- You can't inject a bean via `@PathVariable` - it reads from the URL
+- You can't inject the current user via constructor - they're different per request
+- Understanding this helps debug "why isn't my parameter populated?"
+
+---
+
 ### Path Variables with @PathVariable
 
 Extract values from the URL path:

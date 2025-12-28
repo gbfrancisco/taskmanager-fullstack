@@ -1814,36 +1814,52 @@ public class AuthResponseDto {
 
 **Location:** `src/main/java/com/tutorial/taskmanager/service/AuthService.java`
 
+**Important Design Decision:** AuthService delegates to AppUserService rather than using AppUserRepository directly. This follows the service delegation pattern:
+
+- **Single source of truth** - User creation logic lives in one place (AppUserService)
+- **No code duplication** - Validation, encoding handled consistently
+- **Password encoding in AppUserService** - AuthService passes raw password, AppUserService encodes it
+
 ```java
 package com.tutorial.taskmanager.service;
 
 import com.tutorial.taskmanager.config.JwtProperties;
-import com.tutorial.taskmanager.dto.appuser.AppUserResponseDto;
+import com.tutorial.taskmanager.dto.appuser.AppUserCreateDto;
 import com.tutorial.taskmanager.dto.auth.AuthResponseDto;
 import com.tutorial.taskmanager.dto.auth.LoginRequestDto;
 import com.tutorial.taskmanager.dto.auth.RegisterRequestDto;
 import com.tutorial.taskmanager.mapper.AppUserMapper;
 import com.tutorial.taskmanager.model.AppUser;
-import com.tutorial.taskmanager.repository.AppUserRepository;
 import com.tutorial.taskmanager.security.AppUserDetails;
 import com.tutorial.taskmanager.security.JwtService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
-    private final AppUserRepository appUserRepository;
+    private final AppUserService appUserService;
     private final AppUserMapper appUserMapper;
-    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final AuthenticationManager authenticationManager;
+
+    public AuthService(
+        AppUserService appUserService,
+        AppUserMapper appUserMapper,
+        JwtService jwtService,
+        JwtProperties jwtProperties,
+        AuthenticationManager authenticationManager
+    ) {
+        this.appUserService = appUserService;
+        this.appUserMapper = appUserMapper;
+        this.jwtService = jwtService;
+        this.jwtProperties = jwtProperties;
+        this.authenticationManager = authenticationManager;
+    }
 
     /**
      * Register a new user.
@@ -1854,22 +1870,23 @@ public class AuthService {
      */
     @Transactional
     public AuthResponseDto register(RegisterRequestDto request) {
-        // Validate uniqueness
-        if (appUserRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+        // Validate uniqueness (via AppUserService)
+        if (appUserService.existsByUsername(request.getUsername())) {
+            throw new IllegalArgumentException("Username is already in use");
         }
-        if (appUserRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+        if (appUserService.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email is already in use");
         }
 
-        // Create user with encoded password
-        AppUser user = AppUser.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .build();
+        // Create DTO with raw password (AppUserService will encode it)
+        AppUserCreateDto user = AppUserCreateDto.builder()
+            .username(request.getUsername())
+            .email(request.getEmail())
+            .password(request.getPassword())  // Raw - encoding happens in AppUserService
+            .build();
 
-        AppUser savedUser = appUserRepository.save(user);
+        // Delegate to AppUserService (returns entity for token generation)
+        AppUser savedUser = appUserService.createAppUserEntity(user);
 
         // Generate token
         AppUserDetails userDetails = new AppUserDetails(savedUser);
@@ -1887,16 +1904,14 @@ public class AuthService {
      */
     public AuthResponseDto login(LoginRequestDto request) {
         // Authenticate (throws BadCredentialsException if invalid)
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+            request.getUsername(),
+            request.getPassword()
+        ));
 
-        // Load user and generate token
-        AppUser user = appUserRepository.findByUsername(request.getUsername())
-                .orElseThrow();  // Won't throw - auth already validated
+        // Load user via AppUserService (returns entity for token generation)
+        AppUser user = appUserService.findEntityByUsername(request.getUsername())
+            .orElseThrow();  // Won't throw - auth already validated
 
         AppUserDetails userDetails = new AppUserDetails(user);
         String token = jwtService.generateToken(userDetails);
@@ -1906,14 +1921,31 @@ public class AuthService {
 
     private AuthResponseDto buildAuthResponse(String token, AppUser user) {
         return AuthResponseDto.builder()
-                .token(token)
-                .tokenType("Bearer")
-                .expiresIn(jwtProperties.getExpirationMs() / 1000)  // Convert to seconds
-                .user(appUserMapper.toResponseDto(user))
-                .build();
+            .token(token)
+            .tokenType("Bearer")
+            .expiresIn(jwtProperties.getExpirationMs() / 1000)  // Convert to seconds
+            .user(appUserMapper.toResponseDto(user))
+            .build();
     }
 }
 ```
+
+**Why delegate to AppUserService?**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| Direct repository access | Simpler, fewer dependencies | Code duplication, encoding in multiple places |
+| Delegate to AppUserService | Single source of truth, DRY | Need internal entity methods |
+
+To support delegation, AppUserService needs methods that return entities (not just DTOs):
+
+```java
+// In AppUserService - returns entity for internal use
+public AppUser createAppUserEntity(AppUserCreateDto dto) { ... }
+public Optional<AppUser> findEntityByUsername(String username) { ... }
+```
+
+This follows the existing pattern: `getById()` returns DTO (public API), `getEntityById()` returns entity (internal use).
 
 ### Step 5.3: Create AuthController.java
 
@@ -1997,14 +2029,154 @@ public class AuthController {
 
 **Key concepts:**
 
-**@AuthenticationPrincipal:**
+**@AuthenticationPrincipal - The Clean Way:**
 ```java
 @GetMapping("/me")
 public ResponseEntity<AppUserResponseDto> getCurrentUser(
         @AuthenticationPrincipal AppUserDetails userDetails) {
 ```
 
-Spring Security injects the authenticated user's `UserDetails` (our `AppUserDetails`). This is the same object we stored in `SecurityContext` in the JWT filter.
+Spring MVC **resolves** this parameter from `SecurityContext` - the same object we stored in the JWT filter.
+
+**Important:** This is NOT dependency injection. `AppUserDetails` is not a bean. This is **argument resolution** - Spring MVC populates controller method parameters from various sources:
+
+| Annotation | Source | Mechanism |
+|------------|--------|-----------|
+| Constructor / `@Autowired` | Bean container | Dependency Injection |
+| `@RequestBody` | HTTP request body | Argument Resolution |
+| `@PathVariable` | URL path | Argument Resolution |
+| `@RequestParam` | Query string | Argument Resolution |
+| `@AuthenticationPrincipal` | SecurityContext | Argument Resolution |
+
+**Why is this better than the alternative?**
+
+Without `@AuthenticationPrincipal`, you'd have to do this:
+```java
+@GetMapping("/me")
+public ResponseEntity<AppUserResponseDto> getCurrentUser() {
+    // Manual extraction - verbose and requires casting
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    AppUserDetails userDetails = (AppUserDetails) auth.getPrincipal();
+    // ...
+}
+```
+
+**Comparison:**
+
+| Approach | Code | Type-Safe? |
+|----------|------|------------|
+| `@AuthenticationPrincipal AppUserDetails` | Clean, declarative | Yes |
+| `SecurityContextHolder...getPrincipal()` | Verbose, manual cast | No (Object → cast) |
+
+Use `@AuthenticationPrincipal` in controllers. Reserve `SecurityContextHolder` for non-controller code (services, utilities) where you can't use argument resolution.
+
+---
+
+### Login Flow: Step-by-Step Timeline
+
+Let's trace exactly what happens when a user logs in with `username: "john"` and `password: "secret123"`:
+
+**Step 1: HTTP Request hits AuthController**
+```
+POST /api/auth/login
+Body: { "username": "john", "password": "secret123" }
+```
+
+**Step 2: AuthController receives LoginRequestDto**
+```java
+// LoginRequestDto now holds:
+// username = "john"
+// password = "secret123"
+```
+
+**Step 3: AuthController calls AuthService.login()**
+```java
+authService.login(loginRequest);
+```
+
+**Step 4: AuthService creates authentication token**
+```java
+UsernamePasswordAuthenticationToken token =
+    new UsernamePasswordAuthenticationToken("john", "secret123");
+// This is just a container - NOT authenticated yet
+```
+
+**Step 5: AuthService calls authenticationManager.authenticate(token)**
+```java
+authenticationManager.authenticate(token);
+// Passes username = "john", password = "secret123"
+```
+
+**Step 6: AuthenticationManager delegates to DaoAuthenticationProvider**
+```
+"Here's 'john' and 'secret123' - verify them"
+```
+
+**Step 7: DaoAuthenticationProvider calls UserDetailsService**
+```java
+userDetailsService.loadUserByUsername("john");
+// Only username used here - we're finding the user
+```
+
+**Step 8: Your AppUserDetailsService queries the database**
+```java
+appUserRepository.findByUsername("john");
+// Returns: AppUser { username="john", password="$2a$10$xyz..." (hashed) }
+// Wraps it: new AppUserDetails(appUser)
+```
+
+**Step 9: DaoAuthenticationProvider compares passwords**
+```java
+passwordEncoder.matches("secret123", "$2a$10$xyz...");
+// Compares: raw input vs stored hash
+// Returns: true if match, false if not
+```
+
+**Step 10a: If passwords MATCH**
+```java
+// Returns authenticated Authentication object
+// Flow continues...
+```
+
+**Step 10b: If passwords DON'T match**
+```java
+throw new BadCredentialsException("Bad credentials");
+// Flow stops, 401 returned to client
+```
+
+**Step 11: Back in AuthService - generate JWT**
+```java
+String token = jwtService.generateToken(userDetails);
+// token = "eyJhbGciOiJIUzI1NiJ9..."
+```
+
+**Step 12: AuthService builds response**
+```java
+AuthResponseDto {
+    token: "eyJhbGciOiJIUzI1NiJ9...",
+    tokenType: "Bearer",
+    expiresIn: 86400,
+    user: { id: 1, username: "john", email: "john@example.com" }
+}
+```
+
+**Step 13: Response sent to client**
+```
+HTTP 200 OK
+{ "token": "eyJhbGciOiJIUzI1NiJ9...", "tokenType": "Bearer", ... }
+```
+
+**Password Journey Summary:**
+
+| Step | Location | Password Value |
+|------|----------|----------------|
+| 1-5 | Request → AuthService | `"secret123"` (raw) |
+| 7 | DB lookup | Not used (only username) |
+| 8 | Loaded from DB | `"$2a$10$xyz..."` (hashed) |
+| 9 | PasswordEncoder.matches() | Compares raw vs hash |
+| 10+ | After validation | Password discarded, never in token |
+
+**Key Insight:** The raw password only exists briefly during authentication. After validation, it's discarded. The JWT token contains the username but **never** the password.
 
 ---
 
@@ -2012,19 +2184,68 @@ Spring Security injects the authenticated user's `UserDetails` (our `AppUserDeta
 
 ### Step 6.1: Update AppUserService.java
 
-Add password encoding when creating/updating users:
+Add password encoding when creating/updating users. **Important:** Encode on the entity, not the DTO (avoid mutating input parameters).
 
+**Inject PasswordEncoder:**
 ```java
-// In createAppUser method:
-user.setPassword(passwordEncoder.encode(dto.getPassword()));
+private final PasswordEncoder passwordEncoder;
 
-// In updateAppUser method:
-if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-    existingUser.setPassword(passwordEncoder.encode(dto.getPassword()));
+public AppUserService(
+    AppUserRepository appUserRepository,
+    AppUserMapper appUserMapper,
+    PasswordEncoder passwordEncoder  // Add this
+) {
+    this.appUserRepository = appUserRepository;
+    this.appUserMapper = appUserMapper;
+    this.passwordEncoder = passwordEncoder;
 }
 ```
 
-### Step 6.2: Update GlobalExceptionHandler.java
+**In createAppUserEntity method:**
+```java
+public AppUser createAppUserEntity(AppUserCreateDto dto) {
+    // ... validation ...
+
+    String password = dto.getPassword();  // Capture raw password
+
+    AppUser appUser = appUserMapper.toEntity(dto);
+    appUser.setPassword(passwordEncoder.encode(password));  // Encode on entity
+    return appUserRepository.save(appUser);
+}
+```
+
+**In updateAppUser method:**
+```java
+public AppUserResponseDto updateAppUser(Long id, AppUserUpdateDto dto) {
+    // ... validation ...
+
+    String password = dto.getPassword();  // Capture before mapper
+
+    appUserMapper.patchEntityFromDto(dto, existingUser);
+
+    // Handle password separately (if provided)
+    if (password != null) {
+        existingUser.setPassword(passwordEncoder.encode(password));
+    }
+
+    return appUserMapper.toResponseDto(appUserRepository.save(existingUser));
+}
+```
+
+### Step 6.2: Update AppUserMapper.java
+
+Add `@Mapping(target = "password", ignore = true)` to `patchEntityFromDto` so password is handled manually (with encoding), not by the mapper:
+
+```java
+@Mapping(target = "username", ignore = true)
+@Mapping(target = "password", ignore = true)  // Handle manually with encoding
+@Mapping(target = "tasks", ignore = true)
+@Mapping(target = "projects", ignore = true)
+@BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+void patchEntityFromDto(AppUserUpdateDto dto, @MappingTarget AppUser entity);
+```
+
+### Step 6.3: Update GlobalExceptionHandler.java
 
 Add handlers for authentication exceptions:
 
@@ -2043,7 +2264,7 @@ public ResponseEntity<ErrorResponse> handleUserNotFound(UsernameNotFoundExceptio
 }
 ```
 
-### Step 6.3: Testing with cURL
+### Step 6.4: Testing with cURL
 
 ```bash
 # Register a new user
