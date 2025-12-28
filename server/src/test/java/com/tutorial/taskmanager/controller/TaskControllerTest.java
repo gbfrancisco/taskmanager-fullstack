@@ -17,9 +17,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.tutorial.taskmanager.config.SecurityConfig;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -46,6 +49,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * </ul>
  */
 @WebMvcTest(TaskController.class)
+@Import(SecurityConfig.class)
 @DisplayName("TaskController Tests")
 class TaskControllerTest {
 

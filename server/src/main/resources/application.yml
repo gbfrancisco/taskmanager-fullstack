@@ -40,6 +40,10 @@ app:
     allowed-origins:
       - http://localhost:5173
       - http://localhost:3000
+  jwt:
+    secret: ${JWT_SECRET:dGFza21hbmFnZXItand0LXNlY3JldC1rZXktZm9yLWRldmVsb3BtZW50LW9ubHk=}
+    expiration-ms: 86400000
+    issuer: task-manager-api
 
 # Logging
 logging:
