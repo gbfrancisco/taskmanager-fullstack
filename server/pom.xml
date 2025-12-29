@@ -13,7 +13,7 @@
     </parent>
 
     <groupId>com.tutorial</groupId>
-    <artifactId>taskmanager-fullstack</artifactId>
+    <artifactId>server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>Spring Boot 3 Tutorial</name>
     <description>A comprehensive tutorial for Spring Boot 3 fundamentals and advanced features</description>
