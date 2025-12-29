@@ -22,8 +22,12 @@ import {
 } from '@/api/projects';
 import { fetchTasksByProjectId, taskKeys } from '@/api/tasks';
 import { ProjectForm } from '@/components/ProjectForm';
+import { ProjectStatusBadge } from '@/components/ProjectStatusBadge';
+import { TaskStrip } from '@/components/TaskStrip';
+import { MetaItem } from '@/components/MetaItem';
+import { DetailLoadingSkeleton } from '@/components/DetailLoadingSkeleton';
+import { DetailErrorDisplay } from '@/components/DetailErrorDisplay';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent';
-import type { Task, ProjectStatus } from '@/types/api';
 import { formatDate } from '@/utils/dateUtils';
 
 export const Route = createFileRoute('/projects/$projectId')({
@@ -129,20 +133,29 @@ function ProjectDetailPage() {
 
   // Invalid ID handling
   if (isNaN(id)) {
-    return <ErrorDisplay title="Invalid ID" message="Campaign ID not recognized." />;
+    return (
+      <DetailErrorDisplay
+        title="Invalid ID"
+        message="Campaign ID not recognized."
+        backTo="/projects"
+        backLabel="Return to Projects"
+      />
+    );
   }
 
   // Loading state
   if (isProjectPending) {
-    return <LoadingDisplay />;
+    return <DetailLoadingSkeleton variant="split" />;
   }
 
   // Error state
   if (isProjectError) {
     return (
-      <ErrorDisplay
+      <DetailErrorDisplay
         title="Access Denied"
         message={projectError instanceof Error ? projectError.message : 'Unknown error'}
+        backTo="/projects"
+        backLabel="Return to Projects"
       />
     );
   }
@@ -208,7 +221,7 @@ function ProjectDetailPage() {
                     <h1 className="text-display text-5xl md:text-6xl text-ink uppercase leading-[0.9]">
                       {project.name}
                     </h1>
-                    <ProjectStatusStamp status={project.status} />
+                    <ProjectStatusBadge status={project.status} size="lg" />
                   </div>
 
                   {/* Description */}
@@ -221,10 +234,10 @@ function ProjectDetailPage() {
 
                   {/* Metadata Grid */}
                   <div className="bg-halftone border-comic p-4 grid grid-cols-2 gap-4 mb-6">
-                    <MetaItem label="Commander" value={project.appUser.username} />
-                    <MetaItem label="Initiated" value={formatDate(project.createdTimestamp)} />
-                    <MetaItem label="Last Update" value={formatDate(project.updatedTimestamp)} />
-                    <MetaItem label="Directives" value={`${project.taskCount} Active`} highlight />
+                    <MetaItem label="Commander" value={project.appUser.username} variant="grid" />
+                    <MetaItem label="Initiated" value={formatDate(project.createdTimestamp)} variant="grid" />
+                    <MetaItem label="Last Update" value={formatDate(project.updatedTimestamp)} variant="grid" />
+                    <MetaItem label="Directives" value={`${project.taskCount} Active`} highlight variant="grid" />
                   </div>
 
                   {/* Action Buttons */}
@@ -314,130 +327,6 @@ function ProjectDetailPage() {
           </div>
         </div>
 
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
-// HELPER COMPONENTS
-// =============================================================================
-
-/**
- * TaskStrip - Compact task item for the sidebar
- *
- * Shows task title with checkbox visual indicating completion status.
- */
-function TaskStrip({ task }: { task: Task }) {
-  const isComplete = task.status === 'COMPLETED';
-  const isCancelled = task.status === 'CANCELLED';
-
-  return (
-    <Link
-      to="/tasks/$taskId"
-      params={{ taskId: String(task.id) }}
-      className={`
-        group block bg-paper border-comic p-3 shadow-comic-soft-interactive
-        ${isComplete ? 'opacity-70' : ''}
-      `}
-    >
-      <div className="flex items-center gap-3">
-        {/* Checkbox Visual */}
-        <div className={`
-          w-5 h-5 border-2 border-ink flex items-center justify-center
-          ${isComplete ? 'bg-success' : isCancelled ? 'bg-danger' : 'bg-paper'}
-        `}>
-          {isComplete && <span className="text-paper text-xs font-black">✓</span>}
-          {isCancelled && <span className="text-paper text-xs font-black">✕</span>}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className={`text-sm font-bold truncate ${isComplete || isCancelled ? 'line-through text-ink-light' : 'text-ink'}`}>
-            {task.title}
-          </div>
-        </div>
-
-        {/* Mini Badge */}
-        <span className="text-[10px] font-mono border border-ink px-1 bg-paper-dark">
-          #{task.id}
-        </span>
-      </div>
-    </Link>
-  );
-}
-
-/**
- * ProjectStatusStamp - Large rotated status badge
- *
- * Uses a double border for a "stamped" effect.
- */
-function ProjectStatusStamp({ status }: { status: ProjectStatus }) {
-  const styles: Record<ProjectStatus, string> = {
-    PLANNING: 'text-ink-light border-ink-light rotate-[-10deg]',
-    ACTIVE: 'text-success border-success rotate-[5deg]',
-    ON_HOLD: 'text-status-on-hold border-status-on-hold rotate-[-5deg]',
-    COMPLETED: 'text-status-progress border-status-progress rotate-[-10deg]',
-    CANCELLED: 'text-danger border-danger rotate-[-10deg]'
-  };
-
-  return (
-    <div className={`
-      border-4 border-double px-2 py-1 uppercase font-black tracking-widest text-lg opacity-80
-      ${styles[status] || 'text-ink border-ink'}
-    `}>
-      {status.replace('_', ' ')}
-    </div>
-  );
-}
-
-/**
- * MetaItem - Displays a label/value pair in the metadata grid
- */
-interface MetaItemProps {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}
-
-function MetaItem({ label, value, highlight }: MetaItemProps) {
-  return (
-    <div>
-      <div className="text-[10px] uppercase font-bold text-ink-light">{label}</div>
-      <div className={`font-mono text-sm font-bold truncate ${highlight ? 'text-amber-dark' : 'text-ink'}`}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-/**
- * LoadingDisplay - Skeleton placeholder while loading
- */
-function LoadingDisplay() {
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="h-8 w-32 bg-paper-dark mb-6 animate-pulse"></div>
-      <div className="grid lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 h-96 bg-paper border-comic animate-pulse"></div>
-        <div className="lg:col-span-4 h-64 bg-paper border-comic animate-pulse"></div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * ErrorDisplay - Shows error message with link back to safety
- */
-function ErrorDisplay({ title, message }: { title: string; message: string }) {
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="bg-danger-bg border-comic p-6">
-        <h2 className="text-display text-2xl text-danger">{title}</h2>
-        <p>{message}</p>
-        <Link to="/projects" className="underline mt-4 inline-block">
-          Return to Projects
-        </Link>
       </div>
     </div>
   );

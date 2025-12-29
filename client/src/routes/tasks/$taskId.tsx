@@ -17,9 +17,12 @@ import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-ro
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchTaskById, deleteTask, taskKeys } from '@/api/tasks';
 import { TaskForm } from '@/components/TaskForm';
+import { TaskStatusBadge } from '@/components/TaskStatusBadge';
+import { MetaItem } from '@/components/MetaItem';
+import { DetailLoadingSkeleton } from '@/components/DetailLoadingSkeleton';
+import { DetailErrorDisplay } from '@/components/DetailErrorDisplay';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 import { formatDate } from '@/utils/dateUtils';
-import type { TaskStatus } from '@/types/api';
 
 export const Route = createFileRoute('/tasks/$taskId')({
   // Route guard: redirect to login if not authenticated
@@ -97,20 +100,29 @@ function TaskDetailPage() {
 
   // Invalid ID handling
   if (isNaN(id)) {
-    return <ErrorDisplay title="Invalid ID" message="Target not found." />;
+    return (
+      <DetailErrorDisplay
+        title="Invalid ID"
+        message="Target not found."
+        backTo="/tasks"
+        backLabel="Return to Tasks"
+      />
+    );
   }
 
   // Loading state
   if (isPending) {
-    return <LoadingDisplay />;
+    return <DetailLoadingSkeleton />;
   }
 
   // Error state
   if (isError) {
     return (
-      <ErrorDisplay
+      <DetailErrorDisplay
         title="Intel Unavailable"
         message={error instanceof Error ? error.message : 'Unknown error'}
+        backTo="/tasks"
+        backLabel="Return to Tasks"
       />
     );
   }
@@ -161,7 +173,7 @@ function TaskDetailPage() {
                     {task.title}
                   </h1>
                 </div>
-                <StatusStampLarge status={task.status} />
+                <TaskStatusBadge status={task.status} size="lg" />
               </div>
 
               <div className="grid md:grid-cols-3 gap-8">
@@ -249,91 +261,6 @@ function TaskDetailPage() {
             </>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
-// HELPER COMPONENTS
-// =============================================================================
-
-/**
- * MetaItem - Displays a label/value pair in the metadata sidebar
- */
-interface MetaItemProps {
-  label: string;
-  value: string;
-  link?: string;
-  highlight?: boolean;
-}
-
-function MetaItem({ label, value, link, highlight }: MetaItemProps) {
-  return (
-    <div>
-      <dt className="text-xs text-ink-light uppercase font-bold">{label}</dt>
-      <dd className={`font-bold ${highlight ? 'text-amber-dark' : 'text-ink'}`}>
-        {link ? (
-          <Link to={link} className="underline decoration-wavy hover:text-amber-vivid">
-            {value}
-          </Link>
-        ) : (
-          value
-        )}
-      </dd>
-    </div>
-  );
-}
-
-/**
- * StatusStampLarge - Large rotated status badge
- *
- * Uses a double border for a "stamped" effect.
- */
-function StatusStampLarge({ status }: { status: TaskStatus }) {
-  const colors: Record<TaskStatus, string> = {
-    TODO: 'text-ink-light border-ink-light',
-    IN_PROGRESS: 'text-status-progress border-status-progress',
-    COMPLETED: 'text-success border-success',
-    CANCELLED: 'text-danger border-danger'
-  };
-
-  return (
-    <div className={`border-4 border-double p-2 rotate-[-5deg] opacity-90 ${colors[status]}`}>
-      <span className="text-xl font-black uppercase tracking-widest">
-        {status.replace('_', ' ')}
-      </span>
-    </div>
-  );
-}
-
-/**
- * LoadingDisplay - Skeleton placeholder while loading
- */
-function LoadingDisplay() {
-  return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="bg-paper border-comic p-12 animate-pulse flex flex-col items-center">
-        <div className="w-16 h-16 bg-paper-dark rounded-full mb-4" />
-        <div className="h-4 w-1/2 bg-paper-dark mb-2" />
-        <div className="h-4 w-1/3 bg-paper-dark" />
-      </div>
-    </div>
-  );
-}
-
-/**
- * ErrorDisplay - Shows error message with link back to safety
- */
-function ErrorDisplay({ title, message }: { title: string; message: string }) {
-  return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="bg-danger-bg border-comic p-6">
-        <h2 className="text-display text-2xl text-danger">{title}</h2>
-        <p>{message}</p>
-        <Link to="/tasks" className="underline mt-4 inline-block">
-          Return to Tasks
-        </Link>
       </div>
     </div>
   );
