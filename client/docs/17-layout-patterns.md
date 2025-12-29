@@ -53,7 +53,7 @@ The modern solution uses CSS Flexbox with a column direction.
 ```css
 /* Container: full viewport height, vertical flex */
 .app-shell {
-  min-height: 100vh;
+  min-height: 100dvh;  /* Use dvh for mobile browser support */
   display: flex;
   flex-direction: column;
 }
@@ -87,7 +87,7 @@ footer {
 ### Tailwind CSS Version
 
 ```html
-<div class="min-h-screen flex flex-col">
+<div class="min-h-dvh flex flex-col">
   <header>...</header>
   <main class="flex-1">...</main>
   <footer>...</footer>
@@ -96,11 +96,40 @@ footer {
 
 ### Why This Works
 
-1. **`min-h-screen`** (or `min-height: 100vh`): Container is at least viewport height
+1. **`min-h-dvh`** (or `min-height: 100dvh`): Container is at least viewport height
 2. **`flex flex-col`**: Children stack vertically
 3. **`flex-1`** on main: Main content absorbs all leftover space
 4. Header and Footer keep their natural/fixed heights
 5. If content exceeds viewport, page scrolls normally
+
+### Why `dvh` Instead of `vh`?
+
+On mobile browsers, the address bar and bottom toolbar show/hide as you scroll. This causes a problem with `vh` (viewport height):
+
+| Unit | Behavior | Problem |
+|------|----------|---------|
+| `vh` | Fixed to **largest** viewport (address bar hidden) | Footer gets pushed below visible area when address bar is showing |
+| `dvh` | **Dynamically** adjusts as browser chrome shows/hides | Footer always stays at actual bottom |
+
+```
+Mobile Browser with vh (100vh):         Mobile Browser with dvh (100dvh):
+┌──────────────────────┐                ┌──────────────────────┐
+│   Address Bar        │                │   Address Bar        │
+├──────────────────────┤                ├──────────────────────┤
+│                      │                │                      │
+│      Content         │                │      Content         │
+│                      │                │                      │
+│                      │                ├──────────────────────┤
+├──────────────────────┤ ← visible      │      Footer          │ ← visible!
+│      Footer          │   bottom       └──────────────────────┘
+└──────────────────────┘ ← actual
+        ↑                  bottom
+   Footer hidden!
+```
+
+**Tailwind CSS 4** supports `dvh` with the `min-h-dvh` utility class.
+
+**Browser Support**: `dvh` is supported in all modern browsers (Chrome 108+, Safari 15.4+, Firefox 101+).
 
 ---
 
@@ -405,7 +434,7 @@ main {
 
 ```tsx
 // __root.tsx
-<div className="min-h-screen flex flex-col bg-halftone">
+<div className="min-h-dvh flex flex-col bg-halftone">
   <Header />           {/* sticky top-0, h-16, bg-amber-vivid */}
   <main className="flex-1">
     <Outlet />         {/* Route content renders here */}
@@ -413,6 +442,8 @@ main {
   <Footer />           {/* h-12, bg-amber-vivid, border-t-4 */}
 </div>
 ```
+
+Note: We use `min-h-dvh` instead of `min-h-screen` to handle mobile browser viewport correctly (see [Why dvh Instead of vh?](#why-dvh-instead-of-vh)).
 
 ### Header Implementation
 
@@ -902,7 +933,8 @@ For content that needs narrower width than the app container:
 
 | Concept | Key Takeaway |
 |---------|--------------|
-| Sticky Footer | Use `min-h-screen flex flex-col` + `flex-1` on main |
+| Sticky Footer | Use `min-h-dvh flex flex-col` + `flex-1` on main |
+| vh vs dvh | Use `dvh` for mobile - it adjusts for browser chrome |
 | flex: 1 | Shorthand for "grow to fill available space" |
 | Header | Sticky, fixed height, max-width container |
 | Footer | Mirror header style, NOT sticky, simple is fine |
