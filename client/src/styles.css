@@ -180,6 +180,9 @@ button {
 .bg-status-grey {
   background-color: var(--color-status-grey);
 }
+.group-hover\:bg-status-grey:is(:where(.group):hover *) {
+  background-color: var(--color-status-grey);
+}
 .text-status-grey {
   color: var(--color-status-grey);
 }
@@ -189,6 +192,9 @@ button {
 
 /* Blue - Active work (IN_PROGRESS, ACTIVE) */
 .bg-status-blue {
+  background-color: var(--color-status-blue);
+}
+.group-hover\:bg-status-blue:is(:where(.group):hover *) {
   background-color: var(--color-status-blue);
 }
 .text-status-blue {
@@ -202,6 +208,9 @@ button {
 .bg-status-green {
   background-color: var(--color-status-green);
 }
+.group-hover\:bg-status-green:is(:where(.group):hover *) {
+  background-color: var(--color-status-green);
+}
 .text-status-green {
   color: var(--color-status-green);
 }
@@ -213,6 +222,9 @@ button {
 .bg-status-orange {
   background-color: var(--color-status-orange);
 }
+.group-hover\:bg-status-orange:is(:where(.group):hover *) {
+  background-color: var(--color-status-orange);
+}
 .text-status-orange {
   color: var(--color-status-orange);
 }
@@ -222,6 +234,9 @@ button {
 
 /* Red - Cancelled */
 .bg-status-red {
+  background-color: var(--color-status-red);
+}
+.group-hover\:bg-status-red:is(:where(.group):hover *) {
   background-color: var(--color-status-red);
 }
 .text-status-red {

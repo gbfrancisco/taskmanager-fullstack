@@ -10,6 +10,7 @@
 
 import { Link } from '@tanstack/react-router';
 import { TaskStatusBadge } from '@/components/TaskStatusBadge';
+import { TASK_STATUS_CONFIG } from '@/constants/statusConfig';
 import type { Task } from '@/types/api';
 
 interface TaskCardProps {
@@ -17,14 +18,17 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
+  const config = TASK_STATUS_CONFIG[task.status];
+  const hoverColor = config.bg.replace('bg-', 'group-hover:bg-');
+
   return (
     <Link
       to="/tasks/$taskId"
       params={{ taskId: String(task.id) }}
       className="group block bg-paper border-comic shadow-comic-soft-interactive hover:bg-white transition-all h-full flex flex-col"
     >
-      {/* Top accent bar - changes color on hover */}
-      <div className="h-2 bg-ink w-full group-hover:bg-amber-vivid transition-colors" />
+      {/* Top accent bar - changes to status color on hover */}
+      <div className={`h-2 bg-ink w-full transition-colors ${hoverColor}`} />
 
       <div className="p-5 flex-1 flex flex-col">
         {/* ID and Status row */}
