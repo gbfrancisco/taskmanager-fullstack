@@ -11,27 +11,16 @@
 
 import { Link } from '@tanstack/react-router';
 import { ProjectStatusBadge } from '@/components/ProjectStatusBadge';
+import { PROJECT_STATUS_CONFIG } from '@/constants/statusConfig';
 import type { Project } from '@/types/api';
 
 interface ProjectCardProps {
   project: Project;
 }
 
-/**
- * Spine colors based on project status
- *
- * The spine is a visual indicator on the left side of the card
- * that gives a quick status overview at a glance.
- */
-const statusColors: Record<string, string> = {
-  PLANNING: 'bg-status-planning',
-  ACTIVE: 'bg-status-active',
-  ON_HOLD: 'bg-status-on-hold',
-  COMPLETED: 'bg-status-completed'
-};
-
 export function ProjectCard({ project }: ProjectCardProps) {
-  const spineColor = statusColors[project.status] || 'bg-ink';
+  const config = PROJECT_STATUS_CONFIG[project.status];
+  const spineColor = config?.bg || 'bg-ink';
 
   return (
     <Link

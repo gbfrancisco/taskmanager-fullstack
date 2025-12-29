@@ -6,25 +6,24 @@
  * - 'sm': Small rotated stamp for card views, border only
  * - 'lg': Large stamp with double border for detail pages
  *
- * The visual style differs between sizes:
- * - Default: Filled background, no rotation
- * - Small: Border only, colored text, slight rotation
- * - Large: Double border, more prominent, varied rotations per status
+ * Colors are centralized in @/constants/statusConfig for consistency.
  */
 
 import type { ProjectStatus } from '@/types/api';
+import { PROJECT_STATUS_CONFIG } from '@/constants/statusConfig';
 
 interface ProjectStatusBadgeProps {
   status: ProjectStatus;
   size?: 'default' | 'sm' | 'lg';
 }
 
-const labels: Record<ProjectStatus, string> = {
-  PLANNING: 'Planning',
-  ACTIVE: 'Active',
-  ON_HOLD: 'On Hold',
-  COMPLETED: 'Done',
-  CANCELLED: 'Cancelled'
+/** Rotation styles per status for visual variety (large stamps) */
+const LARGE_ROTATIONS: Record<ProjectStatus, string> = {
+  PLANNING: 'rotate-[-10deg]',
+  ACTIVE: 'rotate-[5deg]',
+  ON_HOLD: 'rotate-[-5deg]',
+  COMPLETED: 'rotate-[-10deg]',
+  CANCELLED: 'rotate-[-10deg]'
 };
 
 export function ProjectStatusBadge({ status, size = 'default' }: ProjectStatusBadgeProps) {
@@ -41,19 +40,13 @@ export function ProjectStatusBadge({ status, size = 'default' }: ProjectStatusBa
  * DefaultBadge - Simple filled badge (original implementation)
  */
 function DefaultBadge({ status }: { status: ProjectStatus }) {
-  const styles: Record<ProjectStatus, string> = {
-    PLANNING: 'bg-status-planning',
-    ACTIVE: 'bg-status-progress',
-    ON_HOLD: 'bg-status-on-hold',
-    COMPLETED: 'bg-status-complete',
-    CANCELLED: 'bg-status-cancelled'
-  };
+  const config = PROJECT_STATUS_CONFIG[status];
 
   return (
     <span
-      className={`px-2 py-1 text-xs text-ink border-2 border-ink shadow-comic-sm ${styles[status]}`}
+      className={`px-2 py-1 text-xs text-ink border-2 border-ink shadow-comic-sm ${config.bg}`}
     >
-      {labels[status]}
+      {config.label}
     </span>
   );
 }
@@ -64,22 +57,16 @@ function DefaultBadge({ status }: { status: ProjectStatus }) {
  * Uses border-only styling with colored text for a lighter appearance.
  */
 function SmallStamp({ status }: { status: ProjectStatus }) {
-  const styles: Record<ProjectStatus, string> = {
-    PLANNING: 'text-ink-light border-ink-light',
-    ACTIVE: 'text-success border-success',
-    ON_HOLD: 'text-status-on-hold border-status-on-hold',
-    COMPLETED: 'text-status-progress border-status-progress',
-    CANCELLED: 'text-danger border-danger'
-  };
+  const config = PROJECT_STATUS_CONFIG[status];
 
   return (
     <span
       className={`
         text-[10px] font-black uppercase tracking-wider border-2 px-1 rotate-[-2deg]
-        ${styles[status] || 'text-ink border-ink'}
+        ${config.text} ${config.border}
       `}
     >
-      {labels[status] || status}
+      {config.label}
     </span>
   );
 }
@@ -90,22 +77,16 @@ function SmallStamp({ status }: { status: ProjectStatus }) {
  * Uses double border with varied rotation per status for visual interest.
  */
 function LargeStamp({ status }: { status: ProjectStatus }) {
-  const styles: Record<ProjectStatus, string> = {
-    PLANNING: 'text-ink-light border-ink-light rotate-[-10deg]',
-    ACTIVE: 'text-success border-success rotate-[5deg]',
-    ON_HOLD: 'text-status-on-hold border-status-on-hold rotate-[-5deg]',
-    COMPLETED: 'text-status-progress border-status-progress rotate-[-10deg]',
-    CANCELLED: 'text-danger border-danger rotate-[-10deg]'
-  };
+  const config = PROJECT_STATUS_CONFIG[status];
 
   return (
     <div
       className={`
         border-4 border-double px-2 py-1 uppercase font-black tracking-widest text-lg opacity-80
-        ${styles[status] || 'text-ink border-ink'}
+        ${config.text} ${config.border} ${LARGE_ROTATIONS[status]}
       `}
     >
-      {status.replace('_', ' ')}
+      {config.label}
     </div>
   );
 }

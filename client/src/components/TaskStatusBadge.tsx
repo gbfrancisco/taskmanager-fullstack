@@ -5,17 +5,24 @@
  * - 'sm' (default): Small rotated stamp for card views, filled background
  * - 'lg': Large stamp with double border for detail pages
  *
- * The visual style differs between sizes:
- * - Small: Filled background colors, compact, slight rotation
- * - Large: Transparent background, colored double border, more prominent rotation
+ * Colors are centralized in @/constants/statusConfig for consistency.
  */
 
 import type { TaskStatus } from '@/types/api';
+import { TASK_STATUS_CONFIG } from '@/constants/statusConfig';
 
 interface TaskStatusBadgeProps {
   status: TaskStatus;
   size?: 'sm' | 'lg';
 }
+
+/** Rotation styles per status for visual variety */
+const ROTATIONS: Record<TaskStatus, string> = {
+  TODO: 'rotate-[-2deg]',
+  IN_PROGRESS: 'rotate-1',
+  COMPLETED: 'rotate-[-2deg]',
+  CANCELLED: 'rotate-1'
+};
 
 export function TaskStatusBadge({ status, size = 'sm' }: TaskStatusBadgeProps) {
   if (size === 'lg') {
@@ -30,21 +37,16 @@ export function TaskStatusBadge({ status, size = 'sm' }: TaskStatusBadgeProps) {
  * Features filled background colors and slight rotation for a "stamped" effect.
  */
 function SmallStamp({ status }: { status: TaskStatus }) {
-  const configs: Record<TaskStatus, string> = {
-    TODO: 'bg-paper text-ink border-ink rotate-[-2deg]',
-    IN_PROGRESS: 'bg-status-planning text-ink border-ink rotate-1',
-    COMPLETED: 'bg-status-complete text-ink border-ink rotate-[-2deg]',
-    CANCELLED: 'bg-status-cancelled text-ink border-ink rotate-1'
-  };
+  const config = TASK_STATUS_CONFIG[status];
 
   return (
     <span
       className={`
         px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border-2 shadow-sm
-        ${configs[status]}
+        ${config.bg} text-ink border-ink ${ROTATIONS[status]}
       `}
     >
-      {status.replace('_', ' ')}
+      {config.label}
     </span>
   );
 }
@@ -56,17 +58,12 @@ function SmallStamp({ status }: { status: TaskStatus }) {
  * No background fill - just the border and text in matching colors.
  */
 function LargeStamp({ status }: { status: TaskStatus }) {
-  const colors: Record<TaskStatus, string> = {
-    TODO: 'text-ink-light border-ink-light',
-    IN_PROGRESS: 'text-status-progress border-status-progress',
-    COMPLETED: 'text-success border-success',
-    CANCELLED: 'text-danger border-danger'
-  };
+  const config = TASK_STATUS_CONFIG[status];
 
   return (
-    <div className={`border-4 border-double p-2 rotate-[-5deg] opacity-90 ${colors[status]}`}>
+    <div className={`border-4 border-double p-2 rotate-[-5deg] opacity-90 ${config.text} ${config.border}`}>
       <span className="text-xl font-black uppercase tracking-widest">
-        {status.replace('_', ' ')}
+        {config.label}
       </span>
     </div>
   );

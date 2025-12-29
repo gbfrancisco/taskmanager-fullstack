@@ -30,17 +30,18 @@
   --color-paper: #FFFEF7;
   --color-paper-dark: #F5F3E8;
 
-  /* Task status colors - flat, saturated */
-  --color-status-todo: #CCCCCC;
-  --color-status-progress: #4DA6FF;
-  --color-status-complete: #4CD964;
-  --color-status-cancelled: #FF6B6B;
-
-  /* Project status colors */
-  --color-status-planning: #FFD93D;
-  --color-status-active: #4CD964;
-  --color-status-on-hold: #FF9F43;
-  --color-status-completed: #4DA6FF;
+  /* Status colors - JIRA-style semantic naming
+   * Grey: Not started (TODO, PLANNING)
+   * Blue: Active work (IN_PROGRESS, ACTIVE)
+   * Green: Completed
+   * Orange: On Hold
+   * Red: Cancelled
+   */
+  --color-status-grey: #CCCCCC;
+  --color-status-blue: #4DA6FF;
+  --color-status-green: #4CD964;
+  --color-status-orange: #FF9F43;
+  --color-status-red: #FF6B6B;
 
   /* Feedback colors */
   --color-danger: #FF3B30;
@@ -169,39 +170,65 @@ button {
 }
 
 /* ============================================================
-   STATUS BADGE COLORS
+   STATUS COLOR UTILITIES
+
+   Semantic status colors used across task and project badges.
+   Each color has bg-, text-, and border- variants.
    ============================================================ */
-.bg-status-todo {
-  background-color: var(--color-status-todo);
+
+/* Grey - Not started (TODO, PLANNING) */
+.bg-status-grey {
+  background-color: var(--color-status-grey);
+}
+.text-status-grey {
+  color: var(--color-status-grey);
+}
+.border-status-grey {
+  border-color: var(--color-status-grey);
 }
 
-.bg-status-progress {
-  background-color: var(--color-status-progress);
+/* Blue - Active work (IN_PROGRESS, ACTIVE) */
+.bg-status-blue {
+  background-color: var(--color-status-blue);
+}
+.text-status-blue {
+  color: var(--color-status-blue);
+}
+.border-status-blue {
+  border-color: var(--color-status-blue);
 }
 
-.bg-status-complete {
-  background-color: var(--color-status-complete);
+/* Green - Completed */
+.bg-status-green {
+  background-color: var(--color-status-green);
+}
+.text-status-green {
+  color: var(--color-status-green);
+}
+.border-status-green {
+  border-color: var(--color-status-green);
 }
 
-.bg-status-cancelled {
-  background-color: var(--color-status-cancelled);
+/* Orange - On Hold */
+.bg-status-orange {
+  background-color: var(--color-status-orange);
+}
+.text-status-orange {
+  color: var(--color-status-orange);
+}
+.border-status-orange {
+  border-color: var(--color-status-orange);
 }
 
-/* Project status badges */
-.bg-status-planning {
-  background-color: var(--color-status-planning);
+/* Red - Cancelled */
+.bg-status-red {
+  background-color: var(--color-status-red);
 }
-
-.bg-status-active {
-  background-color: var(--color-status-active);
+.text-status-red {
+  color: var(--color-status-red);
 }
-
-.bg-status-on-hold {
-  background-color: var(--color-status-on-hold);
-}
-
-.bg-status-completed {
-  background-color: var(--color-status-completed);
+.border-status-red {
+  border-color: var(--color-status-red);
 }
 
 /* ============================================================

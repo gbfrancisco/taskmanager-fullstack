@@ -10,6 +10,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
+import { TASK_STATUS_CONFIG } from '@/constants/statusConfig';
 import type { Task } from '@/types/api';
 
 interface TaskStripProps {
@@ -19,6 +20,10 @@ interface TaskStripProps {
 export function TaskStrip({ task }: TaskStripProps) {
   const isComplete = task.status === 'COMPLETED';
   const isCancelled = task.status === 'CANCELLED';
+  const config = TASK_STATUS_CONFIG[task.status];
+
+  // Checkbox background: show status color for completed/cancelled, paper for others
+  const checkboxBg = isComplete || isCancelled ? config.bg : 'bg-paper';
 
   return (
     <Link
@@ -33,7 +38,7 @@ export function TaskStrip({ task }: TaskStripProps) {
         {/* Checkbox Visual */}
         <div className={`
           w-5 h-5 border-2 border-ink flex items-center justify-center
-          ${isComplete ? 'bg-success' : isCancelled ? 'bg-danger' : 'bg-paper'}
+          ${checkboxBg}
         `}>
           {isComplete && <span className="text-paper text-xs font-black">✓</span>}
           {isCancelled && <span className="text-paper text-xs font-black">✕</span>}
