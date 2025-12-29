@@ -217,7 +217,7 @@ export function ProjectForm({
         {/* Name Field - Required (Spans 2 columns) */}
         <div className="md:col-span-2">
           <label htmlFor="name" className={labelStyle}>
-            Campaign Codename <span className="text-danger">*</span>
+            Project Title <span className="text-danger">*</span>
           </label>
           <input
             type="text"
@@ -235,7 +235,7 @@ export function ProjectForm({
         {/* Status Field (Spans 1 column) */}
         <div className="md:col-span-1">
           <label htmlFor="status" className={labelStyle}>
-            Operational Status
+            Project Status
           </label>
           <div className="bg-halftone border-2 border-dashed border-ink p-1">
             <select
@@ -256,7 +256,7 @@ export function ProjectForm({
       {/* Description Field - Optional */}
       <div>
         <label htmlFor="description" className={labelStyle}>
-          Mission Synopsis
+          Description
         </label>
         <div className="relative">
           <textarea
@@ -264,7 +264,7 @@ export function ProjectForm({
             {...register('description')}
             rows={4}
             className={`${inputStyle} ${errors.description ? 'border-danger' : ''} leading-relaxed resize-none`}
-            placeholder="Brief operational overview..."
+            placeholder="Brief project overview..."
           />
           {/* Subtle watermark inside the textarea container */}
           <div className="absolute bottom-3 right-3 pointer-events-none opacity-10">
@@ -299,8 +299,8 @@ export function ProjectForm({
           {isPending
             ? 'Processing...'
             : isEditing
-              ? 'Update Protocols'
-              : 'Launch Campaign'}
+              ? 'Update Project'
+              : 'Create Project'}
         </button>
 
         {onCancel && (
@@ -310,7 +310,7 @@ export function ProjectForm({
             disabled={isPending}
             className="px-6 py-4 bg-paper text-ink border-comic shadow-comic-interactive text-xl font-display uppercase disabled:opacity-50"
           >
-            Abort
+            Cancel
           </button>
         )}
       </div>

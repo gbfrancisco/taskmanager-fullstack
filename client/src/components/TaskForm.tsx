@@ -344,7 +344,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       {/* Title Field - Required */}
       <div>
         <label htmlFor="title" className={labelStyle}>
-          Objective Title <span className="text-danger">*</span>
+          Task Title <span className="text-danger">*</span>
         </label>
         <input
           type="text"
@@ -359,7 +359,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       {/* Description Field - Optional */}
       <div>
         <label htmlFor="description" className={labelStyle}>
-          Intel / Details
+          Task Details
         </label>
         <textarea
           id="description"
@@ -388,7 +388,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
         {/* Project Dropdown - Optional */}
         <div>
           <label htmlFor="projectId" className={labelStyle}>
-            Assign Campaign
+            Assign Project
           </label>
           <Controller
             name="projectId"
@@ -465,7 +465,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
           disabled={isPending}
           className="flex-1 bg-amber-vivid text-ink border-comic shadow-comic-interactive py-4 px-6 text-xl font-display uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isPending ? 'Processing...' : isEditing ? 'Update Intel' : 'Initialize Mission'}
+          {isPending ? 'Processing...' : isEditing ? 'Update Task' : 'Create Task'}
         </button>
 
         {onCancel && (
@@ -475,7 +475,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
             disabled={isPending}
             className="px-6 py-4 bg-paper text-ink border-comic shadow-comic-interactive text-xl font-display uppercase"
           >
-            Abort
+            Cancel
           </button>
         )}
       </div>

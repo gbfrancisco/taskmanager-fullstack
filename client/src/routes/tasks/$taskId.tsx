@@ -154,7 +154,7 @@ function TaskDetailPage() {
             // Edit mode - show the form
             <div>
               <h2 className="text-display text-2xl mb-6 flex items-center gap-2">
-                <span className="text-amber-vivid">✎</span> Edit Intel
+                <span className="text-amber-vivid">✎</span> Update Task
               </h2>
               <TaskForm
                 task={task}

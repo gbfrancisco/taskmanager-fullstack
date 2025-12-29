@@ -141,7 +141,7 @@ function ProjectsPage() {
       {showCreateForm && (
         <div className="mb-10 bg-paper border-comic-heavy shadow-comic-soft-lg p-6 relative overflow-hidden">
           <h2 className="text-display text-2xl text-ink mb-6 border-b-4 border-amber-vivid inline-block">
-            Initialize Campaign
+            Create Project
           </h2>
           <ProjectForm
             onSuccess={() => setShowCreateForm(false)}

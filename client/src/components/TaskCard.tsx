@@ -40,12 +40,14 @@ export function TaskCard({ task }: TaskCardProps) {
           {task.title}
         </h3>
 
-        {/* Description (truncated) */}
-        {task.description && (
-          <p className="text-sm text-ink-soft line-clamp-2 mb-4 flex-1 font-medium">
-            {task.description}
-          </p>
-        )}
+        {/* Description - always takes remaining space to align footers */}
+        <div className="flex-1">
+          {task.description && (
+            <p className="text-sm text-ink-soft line-clamp-2 font-medium">
+              {task.description}
+            </p>
+          )}
+        </div>
 
         {/* Footer - Project and Due Date */}
         <div className="mt-4 pt-3 border-t-2 border-dashed border-ink-light/30 flex items-center justify-between text-xs font-bold text-ink-light uppercase">

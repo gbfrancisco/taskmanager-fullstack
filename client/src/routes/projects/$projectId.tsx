@@ -203,7 +203,7 @@ function ProjectDetailPage() {
                   {/* Header Strip */}
                   <div className="relative z-10 bg-amber-vivid border-comic px-4 py-2 mb-8 inline-block -rotate-1 shadow-comic-sm">
                     <h2 className="text-display text-lg uppercase tracking-widest text-ink font-black flex items-center gap-2">
-                      <span>⚠</span> Protocol Amendment
+                      <span>⚠</span> Project Update
                     </h2>
                   </div>
 
@@ -226,7 +226,7 @@ function ProjectDetailPage() {
 
                   {/* Description */}
                   <div className="mb-8">
-                    <h3 className="font-bold text-xs uppercase bg-amber-vivid text-ink inline-block px-2 mb-2">Synopsis</h3>
+                    <h3 className="font-bold text-xs uppercase bg-amber-vivid text-ink inline-block px-2 mb-2">Description</h3>
                     <p className="text-lg leading-relaxed text-ink-soft">
                       {project.description || <span className="italic text-ink-light">No mission briefing available.</span>}
                     </p>
@@ -292,7 +292,7 @@ function ProjectDetailPage() {
         <div className="lg:col-span-4">
           <div className="sticky top-6">
             <h2 className="text-display text-2xl mb-4 bg-ink text-amber-vivid inline-block px-3 py-1 -rotate-1 shadow-comic-sm">
-              Campaign Objectives
+              Project Tasks
             </h2>
 
             <div className="space-y-3">

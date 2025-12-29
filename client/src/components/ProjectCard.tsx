@@ -63,7 +63,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
               {project.description}
             </p>
           ) : (
-            <p className="text-sm text-ink-light italic">No synopsis available.</p>
+            <p className="text-sm text-ink-light italic">No description available.</p>
           )}
         </div>
 
