@@ -224,10 +224,10 @@ button {
 /* Action Container - Skewed background for emphasis */
 .bg-action-stripe {
     background: repeating-linear-gradient(
-            45deg,
-            var(--color-paper),
-            var(--color-paper) 10px,
-            var(--color-paper-dark) 10px,
-            var(--color-paper-dark) 20px
+        45deg,
+        var(--color-paper),
+        var(--color-paper) 10px,
+        var(--color-paper-dark) 10px,
+        var(--color-paper-dark) 20px
     );
 }

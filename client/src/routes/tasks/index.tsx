@@ -117,7 +117,7 @@ function TasksPage() {
             group relative px-6 py-3 border-comic text-display uppercase tracking-wider font-bold
             ${!showCreateForm
               // Default state: interactive shadow (press down on hover)
-              ? 'bg-amber-vivid text-ink shadow-comic-interactive'
+              ? 'bg-amber-vivid text-ink shadow-comic-soft-interactive'
               // Active (cancel) state: pressed down, no shadow, dashed border
               : 'bg-paper text-ink shadow-none translate-y-1 border-dashed transition-all'}
           `}
@@ -128,7 +128,7 @@ function TasksPage() {
 
       {/* Create Task Form - shown when showCreateForm is true */}
       {showCreateForm && (
-        <div className="mb-10 bg-paper border-comic-heavy shadow-comic-lg p-6 relative overflow-hidden">
+        <div className="mb-10 bg-paper border-comic-heavy shadow-comic-soft-lg p-6 relative overflow-hidden">
           {/* Decorative watermark */}
           <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
             <span className="text-9xl font-black text-ink">NEW</span>
@@ -146,7 +146,7 @@ function TasksPage() {
       {/* Empty state - no tasks yet */}
       {!isPending && tasks.length === 0 && !showCreateForm && (
         <div className="bg-halftone border-comic p-12 text-center">
-          <div className="inline-block border-4 border-ink rounded-full p-6 mb-4 bg-paper shadow-comic">
+          <div className="inline-block border-4 border-ink rounded-full p-6 mb-4 bg-paper shadow-comic-soft">
             <span className="text-4xl">💤</span>
           </div>
           <h3 className="text-display text-2xl mb-2">All Quiet on the Front</h3>
@@ -179,7 +179,7 @@ function TaskCard({ task }: { task: Task }) {
     <Link
       to="/tasks/$taskId"
       params={{ taskId: String(task.id) }}
-      className="group block bg-paper border-comic shadow-comic-interactive hover:bg-white transition-all h-full flex flex-col"
+      className="group block bg-paper border-comic shadow-comic-soft-interactive hover:bg-white transition-all h-full flex flex-col"
     >
       {/* Top accent bar - changes color on hover */}
       <div className="h-2 bg-ink w-full group-hover:bg-amber-vivid transition-colors" />
@@ -288,7 +288,7 @@ function TasksLoadingSkeleton() {
 function TasksErrorState({ error }: { error: unknown }) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="bg-danger-bg border-comic-heavy p-6 shadow-comic">
+      <div className="bg-danger-bg border-comic-heavy p-6 shadow-comic-soft">
         <h1 className="text-display text-2xl text-danger mb-2">MISSION FAILURE</h1>
         <p className="font-mono text-sm">
           {error instanceof Error ? error.message : 'Unknown tactical error.'}

@@ -166,7 +166,7 @@ function ProjectDetailPage() {
 
         {/* Left Column: Case File (Span 8) */}
         <div className="lg:col-span-8">
-          <div className="bg-paper border-comic-heavy shadow-comic-lg relative min-h-[400px]">
+          <div className="bg-paper border-comic-heavy shadow-comic-soft-lg relative min-h-[400px]">
 
             {/* Visual Tab at top (Only visible in View Mode) */}
             {!isEditing && (
@@ -231,13 +231,13 @@ function ProjectDetailPage() {
                   <div className="flex flex-wrap gap-4 pt-4 border-t-2 border-dashed border-ink/30">
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="bg-paper text-ink border-comic px-6 py-3 font-display uppercase tracking-widest shadow-comic-interactive"
+                      className="bg-paper text-ink border-comic px-6 py-3 font-display uppercase tracking-widest shadow-comic-soft-interactive"
                     >
                       Update
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="bg-paper text-danger border-comic px-6 py-3 font-display uppercase tracking-widest shadow-comic-interactive"
+                      className="bg-paper text-danger border-comic px-6 py-3 font-display uppercase tracking-widest shadow-comic-soft-interactive"
                     >
                       Delete
                     </button>
@@ -256,13 +256,13 @@ function ProjectDetailPage() {
                         <button
                           onClick={handleDelete}
                           disabled={deleteMutation.isPending}
-                          className="bg-danger text-paper border-comic px-4 py-2 font-bold shadow-comic-interactive disabled:opacity-50"
+                          className="bg-danger text-paper border-comic px-4 py-2 font-bold shadow-comic-soft-interactive disabled:opacity-50"
                         >
                           {deleteMutation.isPending ? 'WIPING DATA...' : 'CONFIRM DELETE'}
                         </button>
                         <button
                           onClick={() => setShowDeleteConfirm(false)}
-                          className="bg-paper text-ink border-comic px-4 py-2 font-bold shadow-comic-interactive"
+                          className="bg-paper text-ink border-comic px-4 py-2 font-bold shadow-comic-soft-interactive"
                         >
                           CANCEL
                         </button>
@@ -337,7 +337,7 @@ function TaskStrip({ task }: { task: Task }) {
       to="/tasks/$taskId"
       params={{ taskId: String(task.id) }}
       className={`
-        group block bg-paper border-comic p-3 shadow-comic-interactive
+        group block bg-paper border-comic p-3 shadow-comic-soft-interactive
         ${isComplete ? 'opacity-70' : ''}
       `}
     >

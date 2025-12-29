@@ -31,7 +31,7 @@ function HomePage() {
         <section className="lg:col-span-8 flex flex-col gap-6">
 
           {/* Main Title Panel */}
-          <div className="bg-paper border-comic-heavy shadow-comic-lg p-8 relative overflow-hidden">
+          <div className="bg-paper border-comic-heavy shadow-comic-soft-lg p-8 relative overflow-hidden">
             {/* Decorative background stripes */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-vivid opacity-20 rotate-45 transform translate-x-16 -translate-y-16" />
 
@@ -59,7 +59,7 @@ function HomePage() {
               to="/tasks"
               className="group block relative"
             >
-              <div className="bg-ink text-paper border-comic shadow-comic-interactive p-6 h-full flex flex-col justify-between">
+              <div className="bg-ink text-paper border-comic shadow-comic-soft-interactive p-6 h-full flex flex-col justify-between">
                 <div>
                   <h2 className="text-display text-2xl text-amber-vivid mb-2 group-hover:underline decoration-4 decoration-amber-vivid underline-offset-4">
                     Your Tasks
@@ -78,7 +78,7 @@ function HomePage() {
               to="/projects"
               className="group block relative"
             >
-              <div className="bg-paper text-ink border-comic shadow-comic-interactive p-6 h-full flex flex-col justify-between">
+              <div className="bg-paper text-ink border-comic shadow-comic-soft-interactive p-6 h-full flex flex-col justify-between">
                 <div>
                   <h2 className="text-display text-2xl mb-2 group-hover:underline decoration-4 decoration-ink underline-offset-4">
                     Your projects
@@ -99,7 +99,7 @@ function HomePage() {
         <aside className="lg:col-span-4 space-y-6">
 
           {/* Status Box - Looks like a narrator box */}
-          <div className="bg-amber-light border-comic shadow-comic p-6">
+          <div className="bg-amber-light border-comic shadow-comic-soft p-6">
             <h3 className="text-display text-xl text-ink mb-3 border-b-2 border-ink pb-2">
               System Status
             </h3>
@@ -134,7 +134,7 @@ function HomePage() {
               <p className="text-sm text-ink-light mb-2">Ready to join the team?</p>
               <Link
                 to="/register"
-                className="inline-block w-full text-center bg-status-progress text-paper font-bold border-comic shadow-comic-interactive py-3 px-4 hover:brightness-110"
+                className="inline-block w-full text-center bg-status-progress text-paper font-bold border-comic shadow-comic-soft-interactive py-3 px-4 hover:brightness-110"
               >
                 CREATE ACCOUNT
               </Link>

@@ -118,7 +118,7 @@ function ProjectsPage() {
             group relative px-6 py-3 border-comic text-display uppercase tracking-wider font-bold
             ${!showCreateForm
               // Default state: interactive shadow (press down on hover)
-              ? 'bg-amber-vivid text-ink shadow-comic-interactive'
+              ? 'bg-amber-vivid text-ink shadow-comic-soft-interactive'
               // Active (cancel) state: pressed down, no shadow, dashed border
               : 'bg-paper text-ink shadow-none translate-y-1 border-dashed transition-all'}
           `}
@@ -129,7 +129,7 @@ function ProjectsPage() {
 
       {/* Create Project Form - shown when showCreateForm is true */}
       {showCreateForm && (
-        <div className="mb-10 bg-paper border-comic-heavy shadow-comic-lg p-6 relative overflow-hidden">
+        <div className="mb-10 bg-paper border-comic-heavy shadow-comic-soft-lg p-6 relative overflow-hidden">
           <h2 className="text-display text-2xl text-ink mb-6 border-b-4 border-amber-vivid inline-block">
             Initialize Campaign
           </h2>
@@ -143,7 +143,7 @@ function ProjectsPage() {
       {/* Empty state - no projects yet */}
       {!isPending && projects.length === 0 && !showCreateForm && (
         <div className="bg-halftone border-comic p-12 text-center flex flex-col items-center">
-          <div className="w-20 h-24 border-4 border-ink bg-paper mb-4 shadow-comic rotate-3 flex items-center justify-center">
+          <div className="w-20 h-24 border-4 border-ink bg-paper mb-4 shadow-comic-soft rotate-3 flex items-center justify-center">
             <span className="text-4xl text-ink-light">?</span>
           </div>
           <h3 className="text-display text-2xl mb-2">The Archives Are Empty</h3>
@@ -188,7 +188,7 @@ function ProjectCard({ project }: { project: Project }) {
     <Link
       to="/projects/$projectId"
       params={{ projectId: String(project.id) }}
-      className="group block bg-paper border-comic shadow-comic-interactive h-full relative overflow-hidden"
+      className="group block bg-paper border-comic shadow-comic-soft-interactive h-full relative overflow-hidden"
     >
       {/* Visual Spine (Left side strip) */}
       <div className={`absolute left-0 top-0 bottom-0 w-3 border-r-2 border-ink ${spineColor}`} />
@@ -306,7 +306,7 @@ function ProjectsLoadingSkeleton() {
 function ProjectsErrorState({ error }: { error: unknown }) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="bg-danger-bg border-comic-heavy p-6 shadow-comic">
+      <div className="bg-danger-bg border-comic-heavy p-6 shadow-comic-soft">
         <h1 className="text-display text-2xl text-danger mb-2">CONNECTION SEVERED</h1>
         <p className="font-mono text-sm">
           {error instanceof Error ? error.message : 'Unable to retrieve campaign logs.'}
