@@ -16,9 +16,17 @@ public class AppUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return appUserRepository.findByUsername(username)
-            .map(AppUserDetails::new)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+        // If input contains @, treat it as an email address
+        // Otherwise, treat it as a username
+        if (usernameOrEmail.contains("@")) {
+            return appUserRepository.findByEmail(usernameOrEmail)
+                .map(AppUserDetails::new)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        } else {
+            return appUserRepository.findByUsername(usernameOrEmail)
+                .map(AppUserDetails::new)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        }
     }
 }

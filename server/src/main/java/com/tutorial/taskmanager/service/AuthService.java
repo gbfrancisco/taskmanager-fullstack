@@ -7,6 +7,7 @@ import com.tutorial.taskmanager.dto.auth.LoginRequestDto;
 import com.tutorial.taskmanager.dto.auth.RegisterRequestDto;
 import com.tutorial.taskmanager.mapper.AppUserMapper;
 import com.tutorial.taskmanager.model.AppUser;
+import com.tutorial.taskmanager.repository.AppUserRepository;
 import com.tutorial.taskmanager.security.AppUserDetails;
 import com.tutorial.taskmanager.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final AppUserService appUserService;
+    private final AppUserRepository appUserRepository;
     private final AppUserMapper appUserMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -28,6 +30,7 @@ public class AuthService {
 
     public AuthService(
         AppUserService appUserService,
+        AppUserRepository appUserRepository,
         AppUserMapper appUserMapper,
         PasswordEncoder passwordEncoder,
         JwtService jwtService,
@@ -35,6 +38,7 @@ public class AuthService {
         AuthenticationManager authenticationManager
     ) {
         this.appUserService = appUserService;
+        this.appUserRepository = appUserRepository;
         this.appUserMapper = appUserMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -78,20 +82,32 @@ public class AuthService {
     /**
      * Authenticate user and return token.
      *
-     * @param request Login credentials
+     * Accepts either username or email as the identifier.
+     * Uses @ symbol to distinguish: contains @ = email, otherwise = username.
+     *
+     * @param request Login credentials (usernameOrEmail + password)
      * @return Auth response with token and user info
      * @throws BadCredentialsException if credentials are invalid
      */
     public AuthResponseDto login(LoginRequestDto request) {
+        String identifier = request.getUsernameOrEmail();
+
         // Authenticate (throws BadCredentialsException if invalid)
+        // The AuthenticationManager uses AppUserDetailsService which handles both cases
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-            request.getUsername(),
+            identifier,
             request.getPassword()
         ));
 
-        // Load user and generate token
-        AppUser user = appUserService.findEntityByUsername(request.getUsername())
-            .orElseThrow(); // Won't throw - auth already validated
+        // Load user - need to check both fields since auth already validated
+        AppUser user;
+        if (identifier.contains("@")) {
+            user = appUserRepository.findByEmail(identifier)
+                .orElseThrow(); // Won't throw - auth already validated
+        } else {
+            user = appUserService.findEntityByUsername(identifier)
+                .orElseThrow(); // Won't throw - auth already validated
+        }
 
         AppUserDetails userDetails = new AppUserDetails(user);
         String token = jwtService.generateToken(userDetails);
