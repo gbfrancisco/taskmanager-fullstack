@@ -20,7 +20,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   const config = PROJECT_STATUS_CONFIG[project.status];
-  const spineColor = config?.bg || 'bg-ink';
+  const hoverColor = config.bg.replace('bg-', 'group-hover:bg-');
 
   return (
     <Link
@@ -28,8 +28,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
       params={{ projectId: String(project.id) }}
       className="group block bg-paper border-comic shadow-comic-soft-interactive h-full relative overflow-hidden"
     >
-      {/* Visual Spine (Left side strip) */}
-      <div className={`absolute left-0 top-0 bottom-0 w-3 border-r-2 border-ink ${spineColor}`} />
+      {/* Visual Spine (Left side strip) - changes to status color on hover */}
+      <div className={`absolute left-0 top-0 bottom-0 w-2 bg-ink transition-colors ${hoverColor}`} />
 
       <div className="p-5 pl-8 flex flex-col h-full">
         {/* ID and Status row */}
