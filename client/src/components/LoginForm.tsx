@@ -52,7 +52,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     resolver: zodResolver(loginSchema),
     mode: 'onBlur',
     defaultValues: {
-      username: '',
+      usernameOrEmail: '',
       password: ''
     }
   });
@@ -66,7 +66,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     setAuthError(null);
 
     try {
-      await login(data.username, data.password);
+      await login(data.usernameOrEmail, data.password);
       onSuccess?.();
     } catch (err) {
       // Display auth error (e.g., "Invalid username or password")
@@ -89,26 +89,26 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         </div>
       )}
 
-      {/* Username Field */}
+      {/* Username or Email Field */}
       <div>
         <label
-          htmlFor="username"
+          htmlFor="usernameOrEmail"
           className="block text-display text-ink mb-1"
         >
-          Username
+          Username or Email
         </label>
         <input
           type="text"
-          id="username"
-          {...register('username')}
+          id="usernameOrEmail"
+          {...register('usernameOrEmail')}
           autoComplete="off"
           className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
-            errors.username ? 'border-danger' : ''
+            errors.usernameOrEmail ? 'border-danger' : ''
           }`}
-          placeholder="Enter your username"
+          placeholder="Enter username or email"
         />
-        {errors.username && (
-          <p className="text-danger text-sm mt-1">{errors.username.message}</p>
+        {errors.usernameOrEmail && (
+          <p className="text-danger text-sm mt-1">{errors.usernameOrEmail.message}</p>
         )}
       </div>
 

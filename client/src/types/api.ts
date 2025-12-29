@@ -219,10 +219,11 @@ export interface ApiError {
 /**
  * LoginRequest - Matches backend LoginRequestDto
  *
- * Used for POST /api/auth/login
+ * Used for POST /api/auth/login.
+ * Accepts either username or email for authentication.
  */
 export interface LoginRequest {
-  username: string;
+  usernameOrEmail: string;
   password: string;
 }
 

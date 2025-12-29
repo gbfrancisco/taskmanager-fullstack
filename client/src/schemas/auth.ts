@@ -15,15 +15,13 @@ import { z } from 'zod';
  * Schema for login form validation.
  *
  * Validation rules:
- * - username: Required, 3-50 characters
+ * - usernameOrEmail: Required (accepts either username or email)
  * - password: Required, 8+ characters
  */
 export const loginSchema = z.object({
-  username: z
+  usernameOrEmail: z
     .string()
-    .min(1, 'Username is required')
-    .min(3, 'Username must be at least 3 characters')
-    .max(50, 'Username must be 50 characters or less'),
+    .min(1, 'Username or email is required'),
 
   password: z
     .string()
@@ -55,8 +53,8 @@ export const registerSchema = z.object({
       .min(3, 'Username must be at least 3 characters')
       .max(50, 'Username must be 50 characters or less')
       .regex(
-        /^[a-zA-Z0-9_]+$/,
-        'Username can only contain letters, numbers, and underscores'
+        /^[a-zA-Z0-9_-]+$/,
+        'Username can only contain letters, numbers, underscores, and hyphens'
       ),
 
     // z.email() is the Zod v4 top-level validator (z.string().email() is deprecated)

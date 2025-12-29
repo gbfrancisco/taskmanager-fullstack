@@ -58,10 +58,10 @@ export interface AuthContextType {
   isLoading: boolean;
 
   /**
-   * Log in with username and password.
+   * Log in with username or email and password.
    * @throws Error if credentials are invalid
    */
-  login: (username: string, password: string) => Promise<void>;
+  login: (usernameOrEmail: string, password: string) => Promise<void>;
 
   /**
    * Register a new user and auto-login.
@@ -142,8 +142,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   /**
    * Login handler - validates credentials, stores token, updates state
    */
-  const login = async (username: string, password: string) => {
-    const response = await loginUser({ username, password });
+  const login = async (usernameOrEmail: string, password: string) => {
+    const response = await loginUser({ usernameOrEmail, password });
     setToken(response.token);
     setUser(response.user);
   };
