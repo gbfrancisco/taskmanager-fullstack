@@ -43,15 +43,13 @@ export function Header() {
           {/* Navigation - changes based on auth state */}
           <nav className="flex items-center gap-2">
             {/* Home link - hidden on mobile (logo serves same purpose) */}
-            <span className="hidden sm:block">
-              <NavLink to="/" label="Home" />
-            </span>
+            <NavLink to="/" label="HOME" className="hidden sm:block" />
 
             {isAuthenticated ? (
               <>
                 {/* Authenticated navigation */}
-                <NavLink to="/tasks" label="Tasks" />
-                <NavLink to="/projects" label="Projects" />
+                <NavLink to="/tasks" label="TASKS" />
+                <NavLink to="/projects" label="PROJECTS" />
 
                 {/* User info - hidden on mobile */}
                 <span className="hidden sm:block px-3 py-2 text-display text-sm text-ink">
@@ -63,14 +61,14 @@ export function Header() {
                   onClick={handleLogout}
                   className="px-4 py-2 text-display text-sm bg-paper text-ink border-comic shadow-comic-interactive"
                 >
-                  Logout
+                  LOGOUT
                 </button>
               </>
             ) : (
               <>
                 {/* Guest navigation */}
-                <NavLink to="/login" label="Login" />
-                <NavLink to="/register" label="Register" />
+                <NavLink to="/login" label="LOGIN" />
+                <NavLink to="/register" label="REGISTER" />
               </>
             )}
           </nav>
@@ -88,18 +86,18 @@ export function Header() {
  * - Active: Black background with amber text (pressed look)
  * - Inactive: Paper background with hover/active press effect
  */
-function NavLink({ to, label }: { to: string; label: string }) {
+function NavLink({ to, label, className = '' }: { to: string; label: string; className?: string }) {
+  const baseClasses = 'px-4 py-2 text-display text-sm border-comic';
+
   return (
     <Link
       to={to}
       activeOptions={{ exact: to === '/' }}
       activeProps={{
-        className:
-          'px-4 py-2 text-display text-sm bg-ink text-amber-vivid border-comic translate-x-1 translate-y-1'
+        className: `${baseClasses} bg-ink text-amber-vivid translate-x-1 translate-y-1 ${className}`
       }}
       inactiveProps={{
-        className:
-          'px-4 py-2 text-display text-sm bg-paper text-ink border-comic shadow-comic-interactive'
+        className: `${baseClasses} bg-paper text-ink shadow-comic-interactive ${className}`
       }}
     >
       {label}
