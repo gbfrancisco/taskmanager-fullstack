@@ -231,13 +231,13 @@ function ProjectDetailPage() {
                   <div className="flex flex-wrap gap-4 pt-4 border-t-2 border-dashed border-ink/30">
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="bg-paper text-ink border-comic px-6 py-3 font-display uppercase tracking-widest shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-0 active:shadow-[2px_2px_0_black] transition-all"
+                      className="bg-paper text-ink border-comic px-6 py-3 font-display uppercase tracking-widest shadow-comic-interactive"
                     >
                       Edit File
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="bg-paper text-danger border-comic px-6 py-3 font-display uppercase tracking-widest shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-0 active:shadow-[2px_2px_0_black] transition-all"
+                      className="bg-paper text-danger border-comic px-6 py-3 font-display uppercase tracking-widest shadow-comic-interactive"
                     >
                       Delete
                     </button>
@@ -256,13 +256,13 @@ function ProjectDetailPage() {
                         <button
                           onClick={handleDelete}
                           disabled={deleteMutation.isPending}
-                          className="bg-danger text-paper border-2 border-ink px-4 py-2 font-bold shadow-comic-sm hover:translate-y-0.5 hover:shadow-none"
+                          className="bg-danger text-paper border-comic px-4 py-2 font-bold shadow-comic-interactive disabled:opacity-50"
                         >
                           {deleteMutation.isPending ? 'WIPING DATA...' : 'CONFIRM DELETE'}
                         </button>
                         <button
                           onClick={() => setShowDeleteConfirm(false)}
-                          className="bg-paper text-ink border-2 border-ink px-4 py-2 font-bold shadow-comic-sm hover:translate-y-0.5 hover:shadow-none"
+                          className="bg-paper text-ink border-comic px-4 py-2 font-bold shadow-comic-interactive"
                         >
                           CANCEL
                         </button>
@@ -337,8 +337,7 @@ function TaskStrip({ task }: { task: Task }) {
       to="/tasks/$taskId"
       params={{ taskId: String(task.id) }}
       className={`
-        group block bg-paper border-comic p-3 shadow-[2px_2px_0_black]
-        hover:-translate-y-0.5 hover:translate-x-0.5 hover:shadow-[3px_3px_0_black] transition-all
+        group block bg-paper border-comic p-3 shadow-comic-interactive
         ${isComplete ? 'opacity-70' : ''}
       `}
     >

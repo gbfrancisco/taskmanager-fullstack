@@ -115,12 +115,12 @@ function ProjectsPage() {
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
           className={`
-            group relative px-6 py-3 border-comic text-display uppercase tracking-wider font-bold transition-all
+            group relative px-6 py-3 border-comic text-display uppercase tracking-wider font-bold
             ${!showCreateForm
-              // Default state: popped up with shadow, hover lifts higher
-              ? 'bg-amber-vivid text-ink shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-0 active:shadow-[2px_2px_0_black]'
+              // Default state: interactive shadow (press down on hover)
+              ? 'bg-amber-vivid text-ink shadow-comic-interactive'
               // Active (cancel) state: pressed down, no shadow, dashed border
-              : 'bg-paper text-ink shadow-none translate-y-1 border-dashed'}
+              : 'bg-paper text-ink shadow-none translate-y-1 border-dashed transition-all'}
           `}
         >
           {showCreateForm ? 'Close Log' : '+ Start Campaign'}
@@ -188,7 +188,7 @@ function ProjectCard({ project }: { project: Project }) {
     <Link
       to="/projects/$projectId"
       params={{ projectId: String(project.id) }}
-      className="group block bg-paper border-comic shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] transition-all h-full relative overflow-hidden"
+      className="group block bg-paper border-comic shadow-comic-interactive h-full relative overflow-hidden"
     >
       {/* Visual Spine (Left side strip) */}
       <div className={`absolute left-0 top-0 bottom-0 w-3 border-r-2 border-ink ${spineColor}`} />

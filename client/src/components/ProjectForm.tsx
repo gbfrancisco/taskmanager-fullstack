@@ -294,7 +294,7 @@ export function ProjectForm({
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 bg-amber-vivid text-ink border-comic shadow-[4px_4px_0_black] py-4 px-6 text-xl font-display uppercase tracking-widest hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-0 active:shadow-[2px_2px_0_black] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-amber-vivid text-ink border-comic shadow-comic-interactive py-4 px-6 text-xl font-display uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending
             ? 'Processing...'
@@ -308,7 +308,7 @@ export function ProjectForm({
             type="button"
             onClick={onCancel}
             disabled={isPending}
-            className="px-6 py-4 bg-paper text-ink border-comic shadow-[4px_4px_0_black] text-xl font-display uppercase hover:-translate-y-1 hover:shadow-[6px_6px_0_black] hover:bg-paper-dark active:translate-y-0 active:shadow-[2px_2px_0_black] transition-all disabled:opacity-50"
+            className="px-6 py-4 bg-paper text-ink border-comic shadow-comic-interactive text-xl font-display uppercase disabled:opacity-50"
           >
             Abort
           </button>

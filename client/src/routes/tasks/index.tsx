@@ -114,12 +114,12 @@ function TasksPage() {
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
           className={`
-            group relative px-6 py-3 border-comic text-display uppercase tracking-wider font-bold transition-all
+            group relative px-6 py-3 border-comic text-display uppercase tracking-wider font-bold
             ${!showCreateForm
-              // Default state: popped up with shadow, hover lifts higher
-              ? 'bg-amber-vivid text-ink shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-0 active:shadow-[2px_2px_0_black]'
+              // Default state: interactive shadow (press down on hover)
+              ? 'bg-amber-vivid text-ink shadow-comic-interactive'
               // Active (cancel) state: pressed down, no shadow, dashed border
-              : 'bg-paper text-ink shadow-none translate-y-1 border-dashed'}
+              : 'bg-paper text-ink shadow-none translate-y-1 border-dashed transition-all'}
           `}
         >
           {showCreateForm ? 'Cancel Operation' : '+ New Objective'}

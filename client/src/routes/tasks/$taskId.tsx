@@ -182,13 +182,13 @@ function TaskDetailPage() {
                   <div className="flex flex-wrap gap-4 pt-4">
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="bg-amber-light hover:bg-amber-vivid text-ink border-comic px-6 py-2 font-bold uppercase shadow-[4px_4px_0_black] hover:shadow-[2px_2px_0_black] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                      className="bg-amber-light text-ink border-comic px-6 py-2 font-bold uppercase shadow-comic-interactive"
                     >
                       Update Intel
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="bg-paper hover:bg-danger-bg text-danger border-comic px-6 py-2 font-bold uppercase shadow-[4px_4px_0_black] hover:shadow-[2px_2px_0_black] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                      className="bg-paper text-danger border-comic px-6 py-2 font-bold uppercase shadow-comic-interactive"
                     >
                       Burn File
                     </button>
@@ -203,14 +203,14 @@ function TaskDetailPage() {
                         <button
                           onClick={() => deleteMutation.mutate(id)}
                           disabled={deleteMutation.isPending}
-                          className="bg-danger text-paper border-2 border-ink px-4 py-1 font-bold shadow-comic-sm hover:translate-y-0.5 hover:shadow-none disabled:opacity-50"
+                          className="bg-danger text-paper border-comic px-4 py-2 font-bold shadow-comic-interactive disabled:opacity-50"
                         >
                           {deleteMutation.isPending ? 'Deleting...' : 'CONFIRM DELETION'}
                         </button>
                         <button
                           onClick={() => setShowDeleteConfirm(false)}
                           disabled={deleteMutation.isPending}
-                          className="bg-paper text-ink border-2 border-ink px-4 py-1 font-bold shadow-comic-sm hover:translate-y-0.5 hover:shadow-none"
+                          className="bg-paper text-ink border-comic px-4 py-2 font-bold shadow-comic-interactive"
                         >
                           CANCEL
                         </button>
