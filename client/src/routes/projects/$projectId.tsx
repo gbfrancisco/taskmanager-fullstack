@@ -308,7 +308,7 @@ function ProjectDetailPage() {
             {/* Quick Link to Add Task */}
             <div className="mt-4 text-center">
               <Link to="/tasks" className="text-xs font-bold uppercase underline hover:text-amber-vivid">
-                + Manage Tasks at Mission Board
+                + Manage Tasks at Task Board
               </Link>
             </div>
           </div>

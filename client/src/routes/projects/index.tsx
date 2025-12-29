@@ -221,7 +221,7 @@ function ProjectCard({ project }: { project: Project }) {
         {/* Footer - Task count */}
         <div className="border-t-2 border-dashed border-ink/20 pt-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase text-ink-light">Objectives:</span>
+            <span className="text-xs font-bold uppercase text-ink-light">Tasks:</span>
             <span className="bg-ink text-paper text-xs font-mono px-1.5 py-0.5 rounded-sm">
               {project.taskCount || 0}
             </span>

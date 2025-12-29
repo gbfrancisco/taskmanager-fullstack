@@ -62,9 +62,9 @@ function HomePage() {
               <div className="bg-ink text-paper border-comic shadow-comic-interactive p-6 h-full flex flex-col justify-between">
                 <div>
                   <h2 className="text-display text-2xl text-amber-vivid mb-2 group-hover:underline decoration-4 decoration-amber-vivid underline-offset-4">
-                    Mission Log
+                    Your Tasks
                   </h2>
-                  <p className="text-paper-dark text-sm">Access your current task list and objectives.</p>
+                  <p className="text-paper-dark text-sm">Access your current (and inactive) tasks and objectives.</p>
                 </div>
                 <div className="mt-4 self-end">
                   <span className="bg-amber-vivid text-ink text-xs font-bold px-2 py-1 uppercase border-2 border-paper">
@@ -81,7 +81,7 @@ function HomePage() {
               <div className="bg-paper text-ink border-comic shadow-comic-interactive p-6 h-full flex flex-col justify-between">
                 <div>
                   <h2 className="text-display text-2xl mb-2 group-hover:underline decoration-4 decoration-ink underline-offset-4">
-                    Campaigns
+                    Your projects
                   </h2>
                   <p className="text-ink-soft text-sm">Manage larger projects and long-term goals.</p>
                 </div>
