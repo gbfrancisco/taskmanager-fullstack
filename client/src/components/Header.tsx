@@ -24,7 +24,7 @@ export function Header() {
    */
   async function handleLogout() {
     await logout();
-    navigate({ to: '/' });
+    navigate({ to: '/login' });
   }
 
   return (
