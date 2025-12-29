@@ -203,3 +203,31 @@ button {
 .bg-status-completed {
   background-color: var(--color-status-completed);
 }
+
+/* ============================================================
+   COMIC SPECIFIC UTILITIES
+   ============================================================ */
+
+/* Narrator Caption Box - Classic Yellow Box */
+.comic-caption {
+    background-color: var(--color-amber-vivid);
+    border: 3px solid var(--color-ink);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+    padding: 0.5rem 1rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+    letter-spacing: 0.05em;
+}
+
+/* Action Container - Skewed background for emphasis */
+.bg-action-stripe {
+    background: repeating-linear-gradient(
+            45deg,
+            var(--color-paper),
+            var(--color-paper) 10px,
+            var(--color-paper-dark) 10px,
+            var(--color-paper-dark) 20px
+    );
+}
