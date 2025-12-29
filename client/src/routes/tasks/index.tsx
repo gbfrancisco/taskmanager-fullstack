@@ -42,6 +42,10 @@ export const Route = createFileRoute('/tasks/')({
   errorComponent: RouteErrorComponent
 });
 
+// =============================================================================
+// TASKS PAGE COMPONENT
+// =============================================================================
+
 /**
  * TasksPage Component
  *
@@ -84,80 +88,78 @@ function TasksPage() {
     queryFn: fetchTasks
   });
 
-  // Loading state - show skeleton or spinner
-  if (isPending) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-display text-4xl text-ink mb-6">Tasks</h1>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Skeleton loading cards */}
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div
-              key={i}
-              className="bg-paper p-4 border-comic shadow-comic-sm animate-pulse"
-            >
-              <div className="h-5 bg-paper-dark w-2/3 mb-2"></div>
-              <div className="h-4 bg-paper-dark w-full mb-3"></div>
-              <div className="h-4 bg-paper-dark w-1/2"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // Loading state - show skeleton
+  if (isPending) return <TasksLoadingSkeleton />;
 
   // Error state - show error message
-  if (isError) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-display text-4xl text-ink mb-6">Tasks</h1>
-        <div className="bg-danger-bg border-comic p-4">
-          <p className="text-danger font-medium">Failed to load tasks</p>
-          <p className="text-danger text-sm mt-1">
-            {error instanceof Error ? error.message : 'Unknown error occurred'}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (isError) return <TasksErrorState error={error} />;
 
-  // Success state - render the task list
+  // ---------------------------------------------------------------------------
+  // RENDER - Success state
+  // ---------------------------------------------------------------------------
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
       {/* Header with title and create button */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-display text-4xl text-ink">Tasks</h1>
+      <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 gap-4">
+        <div>
+          <div className="comic-caption text-xs mb-2">Sector 7 // Objectives</div>
+          <h1 className="text-display text-5xl text-ink uppercase leading-none">
+            Active <span className="text-amber-vivid bg-ink px-2">Missions</span>
+          </h1>
+        </div>
+
+        {/* Create button with press animation */}
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="bg-amber-vivid text-ink px-6 py-3 border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
+          className={`
+            group relative px-6 py-3 border-comic text-display uppercase tracking-wider font-bold transition-all
+            ${!showCreateForm
+              // Default state: popped up with shadow, hover lifts higher
+              ? 'bg-amber-vivid text-ink shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-0 active:shadow-[2px_2px_0_black]'
+              // Active (cancel) state: pressed down, no shadow, dashed border
+              : 'bg-paper text-ink shadow-none translate-y-1 border-dashed'}
+          `}
         >
-          {showCreateForm ? 'Cancel' : '+ New Task'}
+          {showCreateForm ? 'Cancel Operation' : '+ New Objective'}
         </button>
       </div>
+
       {/* Create Task Form - shown when showCreateForm is true */}
-      {showCreateForm ? (
-        <div className="bg-paper border-comic shadow-comic-soft-lg p-6 max-w-3xl mx-auto">
-          <h2 className="text-display text-xl text-ink mb-4">
-            Create New Task
+      {showCreateForm && (
+        <div className="mb-10 bg-paper border-comic-heavy shadow-comic-lg p-6 relative overflow-hidden">
+          {/* Decorative watermark */}
+          <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+            <span className="text-9xl font-black text-ink">NEW</span>
+          </div>
+          <h2 className="text-display text-2xl text-ink mb-6 border-b-4 border-amber-vivid inline-block">
+            Mission Briefing
           </h2>
           <TaskForm
             onSuccess={() => setShowCreateForm(false)}
             onCancel={() => setShowCreateForm(false)}
           />
         </div>
-      ) : tasks.length === 0 ? (
-        // Empty state
-        <div className="bg-paper-dark border-comic p-6 text-center">
-          <p className="text-ink-soft">No tasks yet. Create your first task!</p>
-        </div>
-      ) : (
-        // Task grid
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
+      )}
+
+      {/* Empty state - no tasks yet */}
+      {!isPending && tasks.length === 0 && !showCreateForm && (
+        <div className="bg-halftone border-comic p-12 text-center">
+          <div className="inline-block border-4 border-ink rounded-full p-6 mb-4 bg-paper shadow-comic">
+            <span className="text-4xl">💤</span>
+          </div>
+          <h3 className="text-display text-2xl mb-2">All Quiet on the Front</h3>
+          <p className="text-ink-soft">No active missions. Take a break or create a new objective.</p>
         </div>
       )}
+
+      {/* Task grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {tasks.map((task) => (
+          <TaskCard key={task.id} task={task} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -177,60 +179,122 @@ function TaskCard({ task }: { task: Task }) {
     <Link
       to="/tasks/$taskId"
       params={{ taskId: String(task.id) }}
-      className="block bg-paper p-4 border-comic shadow-comic-soft-interactive"
+      className="group block bg-paper border-comic shadow-comic-interactive hover:bg-white transition-all h-full flex flex-col"
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="font-medium text-ink">{task.title}</p>
-          {task.description && (
-            <p className="text-sm text-ink-soft mt-1 line-clamp-2">
-              {task.description}
-            </p>
+      {/* Top accent bar - changes color on hover */}
+      <div className="h-2 bg-ink w-full group-hover:bg-amber-vivid transition-colors" />
+
+      <div className="p-5 flex-1 flex flex-col">
+        {/* ID and Status row */}
+        <div className="flex justify-between items-start mb-3">
+          <span className="font-mono text-xs text-ink-light border border-ink-light px-1">
+            #{task.id.toString().padStart(4, '0')}
+          </span>
+          <StatusStamp status={task.status} />
+        </div>
+
+        {/* Title */}
+        <h3 className="text-display text-xl leading-tight mb-2 group-hover:underline decoration-2 underline-offset-2">
+          {task.title}
+        </h3>
+
+        {/* Description (truncated) */}
+        {task.description && (
+          <p className="text-sm text-ink-soft line-clamp-2 mb-4 flex-1 font-medium">
+            {task.description}
+          </p>
+        )}
+
+        {/* Footer - Project and Due Date */}
+        <div className="mt-4 pt-3 border-t-2 border-dashed border-ink-light/30 flex items-center justify-between text-xs font-bold text-ink-light uppercase">
+          <div>
+            {task.project ? (
+              <span className="text-amber-dark">📂 {task.project.name}</span>
+            ) : (
+              <span>📂 Unclassified</span>
+            )}
+          </div>
+          {task.dueDate && (
+            <div className={new Date(task.dueDate) < new Date() ? 'text-danger' : ''}>
+              ⏱ {formatDate(task.dueDate)}
+            </div>
           )}
         </div>
-        <StatusBadge status={task.status} />
       </div>
-
-      {/* Due date if present */}
-      {task.dueDate && (
-        <p className="text-xs text-ink-light mt-2">
-          Due: {formatDate(task.dueDate)}
-        </p>
-      )}
     </Link>
   );
 }
 
 // =============================================================================
-// STATUS BADGE COMPONENT
+// STATUS STAMP COMPONENT
 // =============================================================================
 
 /**
- * StatusBadge - Displays the task status with appropriate styling
+ * StatusStamp - Displays the task status as a rotated stamp/badge
  *
- * Each status has a different color to make it easy to scan.
+ * Each status has a different color and slight rotation for a "stamped" effect.
  */
-function StatusBadge({ status }: { status: TaskStatus }) {
-  const styles: Record<TaskStatus, string> = {
-    TODO: 'bg-status-todo',
-    IN_PROGRESS: 'bg-status-progress',
-    COMPLETED: 'bg-status-complete',
-    CANCELLED: 'bg-status-cancelled'
-  };
-
-  const labels: Record<TaskStatus, string> = {
-    TODO: 'To Do',
-    IN_PROGRESS: 'In Progress',
-    COMPLETED: 'Completed',
-    CANCELLED: 'Cancelled'
+function StatusStamp({ status }: { status: TaskStatus }) {
+  const configs: Record<TaskStatus, string> = {
+    TODO: 'bg-paper text-ink border-ink rotate-[-2deg]',
+    IN_PROGRESS: 'bg-status-planning text-ink border-ink rotate-1',
+    COMPLETED: 'bg-status-complete text-ink border-ink rotate-[-2deg]',
+    CANCELLED: 'bg-status-cancelled text-ink border-ink rotate-1'
   };
 
   return (
     <span
-      className={`px-2 py-1 text-xs text-ink border-2 border-ink shadow-comic-sm ${styles[status]}`}
+      className={`
+        px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border-2 shadow-sm
+        ${configs[status]}
+      `}
     >
-      {labels[status]}
+      {status.replace('_', ' ')}
     </span>
+  );
+}
+
+// =============================================================================
+// LOADING SKELETON
+// =============================================================================
+
+/**
+ * TasksLoadingSkeleton - Placeholder UI while data is loading
+ *
+ * Shows animated pulse effect to indicate loading state.
+ */
+function TasksLoadingSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="h-16 w-64 bg-paper-dark mb-8 animate-pulse" />
+      <div className="grid gap-6 md:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-48 bg-paper border-comic opacity-50 animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// ERROR STATE
+// =============================================================================
+
+/**
+ * TasksErrorState - Displayed when task fetching fails
+ *
+ * Shows error message in a danger-styled container.
+ */
+function TasksErrorState({ error }: { error: unknown }) {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="bg-danger-bg border-comic-heavy p-6 shadow-comic">
+        <h1 className="text-display text-2xl text-danger mb-2">MISSION FAILURE</h1>
+        <p className="font-mono text-sm">
+          {error instanceof Error ? error.message : 'Unknown tactical error.'}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -241,29 +305,9 @@ function StatusBadge({ status }: { status: TaskStatus }) {
 /**
  * Format an ISO date string for display
  *
- * Shows time only if it's not midnight (00:00).
+ * Shows abbreviated month and day (e.g., "Jan 15")
  */
 function formatDate(isoString: string): string {
   const date = new Date(isoString);
-
-  const dateStr = date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-
-  // Check if time is midnight (meaning no specific time was set)
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  if (hours === 0 && minutes === 0) {
-    return dateStr;
-  }
-
-  // Include time if it was explicitly set
-  const timeStr = date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit'
-  });
-
-  return `${dateStr}, ${timeStr}`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

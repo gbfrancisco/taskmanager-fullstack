@@ -139,12 +139,8 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       status: task?.status ?? 'TODO',
       projectId: task?.project?.id ?? null,
       dueDate: task?.dueDate ? task.dueDate.split('T')[0] : '',
-      dueTime: task?.dueDate
-        ? (task.dueDate.split('T')[1]?.slice(0, 5) ?? '')
-        : '',
-      includeTime: task?.dueDate
-        ? task.dueDate.split('T')[1] !== '00:00:00'
-        : false
+      dueTime: task?.dueDate ? (task.dueDate.split('T')[1]?.slice(0, 5) ?? '') : '',
+      includeTime: task?.dueDate ? task.dueDate.split('T')[1] !== '00:00:00' : false
     }
   });
 
@@ -214,10 +210,8 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
    * both the update and project assignment before calling onSuccess.
    */
   const updateMutation = useMutation({
-    mutationFn: (input: {
-      id: number;
-      data: Parameters<typeof updateTask>[1];
-    }) => updateTask(input.id, input.data)
+    mutationFn: (input: { id: number; data: Parameters<typeof updateTask>[1] }) =>
+      updateTask(input.id, input.data)
   });
 
   // ---------------------------------------------------------------------------
@@ -234,25 +228,15 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
    * We only call this when the project actually changes.
    */
   const projectAssignmentMutation = useMutation({
-    mutationFn: async ({
-      taskId,
-      newProjectId
-    }: {
-      taskId: number;
-      newProjectId: number | null;
-    }) => {
-      if (newProjectId === null) {
-        return removeTaskFromProject(taskId);
-      } else {
-        return assignTaskToProject(taskId, newProjectId);
-      }
+    mutationFn: async ({ taskId, newProjectId }: { taskId: number; newProjectId: number | null }) => {
+      if (newProjectId === null) return removeTaskFromProject(taskId);
+      return assignTaskToProject(taskId, newProjectId);
     }
   });
 
   // Combine for easier access in the UI
   const mutation = isEditing ? updateMutation : createMutation;
-  const isPending =
-    isSubmitting || mutation.isPending || projectAssignmentMutation.isPending;
+  const isPending = isSubmitting || mutation.isPending || projectAssignmentMutation.isPending;
 
   // ---------------------------------------------------------------------------
   // FORM SUBMISSION
@@ -278,8 +262,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
      */
     let formattedDueDate: string | undefined;
     if (data.dueDate) {
-      const timeValue =
-        data.includeTime && data.dueTime ? data.dueTime : '00:00';
+      const timeValue = data.includeTime && data.dueTime ? data.dueTime : '00:00';
       formattedDueDate = `${data.dueDate}T${timeValue}:00`;
     }
 
@@ -297,8 +280,7 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
         });
 
         // If project changed, call the separate project assignment endpoint
-        const projectChanged = data.projectId !== originalProjectId;
-        if (projectChanged) {
+        if (data.projectId !== originalProjectId) {
           await projectAssignmentMutation.mutateAsync({
             taskId: task.id,
             newProjectId: data.projectId ?? null
@@ -337,171 +319,136 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
    * useEffect is needed because we can't do side effects inside render.
    */
   useEffect(() => {
-    if (!watchIncludeTime) {
-      setValue('dueTime', '');
-    }
+    if (!watchIncludeTime) setValue('dueTime', '');
   }, [watchIncludeTime, setValue]);
+
+  // ---------------------------------------------------------------------------
+  // STYLES
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Shared styles for form elements.
+   * Extracted to constants for consistency and easy modification.
+   */
+  const labelStyle = 'block text-sm font-bold uppercase tracking-wide text-ink mb-1';
+  const inputStyle = 'w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-4 focus:ring-amber-vivid/50 transition-all';
+  const errorStyle = 'text-danger text-sm mt-1 font-bold';
 
   // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+
       {/* Title Field - Required */}
       <div>
-        <label
-          htmlFor="title"
-          className="block text-display text-ink mb-1"
-        >
-          Title <span className="text-danger">*</span>
+        <label htmlFor="title" className={labelStyle}>
+          Objective Title <span className="text-danger">*</span>
         </label>
         <input
           type="text"
           id="title"
           {...register('title')}
-          className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
-            errors.title ? 'border-danger' : ''
-          }`}
-          placeholder="Enter task title"
+          className={`${inputStyle} ${errors.title ? 'border-danger' : ''}`}
+          placeholder="E.g. Secure the payload"
         />
-        {errors.title && (
-          <p className="text-danger text-sm mt-1">{errors.title.message}</p>
-        )}
+        {errors.title && <p className={errorStyle}>{errors.title.message}</p>}
       </div>
 
       {/* Description Field - Optional */}
       <div>
-        <label
-          htmlFor="description"
-          className="block text-display text-ink mb-1"
-        >
-          Description
+        <label htmlFor="description" className={labelStyle}>
+          Intel / Details
         </label>
         <textarea
           id="description"
           {...register('description')}
           rows={3}
-          className={`w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
-            errors.description ? 'border-danger' : ''
-          }`}
-          placeholder="Enter task description (optional)"
+          className={`${inputStyle} ${errors.description ? 'border-danger' : ''}`}
+          placeholder="Additional context..."
         />
-        {errors.description && (
-          <p className="text-danger text-sm mt-1">
-            {errors.description.message}
-          </p>
-        )}
+        {errors.description && <p className={errorStyle}>{errors.description.message}</p>}
       </div>
 
-      {/* Status Dropdown */}
-      <div>
-        <label
-          htmlFor="status"
-          className="block text-display text-ink mb-1"
-        >
-          Status
-        </label>
-        <select
-          id="status"
-          {...register('status')}
-          className="w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2"
-        >
-          {TASK_STATUSES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+      {/* Status and Project - Side by side on larger screens */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Status Dropdown */}
+        <div>
+          <label htmlFor="status" className={labelStyle}>
+            Current Status
+          </label>
+          <select id="status" {...register('status')} className={inputStyle}>
+            {TASK_STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Project Dropdown - Optional */}
+        <div>
+          <label htmlFor="projectId" className={labelStyle}>
+            Assign Campaign
+          </label>
+          <Controller
+            name="projectId"
+            control={control}
+            render={({ field }) => (
+              <select
+                id="projectId"
+                value={field.value ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  field.onChange(val === '' ? null : parseInt(val, 10));
+                }}
+                onBlur={field.onBlur}
+                className={inputStyle}
+              >
+                <option value="">-- Independent Op --</option>
+                {projects?.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            )}
+          />
+        </div>
       </div>
 
-      {/* Project Dropdown - Optional */}
-      <div>
-        <label
-          htmlFor="projectId"
-          className="block text-display text-ink mb-1"
-        >
-          Project
-        </label>
-        <Controller
-          name="projectId"
-          control={control}
-          render={({ field }) => (
-            <select
-              id="projectId"
-              value={field.value ?? ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                field.onChange(val === '' ? null : parseInt(val, 10));
-              }}
-              onBlur={field.onBlur}
-              className="w-full px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2"
-            >
-              <option value="">No project</option>
-              {projects?.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          )}
-        />
-        <p className="text-xs text-ink-light mt-1">
-          {isEditing
-            ? 'Move task to a different project'
-            : 'Assign this task to a project (optional)'}
-        </p>
-      </div>
-
-      {/* Due Date & Time - Optional */}
-      <div>
-        <label
-          htmlFor="dueDate"
-          className="block text-display text-ink mb-1"
-        >
-          Due Date
-        </label>
-        <div className="flex gap-2">
+      {/* Due Date & Time - Optional, with dashed border container */}
+      <div className={`p-4 border-2 border-dashed ${errors.dueDate ? 'border-danger bg-danger-bg/20' : 'border-ink bg-halftone'}`}>
+        <label className={labelStyle}>Timeline Requirements</label>
+        <div className="flex gap-2 flex-wrap">
           <input
             type="date"
-            id="dueDate"
             {...register('dueDate')}
-            className={`flex-1 px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 ${
-              errors.dueDate ? 'border-danger' : ''
-            }`}
+            className={`flex-1 ${inputStyle} ${errors.dueDate ? 'border-danger text-danger' : ''}`}
           />
           {watchDueDate && (
+            <div className="flex items-center gap-2 bg-paper border-comic px-3">
+              <input
+                type="checkbox"
+                {...register('includeTime')}
+                className="w-5 h-5 accent-amber-vivid"
+              />
+              <span className="text-sm font-bold">Set Time</span>
+            </div>
+          )}
+          {watchIncludeTime && watchDueDate && (
             <input
               type="time"
-              id="dueTime"
               {...register('dueTime')}
-              disabled={!watchIncludeTime}
-              className="w-38 px-4 py-3 bg-paper border-comic shadow-comic-sm focus:outline-none focus:ring-2 focus:ring-amber-vivid focus:ring-offset-2 disabled:bg-paper-dark disabled:text-ink-light"
+              className={`w-32 ${inputStyle}`}
             />
           )}
         </div>
-        {errors.dueDate && (
-          <p className="text-danger text-sm mt-1">{errors.dueDate.message}</p>
-        )}
-        {watchDueDate && (
-          <label className="flex items-center gap-2 mt-2 text-sm text-ink-soft">
-            <input
-              type="checkbox"
-              {...register('includeTime')}
-              className="w-5 h-5 border-comic text-amber-vivid focus:ring-amber-vivid"
-            />
-            Include specific time
-            {!watchIncludeTime && (
-              <span className="text-ink-light">(defaults to 00:00)</span>
-            )}
-          </label>
-        )}
+        {errors.dueDate && <p className={errorStyle}>{errors.dueDate.message}</p>}
       </div>
 
       {/* Server Error Message - show errors from mutations */}
       {(mutation.isError || projectAssignmentMutation.isError) && (
-        <div className="bg-danger-bg border-comic p-4">
-          <p className="text-danger text-sm font-medium">
+        <div className="bg-danger-bg border-comic p-3">
+          <p className="text-danger font-bold">ERROR: Submission Failed</p>
+          <p className="text-danger text-sm mt-1">
             {mutation.error instanceof Error
               ? mutation.error.message
               : projectAssignmentMutation.error instanceof Error
@@ -512,13 +459,13 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
       )}
 
       {/* Form Actions */}
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-4 pt-4 border-t-4 border-ink">
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 bg-amber-vivid text-ink border-comic shadow-comic py-3 px-6 text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-amber-vivid text-ink border-comic shadow-[4px_4px_0_black] py-4 px-6 text-xl font-display uppercase tracking-widest hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-0 active:shadow-[2px_2px_0_black] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isPending ? 'Saving...' : isEditing ? 'Update Task' : 'Create Task'}
+          {isPending ? 'Processing...' : isEditing ? 'Update Intel' : 'Initialize Mission'}
         </button>
 
         {onCancel && (
@@ -526,9 +473,9 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
             type="button"
             onClick={onCancel}
             disabled={isPending}
-            className="px-6 py-3 bg-paper text-ink border-comic shadow-comic text-display tracking-wide shadow-comic-interactive focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 disabled:opacity-50"
+            className="px-6 py-4 bg-paper text-ink border-comic shadow-[4px_4px_0_black] text-xl font-display uppercase hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-0 active:shadow-[2px_2px_0_black] transition-all"
           >
-            Cancel
+            Abort
           </button>
         )}
       </div>
