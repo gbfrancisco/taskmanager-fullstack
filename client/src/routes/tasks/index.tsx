@@ -106,7 +106,7 @@ function TasksPage() {
         <div>
           <div className="comic-caption text-xs mb-2">Sector 7 // Objectives</div>
           <h1 className="text-display text-5xl text-ink uppercase leading-none">
-            Active <span className="text-amber-vivid bg-ink px-2">Missions</span>
+            Your <span className="text-amber-vivid bg-ink px-2 skew-x-[-6deg] inline-block">Tasks</span>
           </h1>
         </div>
 
@@ -122,7 +122,7 @@ function TasksPage() {
               : 'bg-paper text-ink shadow-none translate-y-1 border-dashed transition-all'}
           `}
         >
-          {showCreateForm ? 'Cancel Operation' : '+ New Objective'}
+          {showCreateForm ? 'Cancel' : '+ New Task'}
         </button>
       </div>
 

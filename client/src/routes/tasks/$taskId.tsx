@@ -123,8 +123,9 @@ function TaskDetailPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       {/* Breadcrumb / Back link */}
       <div className="mb-6">
-        <Link to="/tasks" className="font-bold text-sm uppercase tracking-wider hover:underline decoration-2">
-          &larr; Return to Board
+        <Link to="/tasks" className="group flex items-center gap-2 font-bold text-sm uppercase tracking-wider text-ink hover:text-amber-dark">
+          <span className="bg-ink text-paper px-1 group-hover:-translate-x-1 transition-transform">&larr;</span>
+          <span>Return to Tasks</span>
         </Link>
       </div>
 
@@ -184,13 +185,13 @@ function TaskDetailPage() {
                       onClick={() => setIsEditing(true)}
                       className="bg-amber-light text-ink border-comic px-6 py-2 font-bold uppercase shadow-comic-interactive"
                     >
-                      Update Intel
+                      Update
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
                       className="bg-paper text-danger border-comic px-6 py-2 font-bold uppercase shadow-comic-interactive"
                     >
-                      Burn File
+                      Delete
                     </button>
                   </div>
 
@@ -331,7 +332,7 @@ function ErrorDisplay({ title, message }: { title: string; message: string }) {
         <h2 className="text-display text-2xl text-danger">{title}</h2>
         <p>{message}</p>
         <Link to="/tasks" className="underline mt-4 inline-block">
-          Return to safety
+          Return to Tasks
         </Link>
       </div>
     </div>

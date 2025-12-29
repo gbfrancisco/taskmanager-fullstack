@@ -158,7 +158,7 @@ function ProjectDetailPage() {
       <div className="mb-6">
         <Link to="/projects" className="group flex items-center gap-2 font-bold text-sm uppercase tracking-wider text-ink hover:text-amber-dark">
           <span className="bg-ink text-paper px-1 group-hover:-translate-x-1 transition-transform">&larr;</span>
-          <span>Return to Archives</span>
+          <span>Return to Projects</span>
         </Link>
       </div>
 
@@ -233,7 +233,7 @@ function ProjectDetailPage() {
                       onClick={() => setIsEditing(true)}
                       className="bg-paper text-ink border-comic px-6 py-3 font-display uppercase tracking-widest shadow-comic-interactive"
                     >
-                      Edit File
+                      Update
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
@@ -436,7 +436,7 @@ function ErrorDisplay({ title, message }: { title: string; message: string }) {
         <h2 className="text-display text-2xl text-danger">{title}</h2>
         <p>{message}</p>
         <Link to="/projects" className="underline mt-4 inline-block">
-          Return to Archives
+          Return to Projects
         </Link>
       </div>
     </div>

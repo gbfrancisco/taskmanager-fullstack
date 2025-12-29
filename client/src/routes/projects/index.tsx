@@ -107,7 +107,7 @@ function ProjectsPage() {
             Vol. 1 // Global Operations
           </div>
           <h1 className="text-display text-5xl text-ink uppercase leading-none">
-            Campaign <span className="text-paper bg-ink px-2 skew-x-[-6deg] inline-block">Log</span>
+            Your <span className="text-amber-vivid bg-ink px-2 skew-x-[-6deg] inline-block">Projects</span>
           </h1>
         </div>
 
@@ -123,7 +123,7 @@ function ProjectsPage() {
               : 'bg-paper text-ink shadow-none translate-y-1 border-dashed transition-all'}
           `}
         >
-          {showCreateForm ? 'Close Log' : '+ Start Campaign'}
+          {showCreateForm ? 'Cancel' : '+ New Project'}
         </button>
       </div>
 
