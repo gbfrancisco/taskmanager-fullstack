@@ -142,7 +142,7 @@ function TaskDetailPage() {
       </div>
 
       {/* Main Dossier Container */}
-      <div className="bg-paper border-comic-heavy shadow-comic-lg relative">
+      <div className="bg-paper border-comic-heavy shadow-comic-soft-lg relative">
 
         {/* Confidential stamp */}
         <div className="absolute -top-3 -right-3 bg-amber-vivid border-comic px-4 py-1 rotate-2 shadow-sm z-10">
@@ -168,7 +168,7 @@ function TaskDetailPage() {
               {/* Header with title and status */}
               <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b-4 border-ink pb-6 mb-6">
                 <div>
-                  <div className="font-mono text-xs text-ink-light mb-1">CASE FILE #{task.id}</div>
+                  <div className="font-mono text-xs text-ink-light mb-1">TASK #{task.id}</div>
                   <h1 className="text-display text-4xl md:text-5xl text-ink leading-tight">
                     {task.title}
                   </h1>
@@ -243,7 +243,7 @@ function TaskDetailPage() {
                 <div className="bg-halftone p-4 border-comic h-fit">
                   <h3 className="font-display text-xl border-b-2 border-ink mb-4">Meta Data</h3>
                   <dl className="space-y-4 font-mono text-sm">
-                    <MetaItem label="Operative" value={task.appUser.username} />
+                    <MetaItem label="Owner" value={task.appUser.username} />
                     <MetaItem
                       label="Project"
                       value={task.project ? task.project.name : 'N/A'}

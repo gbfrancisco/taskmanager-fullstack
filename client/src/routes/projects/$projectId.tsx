@@ -185,7 +185,7 @@ function ProjectDetailPage() {
             {!isEditing && (
               <div className="absolute -top-4 left-0 bg-ink text-paper px-6 py-1 skew-x-[-10deg] border-b-0">
                 <span className="font-mono font-bold text-xs uppercase tracking-widest skew-x-[10deg]">
-                  Case File #{project.id}
+                  Project #{project.id}
                 </span>
               </div>
             )}
@@ -234,10 +234,10 @@ function ProjectDetailPage() {
 
                   {/* Metadata Grid */}
                   <div className="bg-halftone border-comic p-4 grid grid-cols-2 gap-4 mb-6">
-                    <MetaItem label="Commander" value={project.appUser.username} variant="grid" />
-                    <MetaItem label="Initiated" value={formatDate(project.createdTimestamp)} variant="grid" />
+                    <MetaItem label="Owner" value={project.appUser.username} variant="grid" />
+                    <MetaItem label="Created" value={formatDate(project.createdTimestamp)} variant="grid" />
                     <MetaItem label="Last Update" value={formatDate(project.updatedTimestamp)} variant="grid" />
-                    <MetaItem label="Directives" value={`${project.taskCount} Active`} highlight variant="grid" />
+                    <MetaItem label="Tasks" value={`${project.taskCount} Active`} highlight variant="grid" />
                   </div>
 
                   {/* Action Buttons */}

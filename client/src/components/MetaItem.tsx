@@ -2,7 +2,7 @@
  * MetaItem - Displays a label/value pair for metadata sections
  *
  * Used in detail pages to show information like:
- * - Operative/Commander (user)
+ * - Owner (user)
  * - Project assignment
  * - Dates (created, deadline)
  *
