@@ -263,6 +263,30 @@ button {
     letter-spacing: 0.05em;
 }
 
+/* Comic-styled Scrollbar */
+.scrollbar-comic {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink) var(--color-paper);
+}
+
+.scrollbar-comic::-webkit-scrollbar {
+  width: 12px;
+}
+
+.scrollbar-comic::-webkit-scrollbar-track {
+  background: var(--color-paper);
+  border-left: 2px solid var(--color-ink);
+}
+
+.scrollbar-comic::-webkit-scrollbar-thumb {
+  background: var(--color-ink);
+  border: 2px solid var(--color-paper);
+}
+
+.scrollbar-comic::-webkit-scrollbar-thumb:hover {
+  background: var(--color-amber-vivid);
+}
+
 /* Action Container - Skewed background for emphasis */
 .bg-action-stripe {
     background: repeating-linear-gradient(

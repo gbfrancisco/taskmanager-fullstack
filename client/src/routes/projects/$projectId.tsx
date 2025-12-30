@@ -288,8 +288,7 @@ function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* Right Column: Objectives List (Span 4) */}
-        {/* Right Column: Objectives List (Span 4) */}
+        {/* Right Column: Task Feed (Span 4) */}
         <div className="lg:col-span-4">
           <div className="sticky top-6">
 
@@ -300,40 +299,29 @@ function ProjectDetailPage() {
               </h2>
             </div>
 
-            {/* THE TACTICAL FEED CONTAINER */}
-            <div className="border-comic-heavy bg-paper shadow-[8px_8px_0_rgba(0,0,0,0.2)] relative overflow-hidden">
+            {/* Task Feed Container */}
+            <div className="border-comic-heavy bg-paper shadow-comic-soft-lg relative overflow-hidden">
 
               {/* Terminal Header Bar */}
               <div className="bg-ink text-paper py-1.5 px-3 flex justify-between items-center border-b-2 border-ink">
                 <span className="font-mono text-[10px] uppercase tracking-widest">
-                  feed_id: {project.id}
+                  project_id: {project.id}
                 </span>
                 <div className="flex gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="font-mono text-[10px] uppercase font-bold text-red-500">LIVE</span>
+                  <div className="w-2 h-2 rounded-full bg-danger animate-pulse" />
+                  <span className="font-mono text-[10px] uppercase font-bold text-danger">LIVE</span>
                 </div>
               </div>
 
-              {/* Scrollable Area with Custom Scrollbar */}
-              <div
-                className="max-h-[450px] overflow-y-auto p-4 space-y-3 bg-halftone"
-                style={{
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#000 #fff'
-                }}
-              >
-                {/* CSS for Webkit Scrollbar (Chrome/Safari) */}
-                <style>{`
-                  div::-webkit-scrollbar { width: 12px; }
-                  div::-webkit-scrollbar-track { background: #fff; border-left: 2px solid #000; }
-                  div::-webkit-scrollbar-thumb { background: #000; border: 2px solid #fff; }
-                  div::-webkit-scrollbar-thumb:hover { background: #FFC72C; }
-                `}</style>
-
+              {/*
+                Scrollable task list
+                TODO: Consider @tanstack/react-virtual for virtualization if lists grow large
+              */}
+              <div className="max-h-[450px] overflow-y-auto p-4 space-y-3 bg-halftone scrollbar-comic">
                 {isTasksPending ? (
                   <div className="space-y-3 opacity-50">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="h-10 bg-gray-200 border-2 border-gray-400 animate-pulse" />
+                      <div key={i} className="h-10 bg-paper-dark border-2 border-ink-light animate-pulse" />
                     ))}
                   </div>
                 ) : isTasksError ? (
@@ -357,19 +345,19 @@ function ProjectDetailPage() {
                 ) : (
                   <div className="border-2 border-dashed border-ink/30 p-8 text-center bg-paper/50">
                     <div className="text-4xl mb-2 opacity-30">📂</div>
-                    <p className="font-bold text-ink-light text-sm uppercase">No Objectives</p>
-                    <p className="text-xs text-ink-light mt-1">Campaign is currently empty.</p>
+                    <p className="font-bold text-ink-light text-sm uppercase">No Tasks</p>
+                    <p className="text-xs text-ink-light mt-1">Task list is currently empty.</p>
                   </div>
                 )}
               </div>
 
-              {/* Terminal Footer Actions */}
+              {/* Footer Actions */}
               <div className="bg-paper border-t-2 border-ink p-3 text-center">
                 <Link
                   to="/tasks"
                   className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider hover:text-amber-dark transition-colors"
                 >
-                  <span className="w-4 h-4 bg-ink text-white flex items-center justify-center text-[10px] group-hover:bg-amber-vivid group-hover:text-ink transition-colors">
+                  <span className="w-4 h-4 bg-ink text-paper flex items-center justify-center text-[10px] group-hover:bg-amber-vivid group-hover:text-ink transition-colors">
                     +
                   </span>
                   Add / Manage Tasks
