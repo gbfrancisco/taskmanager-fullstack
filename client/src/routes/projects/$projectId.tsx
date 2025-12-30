@@ -289,40 +289,93 @@ function ProjectDetailPage() {
         </div>
 
         {/* Right Column: Objectives List (Span 4) */}
+        {/* Right Column: Objectives List (Span 4) */}
         <div className="lg:col-span-4">
           <div className="sticky top-6">
-            <h2 className="text-display text-2xl mb-4 bg-ink text-amber-vivid inline-block px-3 py-1 -rotate-1 shadow-comic-sm">
-              Project Tasks
-            </h2>
 
-            <div className="space-y-3">
-              {isTasksPending ? (
-                <div className="animate-pulse space-y-3">
-                  <div className="h-12 bg-paper-dark border-comic"></div>
-                  <div className="h-12 bg-paper-dark border-comic"></div>
-                </div>
-              ) : isTasksError ? (
-                <div className="bg-danger-bg border-comic p-3 font-bold text-danger text-sm">
-                  Failed to load tactical data.
-                </div>
-              ) : tasks && tasks.length > 0 ? (
-                tasks.map((task) => (
-                  <TaskStrip key={task.id} task={task} />
-                ))
-              ) : (
-                <div className="bg-paper-dark border-comic p-6 text-center border-dashed">
-                  <p className="text-ink-soft text-sm font-medium">
-                    No active objectives.<br/>Add tasks to this campaign.
-                  </p>
-                </div>
-              )}
+            {/* Header: Rotated Tape Style */}
+            <div className="relative z-10 -mb-2 ml-2">
+              <h2 className="text-display text-xl bg-amber-vivid text-ink inline-block px-4 py-1 -rotate-2 border-2 border-ink shadow-sm">
+                Project Tasks
+              </h2>
             </div>
 
-            {/* Quick Link to Add Task */}
-            <div className="mt-4 text-center">
-              <Link to="/tasks" className="text-xs font-bold uppercase underline hover:text-amber-vivid">
-                + Manage Tasks at Task Board
-              </Link>
+            {/* THE TACTICAL FEED CONTAINER */}
+            <div className="border-comic-heavy bg-paper shadow-[8px_8px_0_rgba(0,0,0,0.2)] relative overflow-hidden">
+
+              {/* Terminal Header Bar */}
+              <div className="bg-ink text-paper py-1.5 px-3 flex justify-between items-center border-b-2 border-ink">
+                <span className="font-mono text-[10px] uppercase tracking-widest">
+                  feed_id: {project.id}
+                </span>
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="font-mono text-[10px] uppercase font-bold text-red-500">LIVE</span>
+                </div>
+              </div>
+
+              {/* Scrollable Area with Custom Scrollbar */}
+              <div
+                className="max-h-[450px] overflow-y-auto p-4 space-y-3 bg-halftone"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#000 #fff'
+                }}
+              >
+                {/* CSS for Webkit Scrollbar (Chrome/Safari) */}
+                <style>{`
+                  div::-webkit-scrollbar { width: 12px; }
+                  div::-webkit-scrollbar-track { background: #fff; border-left: 2px solid #000; }
+                  div::-webkit-scrollbar-thumb { background: #000; border: 2px solid #fff; }
+                  div::-webkit-scrollbar-thumb:hover { background: #FFC72C; }
+                `}</style>
+
+                {isTasksPending ? (
+                  <div className="space-y-3 opacity-50">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="h-10 bg-gray-200 border-2 border-gray-400 animate-pulse" />
+                    ))}
+                  </div>
+                ) : isTasksError ? (
+                  <div className="bg-danger-bg border-2 border-danger p-3">
+                    <p className="font-bold text-danger text-xs uppercase">⚠ Connection Lost</p>
+                    <p className="text-xs text-danger">Unable to retrieve objective data.</p>
+                  </div>
+                ) : tasks && tasks.length > 0 ? (
+                  <>
+                    {tasks.map((task) => (
+                      <TaskStrip key={task.id} task={task} />
+                    ))}
+
+                    {/* End of Feed Marker */}
+                    <div className="text-center py-4 opacity-50">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.5em] text-ink-light">
+                        *** END OF DATA ***
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="border-2 border-dashed border-ink/30 p-8 text-center bg-paper/50">
+                    <div className="text-4xl mb-2 opacity-30">📂</div>
+                    <p className="font-bold text-ink-light text-sm uppercase">No Objectives</p>
+                    <p className="text-xs text-ink-light mt-1">Campaign is currently empty.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Terminal Footer Actions */}
+              <div className="bg-paper border-t-2 border-ink p-3 text-center">
+                <Link
+                  to="/tasks"
+                  className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider hover:text-amber-dark transition-colors"
+                >
+                  <span className="w-4 h-4 bg-ink text-white flex items-center justify-center text-[10px] group-hover:bg-amber-vivid group-hover:text-ink transition-colors">
+                    +
+                  </span>
+                  Add / Manage Tasks
+                </Link>
+              </div>
+
             </div>
           </div>
         </div>
