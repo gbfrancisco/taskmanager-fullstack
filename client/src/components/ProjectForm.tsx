@@ -56,11 +56,11 @@ interface ProjectFormProps {
  * Matches the ProjectStatus type from our API types.
  */
 const PROJECT_STATUSES = [
-  { value: 'PLANNING', label: 'Planning Phase' },
-  { value: 'ACTIVE', label: 'Active Operation' },
-  { value: 'ON_HOLD', label: 'On Hold / Frozen' },
-  { value: 'COMPLETED', label: 'Mission Accomplished' },
-  { value: 'CANCELLED', label: 'Scrubbed' }
+  { value: 'PLANNING', label: 'Planning' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'ON_HOLD', label: 'On Hold' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'CANCELLED', label: 'Cancelled' }
 ] as const;
 
 // =============================================================================
