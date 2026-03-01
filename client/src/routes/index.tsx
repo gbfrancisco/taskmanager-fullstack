@@ -113,7 +113,7 @@ function HomePage() {
                 <span className="font-bold text-sm">Database: Connected</span>
               </li>
               <li className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-status-progress border-2 border-ink rounded-full" />
+                <div className="w-3 h-3 bg-status-blue border-2 border-ink rounded-full" />
                 <span className="font-bold text-sm">Theme: Graphic Novel</span>
               </li>
             </ul>
@@ -134,7 +134,7 @@ function HomePage() {
               <p className="text-sm text-ink-light mb-2">Ready to join the team?</p>
               <Link
                 to="/register"
-                className="inline-block w-full text-center bg-status-progress text-paper font-bold border-comic shadow-comic-soft-interactive py-3 px-4 hover:brightness-110"
+                className="inline-block w-full text-center bg-status-blue text-paper font-bold border-comic shadow-comic-soft-interactive py-3 px-4 hover:brightness-110"
               >
                 CREATE ACCOUNT
               </Link>
